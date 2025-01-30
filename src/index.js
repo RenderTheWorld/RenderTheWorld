@@ -24,7 +24,7 @@ import l10n from "./l10n/index.js";
     function addRTWStyle(newStyle) {
         let _RTWStyle = !(window.RTWStyle);
         window.RTWStyle = document.getElementById('RTWStyle');
-    
+
         if (!window.RTWStyle) {
             window.RTWStyle = document.createElement('style');
             window.RTWStyle.type = 'text/css';
@@ -110,7 +110,7 @@ import l10n from "./l10n/index.js";
         };
         // 创建按钮
         const createButtons = (Blockly) => {
-            
+
             // 按钮
             class FieldButton extends Blockly.FieldImage {
                 constructor(src) {
@@ -139,7 +139,7 @@ import l10n from "./l10n/index.js";
                             this.handleClick.bind(this),
                         );
                         // 绑定上这个按钮点击事件
-                        
+
                     }
                     this.initialized = true;
                 }
@@ -165,7 +165,7 @@ import l10n from "./l10n/index.js";
                     super(plusImage);
                 }
                 onclick(e) {
-                    if (e.button == 0){
+                    if (e.button == 0) {
                         const block = this.sourceBlock_;
                         // 增加积木数量改变
                         block.itemCount_ += 1;
@@ -179,7 +179,7 @@ import l10n from "./l10n/index.js";
                     super(minusImage);
                 }
                 onclick(e) {
-                    if (e.button == 0){
+                    if (e.button == 0) {
                         // 获取这个 field 的积木
                         const block = this.sourceBlock_;
                         // 增加积木数量改变
@@ -276,8 +276,8 @@ import l10n from "./l10n/index.js";
                                     type === "substack"
                                         ? this.appendStatementInput(inputKeyID)
                                         : type === "list" || type === "text"
-                                          ? this.appendDummyInput(inputKeyID)
-                                          : this.appendValueInput(inputKeyID);
+                                            ? this.appendDummyInput(inputKeyID)
+                                            : this.appendValueInput(inputKeyID);
                                 if (type === "text") {
                                     input.appendField("text");
                                 } else if (type === "boolean") {
@@ -455,8 +455,8 @@ import l10n from "./l10n/index.js";
                                             ].fieldRow[0].setText(text);
                                     } else {
                                         let flag1 =
-                                                args[1] !== 1 &&
-                                                args[1] !== this.itemCount_,
+                                            args[1] !== 1 &&
+                                            args[1] !== this.itemCount_,
                                             index = inputKeys.indexOf(args[0]),
                                             flag2 =
                                                 index > 0 &&
@@ -532,7 +532,7 @@ import l10n from "./l10n/index.js";
                                         !this.ARGS.includes(name) &&
                                         this.expandableArgs[argName] &&
                                         this.expandableArgs[argName][0] !==
-                                            "text"
+                                        "text"
                                     ) {
                                         target.blocks.deleteBlock(
                                             block.inputs[name].shadow,
@@ -606,7 +606,7 @@ import l10n from "./l10n/index.js";
         };
         const { id, blocks: blocksInfo } = extension.getInfo();
         let expandableBlocks = {};
-        
+
         blocksInfo.forEach((block) => {
             if (block.expandableBlock)
                 expandableBlocks[`${id}_${block.opcode}`] = {
@@ -736,8 +736,7 @@ import l10n from "./l10n/index.js";
     }
     //End of Skins, Please keep this comment if you wanna use this code :3
 
-    const { ArgumentType, BlockType, TargetType, Cast, translate, extensions } =
-        Scratch;
+    const { ArgumentType, BlockType, TargetType, Cast, translate, extensions, runtime } = Scratch;
 
     function hijack(fn) {
         const _orig = Function.prototype.apply;
@@ -752,32 +751,6 @@ import l10n from "./l10n/index.js";
         const result = fn();
         Function.prototype.apply = _orig;
         return result;
-    }
-    function getVM(runtime) {
-        let virtualMachine;
-
-        if (Array.isArray(runtime._events["QUESTION"])) {
-            for (const value of runtime._events["QUESTION"]) {
-                const v = hijack(value);
-                if (v && v.props && v.props.vm) {
-                    virtualMachine = v.props.vm;
-                    break;
-                }
-            }
-        } else if (runtime._events["QUESTION"]) {
-            const v = hijack(runtime._events["QUESTION"]);
-            if (v && v.props && v.props.vm) {
-                virtualMachine = v.props.vm;
-            }
-        }
-
-        if (!virtualMachine) {
-            throw new Error(
-                "RenderTheWorld cannot get Virtual Machine instance.",
-            );
-        }
-
-        return virtualMachine;
     }
     function getBlockly(vm) {
         let Blockly;
@@ -794,9 +767,6 @@ import l10n from "./l10n/index.js";
         }
         return Blockly;
     }
-
-    const vm = Scratch.vm ?? getVM(runtime);
-    const runtime = vm.runtime ?? Scratch.runtime;
 
     const chen_RenderTheWorld_extensionId = "RenderTheWorld";
 
@@ -841,29 +811,11 @@ import l10n from "./l10n/index.js";
             } else {
                 // 如果原函数不存在，直接定义新函数
                 obj[name] = function (...args) {
-                    return functions[name].call(this, () => {}, ...args);
+                    return functions[name].call(this, () => { }, ...args);
                 };
             }
         }
     };
-
-    // 使用patch函数修改runtime的visualReport方法，增加自定义逻辑
-    patch(runtime.constructor.prototype, {
-        visualReport(original, blockId, value) {
-            if (vm.editingTarget) {
-                const block = vm.editingTarget.blocks.getBlock(blockId);
-                // 如果当前块是Inline Blocks且不是顶层块，则不执行后续逻辑
-                if (
-                    block.opcode ===
-                        chen_RenderTheWorld_extensionId + "_makeMaterial" &&
-                    !block.topLevel
-                )
-                    return;
-            }
-            // 调用原始函数，继续执行后续逻辑
-            original(blockId, value);
-        },
-    });
 
     /** @typedef {string|number|boolean} SCarg 来自Scratch圆形框的参数，虽然这个框可能只能输入数字，但是可以放入变量，因此有可能获得数字、布尔和文本（极端情况下还有 null 或 undefined，需要同时处理 */
     translate.setup(l10n);
@@ -893,7 +845,6 @@ import l10n from "./l10n/index.js";
                 html.innerText = `model: "${this.model["type"] ?? String(this.model)}"`;
             }
             if (this.model instanceof THREE.Group) {
-                // console.log(this.model);
                 html.innerText += ` ${JSON.stringify(this.model.children.map((x) => x.type))}`;
             }
             return html;
@@ -967,7 +918,23 @@ import l10n from "./l10n/index.js";
                         this.Blockly = newBlockly;
                     }
                 });
-
+            // 使用patch函数修改runtime的visualReport方法，增加自定义逻辑
+            patch(this.runtime.constructor.prototype, {
+                visualReport(original, blockId, value) {
+                    if (this.vm.editingTarget) {
+                        const block = this.vm.editingTarget.blocks.getBlock(blockId);
+                        // 如果当前块是Inline Blocks且不是顶层块，则不执行后续逻辑
+                        if (
+                            block.opcode ===
+                            chen_RenderTheWorld_extensionId + "_makeMaterial" &&
+                            !block.topLevel
+                        )
+                            return;
+                    }
+                    // 调用原始函数，继续执行后续逻辑
+                    original(blockId, value);
+                },
+            });
             const _visualReport = runtime.visualReport;
             runtime.visualReport = (blockId, value) => {
                 const unwrappedValue = Wrapper.unwrap(value);
@@ -1119,18 +1086,18 @@ import l10n from "./l10n/index.js";
 
             // 注册可拓展积木
             console.log("RTW", is_see_inside());
-            
+
             if (is_see_inside()) {
                 // 修复ccw_hat_parameter的颜色问题
                 this._RTW_hat_parameters = new Set();
                 this.objectLoadingCompletedUpdate = () => {
                     this.Blockly.getMainWorkspace().getAllBlocks().filter((block) => block.type === "ccw_hat_parameter").forEach((hat_parameter) => {
                         if (hat_parameter.svgGroup_.getElementsByTagName("text")[0].textContent === "name") {  // 这里是判断参数的名称，防止误判
-                            let flag = hat_parameter["is_RTW_hat_parameter"]==true || this._RTW_hat_parameters.has(hat_parameter.id) ? true : false;
+                            let flag = hat_parameter["is_RTW_hat_parameter"] == true || this._RTW_hat_parameters.has(hat_parameter.id) ? true : false;
                             let parentBlock_ = hat_parameter.parentBlock_;
-                            while (!flag && parentBlock_!==null) {
+                            while (!flag && parentBlock_ !== null) {
                                 this._RTW_hat_parameters.add(hat_parameter.id);
-                                if (parentBlock_.type === chen_RenderTheWorld_extensionId+"_objectLoadingCompleted") {  // 如果这个ccw_hat_parameter的最高层是objectLoadingCompleted积木，说明他是objectLoadingCompleted的ccw_hat_parameter
+                                if (parentBlock_.type === chen_RenderTheWorld_extensionId + "_objectLoadingCompleted") {  // 如果这个ccw_hat_parameter的最高层是objectLoadingCompleted积木，说明他是objectLoadingCompleted的ccw_hat_parameter
                                     flag = true;
                                     break;
                                 }
@@ -1139,7 +1106,7 @@ import l10n from "./l10n/index.js";
                             if (flag) {
                                 hat_parameter["is_RTW_hat_parameter"] = true;
                                 hat_parameter.colour_ = hat_parameter.svgPath_.style.fill = "#121C3D";
-                                hat_parameter.colourTertiary_ = hat_parameter.svgPath_.style.stroke="#4A76FF";
+                                hat_parameter.colourTertiary_ = hat_parameter.svgPath_.style.stroke = "#4A76FF";
                             }
                             this._RTW_hat_parameters.forEach((id) => {
                                 if (this.Blockly.getMainWorkspace().getBlockById(id) === null) {
@@ -1233,6 +1200,21 @@ import l10n from "./l10n/index.js";
             this._clock = 0;
 
             this.threadInfo = {};
+
+            // 重新实现“output”和“outputShape”块参数
+            const cbfsb = this.runtime._convertBlockForScratchBlocks.bind(this.runtime);
+            this.runtime._convertBlockForScratchBlocks = function (blockInfo, categoryInfo) {
+                const res = cbfsb(blockInfo, categoryInfo);
+                if (blockInfo.outputShape) {
+                    if (!res.json.outputShape)
+                        res.json.outputShape = blockInfo.outputShape;
+                }
+                if (blockInfo.output) {
+                    if (!res.json.output) res.json.output = blockInfo.output;
+                }
+                if (!res.json.branchCount) res.json.branchCount = blockInfo.branchCount;
+                return res;
+            };
         }
 
         /**
@@ -1366,7 +1348,7 @@ import l10n from "./l10n/index.js";
                               </value>
                           </block>
                           `
-                  },
+                },
                 {
                     opcode: "setMaterialColor",
                     blockType: BlockType.COMMAND,
@@ -2105,7 +2087,7 @@ import l10n from "./l10n/index.js";
                     outputShape: 3,
                     branchCount: 0,
                 },
-                
+
                 {
                     opcode: "setAmbientLightColor",
                     blockType: BlockType.COMMAND,
@@ -2566,7 +2548,7 @@ import l10n from "./l10n/index.js";
          * @param {object} args
          */
 
-        isWebGLAvailable({}) {
+        isWebGLAvailable({ }) {
             this.isWebglAvailable = WebGL.isWebGLAvailable();
         }
         /**
@@ -2575,7 +2557,7 @@ import l10n from "./l10n/index.js";
          * @return {boolean}
          */
 
-        _isWebGLAvailable({}) {
+        _isWebGLAvailable({ }) {
             return this.isWebglAvailable;
         }
 
@@ -2809,13 +2791,13 @@ import l10n from "./l10n/index.js";
                 //并有第三阶段
                 const returnValue = util.stackFrame._inlineReturn;
 
-				util.thread.popStack();
+                util.thread.popStack();
 
-				util.stackFrame._inlineLastReturn = true;
-				util.stackFrame._inlineReturn = returnValue;
+                util.stackFrame._inlineLastReturn = true;
+                util.stackFrame._inlineReturn = returnValue;
 
                 this.threadInfo[thread.topBlock.concat(thread.target.id)].pop()
-				return returnValue;
+                return returnValue;
             } else {
                 // 第1阶段：运行堆栈。
                 // 假设区块返回一个承诺，这样
@@ -2828,12 +2810,10 @@ import l10n from "./l10n/index.js";
                     return "";
                 }
 
-                console.log(material, this.threadInfo[thread.topBlock.concat(thread.target.id)]);
-                
-                if (this.threadInfo[thread.topBlock.concat(thread.target.id)] && this.threadInfo[thread.topBlock.concat(thread.target.id)].length>0) {
-                    this.threadInfo[thread.topBlock.concat(thread.target.id)].push({material: material, color: 0, fog: true});
+                if (this.threadInfo[thread.topBlock.concat(thread.target.id)] && this.threadInfo[thread.topBlock.concat(thread.target.id)].length > 0) {
+                    this.threadInfo[thread.topBlock.concat(thread.target.id)].push({ material: material, color: 0, fog: true });
                 } else {
-                    this.threadInfo[thread.topBlock.concat(thread.target.id)] = [{material: material, color: 0, fog: true}];
+                    this.threadInfo[thread.topBlock.concat(thread.target.id)] = [{ material: material, color: 0, fog: true }];
                 }
 
                 const stackFrame = thread.peekStackFrame();
@@ -2883,7 +2863,7 @@ import l10n from "./l10n/index.js";
                 });
 
                 // 虚假承诺
-                return { then: () => {} };
+                return { then: () => { } };
             }
         }
 
@@ -2908,30 +2888,30 @@ import l10n from "./l10n/index.js";
 
         setMaterialColor({ color }, util) {
             const thread = util.thread;
-            if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length-1] === undefined) return "⚠️请在“创建材质”积木中使用！";
+            if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1] === undefined) return "⚠️请在“创建材质”积木中使用！";
             if (Number(Cast.toString(color)) == Number(Cast.toString(color))) {
-                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length-1]['color'] = Number(
+                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]['color'] = Number(
                     Cast.toString(color),
                 );
             } else {
-                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length-1]['color'] = Cast.toString(color);
+                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]['color'] = Cast.toString(color);
             }
         }
 
         setMaterialFog({ YN }, util) {
             const thread = util.thread;
-            if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length-1] === undefined) return "⚠️请在“创建材质”积木中使用！";
+            if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1] === undefined) return "⚠️请在“创建材质”积木中使用！";
             if (Cast.toString(YN) === "ture") {
-                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length-1]['fog'] = true;
+                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]['fog'] = true;
             } else {
-                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length-1]['fog'] = false;
+                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]['fog'] = false;
             }
         }
 
         // 实现return方法，用于处理返回值
         return(args, util) {
             const thread = util.thread;
-            if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length-1] === undefined) return "⚠️请在“创建材质”积木中使用！";
+            if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1] === undefined) return "⚠️请在“创建材质”积木中使用！";
 
             let blockID = thread.peekStack();
             while (blockID) {
@@ -2939,7 +2919,7 @@ import l10n from "./l10n/index.js";
                 if (
                     block &&
                     block.opcode ===
-                        chen_RenderTheWorld_extensionId + "_makeMaterial"
+                    chen_RenderTheWorld_extensionId + "_makeMaterial"
                 ) {
                     break;
                 }
@@ -2952,31 +2932,29 @@ import l10n from "./l10n/index.js";
                 thread.requestScriptGlowInFrame = false;
                 thread.status = thread.constructor.STATUS_DONE;
             } else {
-                console.log(this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length-1]);
-                
                 // 返回值
                 let _material = "";
 
-                if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length-1].material === "Basic") {
+                if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1].material === "Basic") {
                     _material = new THREE.MeshBasicMaterial();
-                } else if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length-1].material === "Lambert") {
+                } else if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1].material === "Lambert") {
                     _material = new THREE.MeshLambertMaterial();
-                } else if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length-1].material === "Phong") {
+                } else if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1].material === "Phong") {
                     _material = new THREE.MeshPhongMaterial();
                 } else {
                     _material = new THREE.MeshBasicMaterial();
                 }
                 _material.fog = true; // 默认受雾效果影响
 
-                if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length-1]) {
-                    for (let key in this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length-1]) {
+                if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]) {
+                    for (let key in this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]) {
                         if (key === "color") {
                             _material.color.set(
-                                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length-1][key],
+                                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1][key],
                             );
                         }
                         if (key === "fog") {
-                            _material.fog = this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length-1][key];
+                            _material.fog = this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1][key];
                         }
                     }
                 }
@@ -3098,17 +3076,17 @@ import l10n from "./l10n/index.js";
                 if (_model instanceof RTW_Model_Box && _model.model.isObject3D) {
                     _model = _model.model;
                 } else if (typeof _model === 'string') {
-                    if (!(_model in this.objects)) {cnt++;continue};
+                    if (!(_model in this.objects)) { cnt++; continue };
                     _model = this.objects[_model];
-                    
-                } else {cnt++;continue};
-                
+
+                } else { cnt++; continue };
+
                 _group.add(_model);
-                
-                cnt++; 
+
+                cnt++;
             }
             // cnt--;  // 模型数量
-            
+
             return new Wrapper(
                 new RTW_Model_Box(
                     _group,
@@ -3147,7 +3125,7 @@ import l10n from "./l10n/index.js";
                 ),
             );
         }
-        
+
         sphereModel({ radius, w, h, material }) {
             material = Wrapper.unwrap(material);
             if (material !== undefined) {
@@ -3231,7 +3209,7 @@ import l10n from "./l10n/index.js";
 
                         let r = this.runtime.startHatsWithParams(
                             chen_RenderTheWorld_extensionId +
-                                "_objectLoadingCompleted",
+                            "_objectLoadingCompleted",
                             {
                                 parameters: {
                                     name: name,
@@ -3609,7 +3587,7 @@ import l10n from "./l10n/index.js";
                         }
                         let r = this.runtime.startHatsWithParams(
                             chen_RenderTheWorld_extensionId +
-                                "_objectLoadingCompleted",
+                            "_objectLoadingCompleted",
                             {
                                 parameters: {
                                     name: name,
@@ -4088,7 +4066,7 @@ import l10n from "./l10n/index.js";
                     _camera.zoom = this.objects[name].shadow.camera.zoom;
                     this.objects[name].shadow.camera = _camera;
                 } else {
-                    return "⚠️'"+name+"'不是平行光！";
+                    return "⚠️'" + name + "'不是平行光！";
                 }
             }
         }
@@ -4104,14 +4082,14 @@ import l10n from "./l10n/index.js";
             if (!this.tc) {
                 return "⚠️显示器未初始化！";
             }
-            
+
             name = Cast.toString(name);
             if (name in this.objects) {
                 if (this.objects[name].isLight) {
                     this.objects[name].shadow.mapSize.width = Cast.toNumber(xsize);
                     this.objects[name].shadow.mapSize.height = Cast.toNumber(ysize);
                 } else {
-                    return "⚠️'"+name+"'不是光源！";
+                    return "⚠️'" + name + "'不是光源！";
                 }
             }
         }
@@ -4315,7 +4293,7 @@ import l10n from "./l10n/index.js";
             this.controls.update();
         }
 
-        mouseCanControlCamera({}) {
+        mouseCanControlCamera({ }) {
             if (!this.tc) {
                 return false;
             }
@@ -4404,21 +4382,6 @@ import l10n from "./l10n/index.js";
             );
         }
     }
-    // 重新实现“output”和“outputShape”块参数
-    const cbfsb = runtime._convertBlockForScratchBlocks.bind(runtime);
-    runtime._convertBlockForScratchBlocks = function (blockInfo, categoryInfo) {
-        const res = cbfsb(blockInfo, categoryInfo);
-        if (blockInfo.outputShape) {
-            if (!res.json.outputShape)
-                res.json.outputShape = blockInfo.outputShape;
-        }
-        if (blockInfo.output) {
-            if (!res.json.output) res.json.output = blockInfo.output;
-        }
-        if (!res.json.branchCount) res.json.branchCount = blockInfo.branchCount;
-        return res;
-    };
-
     extensions.register(new RenderTheWorld(runtime));
     window.tempExt = {
         Extension: RenderTheWorld,
@@ -4448,11 +4411,11 @@ import l10n from "./l10n/index.js";
         l10n: {
             "zh-cn": {
                 "RenderTheWorld.name": "渲染世界",
-                "RenderTheWorld.descp": "立体空间, WebGL帮你实现!",
+                "RenderTheWorld.descp": "积木渲染世界",
             },
             en: {
                 "RenderTheWorld.name": "Render The World",
-                "RenderTheWorld.descp": "WebGL Start!",
+                "RenderTheWorld.descp": "Building blocks render the world",
             },
         },
     };

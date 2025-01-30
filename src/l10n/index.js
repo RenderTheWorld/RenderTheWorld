@@ -170,11 +170,11 @@ export default {
         "RenderTheWorld.makeMaterial.tooltip":
             "创建一个材质，可直接在“导入或重置”积木中使用，如非必要，推荐多个模型共用一个材质",
         "RenderTheWorld.setMaterialColor.tooltip":
-            "设置当前材质颜色，在“创建一个材质”积木中使用",
+            "设置当前材质颜色，在“创建材质”积木中使用",
         "RenderTheWorld.setMaterialFog.tooltip":
-            "设置当前材质是否受雾效果影响，在“创建一个材质”积木中使用",
+            "设置当前材质是否受雾效果影响，在“创建材质”积木中使用",
         "RenderTheWorld.return.tooltip":
-            "材质创建完成，必须在“创建一个材质”积木中使用",
+            "材质创建完成，必须在“创建材质”积木中使用",
 
         "RenderTheWorld.playAnimation.tooltip": "启动模型的动画",
         "RenderTheWorld.stopAnimation.tooltip": "结束模型的动画",
