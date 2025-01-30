@@ -2759,6 +2759,10 @@ import l10n from "./l10n/index.js";
                     this.scene.clear();
                 });
                 this.is_listener = true;
+                console.log(
+                    chen_RenderTheWorld_extensionId + ": Starting renders",
+                );
+                this.renderer.setAnimationLoop(this.render);
             }
         }
 
