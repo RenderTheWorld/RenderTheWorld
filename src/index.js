@@ -10,8 +10,12 @@ import WebGL from "./assets/threejs_ext/WebGL.js";
 import {
     chen_RenderTheWorld_picture,
     chen_RenderTheWorld_icon,
+    leftButton,
+    rightButton,
 } from "./assets/index.js";
 import l10n from "./l10n/index.js";
+import { initExpandableBlocks, getDynamicArgs } from "./utils/extendableBlock.js";
+import { log } from "./assets/threejs/src/Three.TSL.js";
 
 (function (Scratch) {
     "use strict";
@@ -67,591 +71,6 @@ import l10n from "./l10n/index.js";
                 return origFun.call(this, blockInfo, categoryInfo);
             };
         }
-    };
-
-    const PICTRUE = {
-        plus: "data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSI4NC41NzI3MyIgaGVpZ2h0PSI4NC41NzI3MyIgdmlld0JveD0iMCwwLDg0LjU3MjczLDg0LjU3MjczIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMjc3LjcxMzYzLC0xMzcuNzEzNjMpIj48ZyBkYXRhLXBhcGVyLWRhdGE9InsmcXVvdDtpc1BhaW50aW5nTGF5ZXImcXVvdDs6dHJ1ZX0iIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0ibm9uemVybyIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIgc3Ryb2tlLW1pdGVybGltaXQ9IjEwIiBzdHJva2UtZGFzaGFycmF5PSIiIHN0cm9rZS1kYXNob2Zmc2V0PSIwIiBzdHlsZT0ibWl4LWJsZW5kLW1vZGU6IG5vcm1hbCI+PHBhdGggZD0iTTI5My42ODIxNiwxODAuMDI1NDRoNTIuNjM1NjgiIHN0cm9rZT0iIzlhYjNmZiIgc3Ryb2tlLXdpZHRoPSIxMSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTMyMC4xMjQ4NiwxNTMuNjgyNThsLTAuMzAwNTcsNTIuNjM0ODMiIHN0cm9rZT0iIzlhYjNmZiIgc3Ryb2tlLXdpZHRoPSIxMSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTI3Ny43MTM2MywyMjIuMjg2MzZ2LTg0LjU3MjczaDg0LjU3Mjczdjg0LjU3MjczeiIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjAiIHN0cm9rZS1saW5lY2FwPSJidXR0Ii8+PC9nPjwvZz48L3N2Zz4=",
-        minus: "data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSI4NC41NzI3MyIgaGVpZ2h0PSI4NC41NzI3MyIgdmlld0JveD0iMCwwLDg0LjU3MjczLDg0LjU3MjczIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMjc3LjcxMzYzLC0xMzcuNzEzNjQpIj48ZyBkYXRhLXBhcGVyLWRhdGE9InsmcXVvdDtpc1BhaW50aW5nTGF5ZXImcXVvdDs6dHJ1ZX0iIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0ibm9uemVybyIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIgc3Ryb2tlLW1pdGVybGltaXQ9IjEwIiBzdHJva2UtZGFzaGFycmF5PSIiIHN0cm9rZS1kYXNob2Zmc2V0PSIwIiBzdHlsZT0ibWl4LWJsZW5kLW1vZGU6IG5vcm1hbCI+PHBhdGggZD0iTTI5My42ODIxNiwxODAuMDI1NDNoNTIuNjM1NjgiIHN0cm9rZT0iIzlhYjNmZiIgc3Ryb2tlLXdpZHRoPSIxMSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTI3Ny43MTM2NCwyMjIuMjg2Mzd2LTg0LjU3MjczaDg0LjU3Mjczdjg0LjU3MjczeiIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjAiIHN0cm9rZS1saW5lY2FwPSJidXR0Ii8+PC9nPjwvZz48L3N2Zz4=",
-    };
-
-    const BLOCK_DEFAULT = {
-        connect: ["DEFAULT", "DEFAULT2"],
-        arit: ["DEFAULT", "OPER", "DEFAULT2"],
-        array: [],
-        object: [],
-        broadcastWithData: [],
-        if: [],
-    };
-
-    let expandableBlockInit = false;
-    const setExpandableBlocks = (runtime, extension) => {
-        if (expandableBlockInit) return;
-        expandableBlockInit = true;
-        // 在编辑器获取scratchBlocks与获取VM的方法来自 https://github.com/FurryR/lpp-scratch 的LPP扩展
-        const hijack = (fn) => {
-            const _orig = Function.prototype.apply;
-            Function.prototype.apply = (thisArg) => thisArg;
-            const result = fn();
-            Function.prototype.apply = _orig;
-            return result;
-        };
-        const getScratch = (runtime) => {
-            function getEvent(e) {
-                return e instanceof Array ? e[e.length - 1] : e;
-            }
-            const vm = hijack(getEvent(runtime._events["QUESTION"])).props.vm;
-            const scratchBlocks = hijack(
-                getEvent(vm._events["EXTENSION_ADDED"]),
-            )?.ScratchBlocks;
-            return {
-                scratchBlocks: scratchBlocks,
-                vm: vm,
-            };
-        };
-        // 创建按钮
-        const createButtons = (Blockly) => {
-
-            // 按钮
-            class FieldButton extends Blockly.FieldImage {
-                constructor(src) {
-                    super(src, 25, 25, undefined, false);
-                    this.initialized = false;
-                }
-                init() {
-                    // Field has already been initialized once.
-                    super.init();
-                    this.getSvgRoot().getElementsByTagName("image")[0].classList.add("RTW-image");
-                    if (!this.initialized) {
-                        // 初始化按钮
-                        Blockly.bindEventWithChecks_(
-                            this.getSvgRoot(),
-                            "mousedown",
-                            this,
-                            (e) => {
-                                e.stopPropagation();
-                                // 阻止事件冒泡，要不然你点按钮就会执行积木（点击积木）
-                            },
-                        );
-                        Blockly.bindEventWithChecks_(
-                            this.getSvgRoot(),
-                            "mouseup",
-                            this,
-                            this.handleClick.bind(this),
-                        );
-                        // 绑定上这个按钮点击事件
-
-                    }
-                    this.initialized = true;
-                }
-                handleClick(e) {
-                    if (!this.sourceBlock_ || !this.sourceBlock_.workspace) {
-                        return false;
-                    }
-                    if (this.sourceBlock_.workspace.isDragging()) {
-                        return false;
-                    }
-                    if (this.sourceBlock_.isInFlyout) {
-                        return false;
-                    }
-                    this.onclick(e);
-                }
-                onclick(e) {
-                    // 子类实现
-                }
-            }
-            // + 按钮
-            class PlusButton extends FieldButton {
-                constructor() {
-                    super(plusImage);
-                }
-                onclick(e) {
-                    if (e.button == 0) {
-                        const block = this.sourceBlock_;
-                        // 增加积木数量改变
-                        block.itemCount_ += 1;
-                        block.updateShape(); // 更新
-                    }
-                }
-            }
-            // - 按钮
-            class MinusButton extends FieldButton {
-                constructor() {
-                    super(minusImage);
-                }
-                onclick(e) {
-                    if (e.button == 0) {
-                        // 获取这个 field 的积木
-                        const block = this.sourceBlock_;
-                        // 增加积木数量改变
-                        block.itemCount_ -= 1;
-                        if (block.itemCount_ < 0) {
-                            // 不能有 -1 个参数
-                            block.itemCount_ = 0;
-                        }
-                        block.updateShape(); // 更新
-                    }
-                }
-            }
-            // 图片
-            const minusImage = PICTRUE.minus;
-            const plusImage = PICTRUE.plus;
-
-            return {
-                PlusButton,
-                MinusButton,
-            };
-        };
-
-        const createExpandableBlock = (runtime, Blockly) => {
-            const { PlusButton, MinusButton } = createButtons(Blockly);
-            // 这个是scratch函数的utils
-            const ProcedureUtils = Blockly.ScratchBlocks.ProcedureUtils;
-
-            return {
-                attachShadow_: function (input, argumentType, text) {
-                    if (argumentType == "number" || argumentType == "string") {
-                        let blockType =
-                            argumentType == "number" ? "math_number" : "text";
-                        Blockly.Events.disable();
-                        let newBlock;
-                        try {
-                            newBlock = this.workspace.newBlock(blockType);
-                            if (argumentType == "number") {
-                                newBlock.setFieldValue(
-                                    Scratch.Cast.toString(text),
-                                    "NUM",
-                                );
-                            } else if (argumentType == "string") {
-                                newBlock.setFieldValue(
-                                    Scratch.Cast.toString(text),
-                                    "TEXT",
-                                );
-                            }
-                            newBlock.setShadow(true);
-                            if (!this.isInsertionMarker()) {
-                                newBlock.initSvg();
-                                newBlock.render(false);
-                            }
-                        } finally {
-                            Blockly.Events.enable();
-                        }
-                        if (Blockly.Events.isEnabled()) {
-                            Blockly.Events.fire(
-                                new Blockly.Events.BlockCreate(newBlock),
-                            );
-                        }
-                        newBlock.outputConnection.connect(input.connection);
-                    }
-                },
-                updateShape: function () {
-                    let wasRendered = this.rendered;
-                    this.rendered = false;
-
-                    // 更新参数
-                    Blockly.Events.setGroup(true);
-                    // 先记录现在的 mutation
-                    let oldExtraState = Blockly.Xml.domToText(
-                        this.mutationToDom(this),
-                    );
-
-                    // 创建新的积木
-                    let opcode_ = this.opcode_,
-                        expandableArgs = this.expandableArgs,
-                        inputKeys = Object.keys(expandableArgs),
-                        i;
-                    for (i = 1; i <= this.itemCount_; i++) {
-                        if (!this.getInput(`${inputKeys[0]}_${i}`)) {
-                            for (let j = 0; j < inputKeys.length; j++) {
-                                let inputKey = inputKeys[j],
-                                    inputKeyID = `${inputKey}_${i}`;
-
-                                this.ARGS.push(inputKeyID);
-                                let input,
-                                    type = expandableArgs[inputKey][0],
-                                    text = expandableArgs[inputKey][1] || null,
-                                    canEndInput =
-                                        expandableArgs[inputKey][2] || 0;
-
-                                input =
-                                    type === "substack"
-                                        ? this.appendStatementInput(inputKeyID)
-                                        : type === "list" || type === "text"
-                                            ? this.appendDummyInput(inputKeyID)
-                                            : this.appendValueInput(inputKeyID);
-                                if (type === "text") {
-                                    input.appendField("text");
-                                } else if (type === "boolean") {
-                                    input.setCheck("Boolean");
-                                } else if (type === "list") {
-                                    input.appendField(
-                                        new Blockly.FieldDropdown(text),
-                                        inputKeyID,
-                                    );
-                                    const fields = runtime
-                                        .getEditingTarget()
-                                        ?.blocks.getBlock(this.id)?.fields;
-                                    if (fields) {
-                                        fields[inputKeyID] = {
-                                            id: null,
-                                            name: inputKeyID,
-                                            value: "+",
-                                        };
-                                    }
-                                    this.moveInputBefore(inputKeyID, "END");
-                                } else if (type === "substack") {
-                                    input.setCheck(null);
-                                } else {
-                                    this.attachShadow_(input, type, text);
-                                }
-                            }
-                        }
-                    }
-                    if (runtime._editingTarget) {
-                        // 移除 input 并记录
-
-                        if (this.getInput("SUBSTACK")) {
-                            try {
-                                const blocks = runtime._editingTarget.blocks;
-                                const targetBlock = blocks.getBlock(this.id);
-                                const input = targetBlock.inputs["SUBSTACK"];
-                                if (input) {
-                                    if (input.block !== null) {
-                                        const blockInInput =
-                                            targetBlock.getBlock(input.block);
-                                        blockInInput.topLevel = true;
-                                        blockInInput.parent = null;
-                                        blocks.moveBlock({
-                                            id: blockInInput.id,
-                                            oldParent: this.id,
-                                            oldInput: "SUBSTACK",
-                                            newParent: undefined,
-                                            newInput: undefined,
-                                        });
-                                    }
-                                    if (
-                                        input.shadow !== null &&
-                                        input.shadow == input.block
-                                    ) {
-                                        blocks.deleteBlock(input.shadow);
-                                    }
-                                }
-                                this.removeInput("SUBSTACK");
-                                delete targetBlock.inputs["SUBSTACK"];
-                            } catch {
-                                // nothing
-                            }
-                        }
-
-                        let iTemp = i;
-                        for (let j = 0; j < inputKeys.length; j++) {
-                            i = iTemp;
-                            const blocks = runtime._editingTarget.blocks;
-                            const targetBlock = blocks.getBlock(this.id);
-                            const toDel = [];
-                            let inputKey = inputKeys[j],
-                                inputKeyID = `${inputKey}_${i}`,
-                                type = expandableArgs[inputKey][0];
-                            while (this.getInput(inputKeyID)) {
-                                this.ARGS.pop(inputKeyID);
-                                const input = targetBlock.inputs[inputKeyID];
-                                if (input) {
-                                    if (input.block !== null) {
-                                        const blockInInput = blocks.getBlock(
-                                            input.block,
-                                        );
-                                        blockInInput.topLevel = true;
-                                        blockInInput.parent = null;
-                                        blocks.moveBlock({
-                                            id: blockInInput.id,
-                                            oldParent: this.id,
-                                            oldInput: inputKeyID,
-                                            newParent: undefined,
-                                            newInput: undefined,
-                                            //newCoordinate: e.newCoordinate
-                                        });
-                                    }
-                                    if (input.shadow !== null) {
-                                        if (input.shadow == input.block)
-                                            blocks.deleteBlock(input.shadow);
-                                        else blocks.deleteBlock(input.block);
-                                    }
-                                }
-                                this.removeInput(inputKeyID);
-                                if (type === "list") {
-                                    const fields = runtime
-                                        .getEditingTarget()
-                                        ?.blocks.getBlock(this.id)?.fields;
-                                    if (fields) {
-                                        delete fields[inputKeyID];
-                                    }
-                                } else {
-                                    toDel.push(inputKeyID);
-                                }
-                                i++;
-                            }
-                            setTimeout(() => {
-                                toDel.forEach((i) => {
-                                    delete targetBlock.inputs[i];
-                                });
-                            }, 0);
-                        }
-                    }
-
-                    // 移动按钮
-                    this.removeInput("BEGIN");
-                    if (this.itemCount_ > 0) {
-                        this.appendDummyInput("BEGIN").appendField(
-                            this.textBegin,
-                        );
-                        this.moveInputBefore("BEGIN", "BEGIN");
-                    }
-
-                    const getArg = (str) => {
-                        let str_ = str.match(/^[A-Z0-9]+/);
-                        if (Array.isArray(str_)) {
-                            str_ = str_[0];
-                            let num_ = Number(str.replace(str_ + "_", ""));
-                            return [str_, isNaN(num_) ? 1 : num_];
-                        } else {
-                            return false;
-                        }
-                    };
-                    let inputList = this.inputList;
-                    for (i = 0; i < inputList.length; i++) {
-                        let name = inputList[i].name,
-                            args = getArg(name);
-                        if (
-                            args === false &&
-                            this.defaultText &&
-                            Array.isArray(this.defaultText) &&
-                            i === this.defaultIndex
-                        ) {
-                            this.inputList[
-                                this.defaultIndex
-                            ].fieldRow[0].setText(
-                                this.itemCount_ === 0
-                                    ? this.defaultText[0]
-                                    : this.defaultText[1],
-                            );
-                        } else {
-                            if (expandableArgs[args[0]]) {
-                                let arg = expandableArgs[args[0]],
-                                    type = arg[0],
-                                    text = arg[1],
-                                    rule = arg[2] || 0;
-                                if (type === "text") {
-                                    if (rule === 1) {
-                                        if (Array.isArray(text)) {
-                                            this.inputList[
-                                                i
-                                            ].fieldRow[0].setText(
-                                                args[1] === 1
-                                                    ? text[0]
-                                                    : text[1],
-                                            );
-                                        } else
-                                            this.inputList[
-                                                i
-                                            ].fieldRow[0].setText(text);
-                                    } else {
-                                        let flag1 =
-                                            args[1] !== 1 &&
-                                            args[1] !== this.itemCount_,
-                                            index = inputKeys.indexOf(args[0]),
-                                            flag2 =
-                                                index > 0 &&
-                                                index < inputKeys.length - 1,
-                                            flag3 = args[1] > 1 || index > 0,
-                                            flag4 =
-                                                args[1] < this.itemCount_ ||
-                                                index < inputKeys.length - 1;
-                                        if (
-                                            flag1 ||
-                                            flag2 ||
-                                            (flag3 && flag4)
-                                        ) {
-                                            this.inputList[
-                                                i
-                                            ].fieldRow[0].setText(text);
-                                            this.inputList[i].setVisible(true);
-                                        } else {
-                                            this.inputList[
-                                                i
-                                            ].fieldRow[0].setText("");
-                                            this.inputList[i].setVisible(false);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    for (i = 1; i <= this.itemCount_; i++) {
-                        for (let j = 0; j < inputKeys.length; j++) {
-                            this.moveInputBefore(`${inputKeys[j]}_${i}`, null);
-                        }
-                    }
-                    this.removeInput("END");
-                    if (this.itemCount_ > 0) {
-                        this.appendDummyInput("END").appendField(this.textEnd);
-                        this.moveInputBefore("END", null);
-                    }
-                    this.removeInput("MINUS");
-                    if (this.itemCount_ > 0) {
-                        this.minusButton = new MinusButton();
-                        this.appendDummyInput("MINUS").appendField(
-                            this.minusButton,
-                        );
-                        this.moveInputBefore("MINUS", null);
-                    }
-                    this.moveInputBefore("PLUS", null);
-
-                    // 更新 oldItemCount，oldItemCount用于生成domMutation的
-                    this.oldItemCount = this.itemCount_;
-                    // 新的 mutation
-                    const newExtraState = Blockly.Xml.domToText(
-                        this.mutationToDom(this),
-                    );
-                    if (oldExtraState != newExtraState) {
-                        // 判断是否一样，不一样就fire一个mutation更新事件
-                        Blockly.Events.fire(
-                            new Blockly.Events.BlockChange(
-                                this,
-                                "mutation",
-                                null,
-                                oldExtraState,
-                                newExtraState, // 状态
-                            ),
-                        );
-                        setTimeout(() => {
-                            const target = runtime._editingTarget;
-                            const block = target.blocks._blocks[this.id];
-                            try {
-                                Object.keys(block.inputs).forEach((name) => {
-                                    let argName = name.match(/^[A-Z0-9]+/)[0];
-                                    if (
-                                        !this.ARGS.includes(name) &&
-                                        this.expandableArgs[argName] &&
-                                        this.expandableArgs[argName][0] !==
-                                        "text"
-                                    ) {
-                                        target.blocks.deleteBlock(
-                                            block.inputs[name].shadow,
-                                            {
-                                                source: "default",
-                                                targetId: target.id,
-                                            },
-                                        );
-                                        delete block.inputs[name];
-                                        if (runtime.emitTargetBlocksChanged) {
-                                            runtime.emitTargetBlocksChanged(
-                                                target.id,
-                                                [
-                                                    "deleteInput",
-                                                    {
-                                                        id: block.id,
-                                                        inputName: name,
-                                                    },
-                                                ],
-                                            );
-                                        }
-                                    }
-                                });
-                            } catch {
-                                // nothing
-                            }
-                        }, 0);
-                    }
-                    Blockly.Events.setGroup(false);
-
-                    this.rendered = wasRendered;
-                    if (wasRendered && !this.isInsertionMarker()) {
-                        this.initSvg();
-                        this.render();
-                    }
-                },
-                mutationToDom: function () {
-                    // 可以保存别的数据，会保存到sb3中，oldItemCount就是有多少个参数
-                    const container = document.createElement("mutation");
-                    container.setAttribute("items", `${this.oldItemCount}`);
-                    return container;
-                },
-                domToMutation: function (xmlElement) {
-                    // 读取 mutationToDom 保存的数据
-                    this.itemCount_ = parseInt(
-                        xmlElement.getAttribute("items"),
-                        0,
-                    );
-                    this.updateShape(); // 读了之后更新
-                },
-                init: function (type) {
-                    // 积木初始化
-                    this.itemCount_ = 0;
-                    this.oldItemCount = this.itemCount_;
-                    this.opcode_ = type.opcode;
-                    this.expandableBlock = type.expandableBlock;
-                    this.expandableArgs = this.expandableBlock.expandableArgs;
-                    this.textBegin = this.expandableBlock.textBegin;
-                    this.textEnd = this.expandableBlock.textEnd;
-                    this.defaultIndex = this.expandableBlock.defaultIndex || 0;
-                    this.defaultText = this.expandableBlock.defaultText;
-                    this.plusButton = new PlusButton();
-                    this.ARGS = [];
-
-                    if (this.removeInput) this.removeInput("PLUS");
-                    this.appendDummyInput("PLUS").appendField(this.plusButton);
-                    if (this.moveInputBefore)
-                        this.moveInputBefore("PLUS", null);
-                },
-            };
-        };
-        const { id, blocks: blocksInfo } = extension.getInfo();
-        let expandableBlocks = {};
-
-        blocksInfo.forEach((block) => {
-            if (block.expandableBlock)
-                expandableBlocks[`${id}_${block.opcode}`] = {
-                    opcode: block.opcode,
-                    expandableBlock: block.expandableBlock,
-                };
-        });
-        const { scratchBlocks } = getScratch(runtime);
-        if (!scratchBlocks) return;
-        const expandableAttr = createExpandableBlock(runtime, scratchBlocks);
-        scratchBlocks.Blocks = new Proxy(scratchBlocks.Blocks, {
-            set(target, property, value) {
-                // 设置
-                if (expandableBlocks[property]) {
-                    Object.keys(expandableAttr).forEach((key) => {
-                        if (key != "init") {
-                            // 除了init设置
-                            value[key] = expandableAttr[key];
-                        }
-                    });
-                    const orgInit = value.init;
-                    value.init = function () {
-                        // 先用原本的init
-                        orgInit.call(this);
-                        // init expandable
-                        expandableAttr.init.call(
-                            this,
-                            expandableBlocks[property],
-                        );
-                    };
-                }
-
-                // if (property == "sb_CreporterRun") {
-                //   const orgInit = value.init;
-                //   value.init = function () {
-                //     // 先用原本的 init
-                //     orgInit.call(this);
-                //     // 你要搞的999神秘的事情
-                //     this.setOutputShape(Blockly.OUTPUT_SHAPE_SQUARE);
-                //   };
-                // }
-                //保证C型reporter积木样式正常
-                return Reflect.set(target, property, value);
-            },
-        });
     };
 
     /*
@@ -910,6 +329,8 @@ import l10n from "./l10n/index.js";
              */
             this.Blockly = void 0;
             this.vm = this.runtime.extensionManager.vm;
+            console.log(this.vm);
+
             this.Blockly = getBlockly(this.vm);
             if (!this.Blockly)
                 this.vm.once("workspaceUpdate", () => {
@@ -920,7 +341,7 @@ import l10n from "./l10n/index.js";
                 });
             // 使用patch函数修改runtime的visualReport方法，增加自定义逻辑
             patch(this.runtime.constructor.prototype, {
-                visualReport(original, blockId, value) {
+                visualReport: (original, blockId, value) => {
                     if (this.vm.editingTarget) {
                         const block = this.vm.editingTarget.blocks.getBlock(blockId);
                         // 如果当前块是Inline Blocks且不是顶层块，则不执行后续逻辑
@@ -1119,7 +540,7 @@ import l10n from "./l10n/index.js";
                 this.runtime.on("PROJECT_LOADED", this.objectLoadingCompletedUpdate);     // 项目加载完
                 this.runtime.on("BLOCK_DRAG_UPDATE", this.objectLoadingCompletedUpdate);  // 拖动完积木后
                 this.runtime.on("BLOCKSINFO_UPDATE", this.objectLoadingCompletedUpdate);  // 切换角色时
-                setExpandableBlocks(this.runtime, this);
+                initExpandableBlocks(this, rightButton, leftButton);
             }
 
             this.is_listener = false;
@@ -1360,7 +781,6 @@ import l10n from "./l10n/index.js";
                         },
                     },
                 },
-                // "RenderTheWorld.setMaterialFog": "设置当前材质 [YN] 受雾效果影响",
                 {
                     opcode: "setMaterialFog",
                     blockType: BlockType.COMMAND,
@@ -1422,17 +842,14 @@ import l10n from "./l10n/index.js";
                     arguments: {
                         name: {
                             type: "string",
-                            defaultValue: "name",
+                            defaultValue: "name1",
                         },
                     },
-                    expandableBlock: {
-                        expandableArgs: {
-                            TEXT: ["text", ", ", 1],
-                            NAME: ["string", "name"],
-                        },
-                        defaultIndex: 1,
-                        textBegin: "",
-                        textEnd: "",
+                    dynamicArgsInfo: {
+                        defaultValues: (i) => `name${i + 2}`,
+                        afterArg: 'name',
+                        joinCh: ', ',
+                        dynamicArgTypes: ['s']
                     },
                 },
                 {
@@ -1554,15 +971,11 @@ import l10n from "./l10n/index.js";
                     blockType: BlockType.OUTPUT,
                     text: this.formatMessage("RenderTheWorld.groupModel"),
                     arguments: {},
-                    expandableBlock: {
-                        expandableArgs: {
-                            MODEL: ["string", "MODEL"],
-                            TEXT: ["text", ", ", 0],
-                        },
-                        defaultIndex: 1,
-                        defaultText: this.formatMessage("RenderTheWorld.groupModel"),
-                        textBegin: "[",
-                        textEnd: "]",
+                    dynamicArgsInfo: {
+                        defaultValues: 'MODEL',
+                        dynamicArgTypes: ['s'],
+                        preText: (n) => (n === 0 ? this.formatMessage("RenderTheWorld.groupModel") : `${this.formatMessage("RenderTheWorld.groupModel")}[`),
+                        endText: (n) => (n === 0 ? "" : "]"),
                     },
                     output: "Reporter",
                     outputShape: 3,
@@ -1937,17 +1350,14 @@ import l10n from "./l10n/index.js";
                         },
                         animationName: {
                             type: "string",
-                            defaultValue: "animationName",
+                            defaultValue: "animationName1",
                         },
                     },
-                    expandableBlock: {
-                        expandableArgs: {
-                            TEXT: ["text", ", ", 1],
-                            ANIMATIONMAME: ["string", "animationName"],
-                        },
-                        defaultIndex: 1,
-                        textBegin: "",
-                        textEnd: "",
+                    dynamicArgsInfo: {
+                        defaultValues: (i) => `animationName${i+2}`,
+                        afterArg: 'animationName',
+                        joinCh: ', ',
+                        dynamicArgTypes: ['s']
                     },
                 },
                 {
@@ -1961,17 +1371,14 @@ import l10n from "./l10n/index.js";
                         },
                         animationName: {
                             type: "string",
-                            defaultValue: "animationName",
+                            defaultValue: "animationName1",
                         },
                     },
-                    expandableBlock: {
-                        expandableArgs: {
-                            TEXT: ["text", ", ", 1],
-                            ANIMATIONMAME: ["string", "animationName"],
-                        },
-                        defaultIndex: 1,
-                        textBegin: "",
-                        textEnd: "",
+                    dynamicArgsInfo: {
+                        defaultValues: (i) => `animationName${i+2}`,
+                        afterArg: 'animationName',
+                        joinCh: ', ',
+                        dynamicArgTypes: ['s']
                     },
                 },
                 {
@@ -2715,13 +2122,6 @@ import l10n from "./l10n/index.js";
 
         _listener() {
             if (!this.is_listener) {
-                this.runtime.on("PROJECT_START", () => {
-                    console.log(
-                        chen_RenderTheWorld_extensionId + ": Starting renders",
-                    );
-                    this.renderer.setAnimationLoop(this.render);
-                });
-
                 this.runtime.on("PROJECT_STOP_ALL", () => {
                     this._init_porject_time = 0;
                     console.log(
@@ -2746,6 +2146,10 @@ import l10n from "./l10n/index.js";
                 );
                 this.renderer.setAnimationLoop(this.render);
             }
+            console.log(
+                chen_RenderTheWorld_extensionId + ": Starting renders",
+            );
+            this.renderer.setAnimationLoop(this.render);
         }
 
         /**
@@ -3070,22 +2474,20 @@ import l10n from "./l10n/index.js";
         }
 
         groupModel(args) {
-            let _group = new THREE.Group(), cnt = 1;
-            while (args[`MODEL_${cnt}`]) {
-                let _model = Wrapper.unwrap(args[`MODEL_${cnt}`]);
+            let _group = new THREE.Group()
+            const dynamicArgs = getDynamicArgs(args);
+            dynamicArgs.forEach((_model) => {
+                _model = Wrapper.unwrap(_model);
                 if (_model instanceof RTW_Model_Box && _model.model.isObject3D) {
                     _model = _model.model;
                 } else if (typeof _model === 'string') {
-                    if (!(_model in this.objects)) { cnt++; continue };
+                    if (!(_model in this.objects)) return;
                     _model = this.objects[_model];
 
-                } else { cnt++; continue };
+                } else return;
 
                 _group.add(_model);
-
-                cnt++;
-            }
-            // cnt--;  // 模型数量
+            });
 
             return new Wrapper(
                 new RTW_Model_Box(
@@ -3715,13 +3117,9 @@ import l10n from "./l10n/index.js";
             }
 
             let name = Cast.toString(args.name);
+            const dynamicArgs = getDynamicArgs(args);
 
-            let animationNames = [Cast.toString(args.animationName)];
-            let i = 1;
-            while (args[`ANIMATIONMAME_${i}`]) {
-                animationNames.push(args[`ANIMATIONMAME_${i}`]);
-                i++;
-            }
+            let animationNames = [Cast.toString(args.animationName)].concat(dynamicArgs);
 
             if (name in this.animations && this.animations[name].mixer) {
                 animationNames.forEach((animationName) => {
@@ -3751,13 +3149,9 @@ import l10n from "./l10n/index.js";
             }
 
             let name = Cast.toString(args.name);
+            const dynamicArgs = getDynamicArgs(args);
 
-            let animationNames = [Cast.toString(args.animationName)];
-            let i = 1;
-            while (args[`ANIMATIONMAME_${i}`]) {
-                animationNames.push(args[`ANIMATIONMAME_${i}`]);
-                i++;
-            }
+            let animationNames = [Cast.toString(args.animationName)].concat(dynamicArgs);
 
             if (name in this.animations) {
                 animationNames.forEach((animationName) => {
@@ -3822,13 +3216,12 @@ import l10n from "./l10n/index.js";
             if (!this.tc) {
                 return "⚠️显示器未初始化！";
             }
+            const dynamicArgs = getDynamicArgs(args);
 
-            let i = 1;
             this.releaseDuplicates(Cast.toString(args.name));
-            while (args[`NAME_${i}`]) {
-                this.releaseDuplicates(args[`NAME_${i}`]);
-                i++;
-            }
+            dynamicArgs.forEach((_name) => {
+                this.releaseDuplicates(_name);
+            });
             this.render();
         }
 
