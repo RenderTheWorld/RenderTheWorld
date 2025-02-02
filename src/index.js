@@ -6,6 +6,7 @@ import { OBJLoader } from "./assets/threejs_ext/OBJLoader.js";
 import { OrbitControls } from "./assets/threejs_ext/OrbitControls.js";
 import { MTLLoader } from "./assets/threejs_ext/MTLLoader.js";
 import { GLTFLoader } from "./assets/threejs_ext/GLTFLoader.js";
+import * as SkeletonUtils from "./assets/threejs_ext/SkeletonUtils.js"
 import WebGL from "./assets/threejs_ext/WebGL.js";
 import {
     chen_RenderTheWorld_picture,
@@ -162,7 +163,7 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
         /**
          * Hijack the Function.prototype.apply function.
          * @param thisArg
-         * @returns thisArg.
+         * @returnss thisArg.
          */
         Function.prototype.apply = function (thisArg) {
             return thisArg;
@@ -282,14 +283,14 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
         /**
          * Unwraps a wrapped object.
          * @param value Wrapped object.
-         * @returns Unwrapped object.
+         * @returnss Unwrapped object.
          */
         static unwrap(value) {
             return value instanceof _Wrapper ? value.value : value;
         }
         /**
          * toString method for Scratch monitors.
-         * @returns String display.
+         * @returnss String display.
          */
         toString() {
             return String(this.value);
@@ -329,7 +330,6 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
              */
             this.Blockly = void 0;
             this.vm = this.runtime.extensionManager.vm;
-            console.log(this.vm);
 
             this.Blockly = getBlockly(this.vm);
             if (!this.Blockly)
@@ -339,6 +339,7 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
                         this.Blockly = newBlockly;
                     }
                 });
+            
             // 使用patch函数修改runtime的visualReport方法，增加自定义逻辑
             patch(this.runtime.constructor.prototype, {
                 visualReport: (original, blockId, value) => {
@@ -641,7 +642,7 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
         /**
          * 翻译
          * @param {string} id
-         * @return {string}
+         * @returns {string}
          */
         formatMessage(id) {
             return translate({
@@ -678,9 +679,9 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
                             type: "number",
                             defaultValue: 360,
                         },
-                        Anti_Aliasing: {
+                        ed: {
                             type: "string",
-                            menu: "Anti_Aliasing",
+                            menu: "ed",
                         },
                     },
                 },
@@ -1216,6 +1217,49 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
                     },
                 },
                 {
+                    opcode: "isGroup",
+                    blockType: BlockType.BOOLEAN,
+                    text: this.formatMessage("RenderTheWorld.isGroup"),
+                    arguments: {
+                        name: {
+                            type: "string",
+                            defaultValue: "name",
+                        },
+                    },
+                    disableMonitor: true,
+                },
+                {
+                    opcode: "getChildrenNumInObject",
+                    blockType: BlockType.REPORTER,
+                    text: this.formatMessage("RenderTheWorld.getChildrenNumInObject"),
+                    arguments: {
+                        name: {
+                            type: "string",
+                            defaultValue: "name",
+                        },
+                    },
+                    disableMonitor: true,
+                },
+                {
+                    opcode: "getChildrenInObject",
+                    blockType: BlockType.OUTPUT,
+                    text: this.formatMessage("RenderTheWorld.getChildrenInObject"),
+                    arguments: {
+                        name: {
+                            type: "string",
+                            defaultValue: "name",
+                        },
+                        num: {
+                            type: "number",
+                            defaultValue: "1",
+                        },
+                    },
+                    output: "Reporter",
+                    outputShape: 3,
+                    branchCount: 0,
+                },
+
+                {
                     blockType: BlockType.LABEL,
                     text: this.formatMessage("RenderTheWorld.Move"),
                 },
@@ -1354,7 +1398,7 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
                         },
                     },
                     dynamicArgsInfo: {
-                        defaultValues: (i) => `animationName${i+2}`,
+                        defaultValues: (i) => `animationName${i + 2}`,
                         afterArg: 'animationName',
                         joinCh: ', ',
                         dynamicArgTypes: ['s']
@@ -1375,7 +1419,7 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
                         },
                     },
                     dynamicArgsInfo: {
-                        defaultValues: (i) => `animationName${i+2}`,
+                        defaultValues: (i) => `animationName${i + 2}`,
                         afterArg: 'animationName',
                         joinCh: ', ',
                         dynamicArgTypes: ['s']
@@ -1558,6 +1602,15 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
                             type: "number",
                             defaultValue: -20,
                         },
+                        near: {
+                            type: "number",
+                            defaultValue: 0.1,
+                        },
+                        far: {
+                            type: "number",
+                            defaultValue: 1000,
+                        }
+
                     },
                 },
                 {
@@ -1808,18 +1861,18 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
                             },
                         ],
                     },
-                    Anti_Aliasing: {
+                    ed: {
                         acceptReporters: false,
                         items: [
                             {
                                 text: this.formatMessage(
-                                    "RenderTheWorld.Anti_Aliasing.enable",
+                                    "RenderTheWorld.ed.enable",
                                 ),
                                 value: "enable",
                             },
                             {
                                 text: this.formatMessage(
-                                    "RenderTheWorld.Anti_Aliasing.disable",
+                                    "RenderTheWorld.ed.disable",
                                 ),
                                 value: "disable",
                             },
@@ -1961,7 +2014,7 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
         /**
          * 兼容性
          * @param {object} args
-         * @return {boolean}
+         * @returns {boolean}
          */
 
         _isWebGLAvailable({ }) {
@@ -1980,9 +2033,20 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
          * @param {object} model
          */
         _deleteObject(model) {
+            if (model.isObject3D) {
+                if (model.parent !== null) {
+                    model.parent.remove(model);
+                }
+            }
             if (model.type === "Mesh") {
                 model.geometry.dispose();
-                model.material.dispose();
+                if (Array.isArray(model.material)) {
+                    model.material.forEach((mat) => {
+                        mat.dispose();
+                    });
+                } else {
+                    obj.material.dispose();
+                }
             } else if (model.type === "Group") {
                 model.traverse((obj) => {
                     if (obj.type === "Mesh") {
@@ -2005,15 +2069,17 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
          * @param {string} name
          */
         releaseDuplicates(name) {
-            if (name in this.objects) {
-                if (name in this.animations) {
-                    if (this.animations[name].mixer) {
-                        this.animations[name].mixer.stopAllAction();
-                    }
-                    this.animations[name] = {};
+            let model = this._getModel(name);
+            
+            if (model === -1) return;
+            name = Cast.toString(name);
+            if (name in this.animations) {
+                if (this.animations[name].mixer) {
+                    this.animations[name].mixer.stopAllAction();
                 }
-                this._deleteObject(this.objects[name]);
+                this.animations[name] = {};
             }
+            this._deleteObject(model);
         }
 
         /**
@@ -2024,7 +2090,7 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
          * @param {number} args.sizex
          * @param {string} args.Anti_Aliasing
          */
-        init({ color, sizex, sizey, Anti_Aliasing }) {
+        init({ color, sizex, sizey, ed }) {
             this._init_porject_time = new Date().getTime();
             const _draw = this.runtime.renderer.draw;
             this.dirty = false;
@@ -2043,7 +2109,7 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
             let _antialias = false;
 
             // 是否启动抗锯齿
-            if (Cast.toString(Anti_Aliasing) == "enable") {
+            if (Cast.toString(ed) == "enable") {
                 _antialias = true;
             }
             this.renderer = new THREE.WebGLRenderer({
@@ -2053,7 +2119,12 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
             this.renderer.setClearColor("#000000"); // 设置渲染器背景
 
             this.renderer.shadowMap.enabled = true;
-            this.renderer.shadowMapEnabled = true;
+
+            // 效果（高 -> 低）& 速度（慢 -> 快）
+            // VSMShadowMap    PCFSoftShadowMap    PCFShadowMap    BasicShadowMap
+            // this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;  // 启用软阴影
+            this.renderer.shadowMap.type = THREE.VSMShadowMap;  // 启用软阴影
+
             this.renderer.setSize(
                 Cast.toNumber(sizex),
 
@@ -2153,6 +2224,20 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
         }
 
         /**
+         * 获取模型对象
+         * @param {string | RTW_Model_Box} obj
+         * @returns {THREE.Object3D | -1}
+         */
+        _getModel(obj) {
+            obj = Wrapper.unwrap(obj);
+            if (obj instanceof RTW_Model_Box && obj.model != undefined && obj.model.isObject3D) {
+                return obj.model;
+            } else if (Cast.toString(obj) in this.objects) {
+                return this.objects[Cast.toString(obj)];
+            } else return -1;
+        }
+
+        /**
          * 设置3d渲染器状态
          * @param {object} args
          * @param {string} args.state
@@ -2178,7 +2263,7 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
          * 创建材质
          * @param {object} args
          * @param {string} args.material
-         * @return {_Wrapper}
+         * @returns {_Wrapper}
          */
         makeMaterial({ material }, util) {
             const thread = util.thread;
@@ -2292,30 +2377,41 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
 
         setMaterialColor({ color }, util) {
             const thread = util.thread;
-            if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1] === undefined) return "⚠️请在“创建材质”积木中使用！";
-            if (Number(Cast.toString(color)) == Number(Cast.toString(color))) {
-                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]['color'] = Number(
-                    Cast.toString(color),
-                );
-            } else {
-                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]['color'] = Cast.toString(color);
+            try {
+                if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1] === undefined) return "⚠️请在“创建材质”积木中使用！";
+                if (Number(Cast.toString(color)) == Number(Cast.toString(color))) {
+                    this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]['color'] = Number(
+                        Cast.toString(color),
+                    );
+                } else {
+                    this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]['color'] = Cast.toString(color);
+                }
+            } catch(err) {
+                return "⚠️请在“创建材质”积木中运行！";
             }
+            
         }
 
         setMaterialFog({ YN }, util) {
             const thread = util.thread;
-            if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1] === undefined) return "⚠️请在“创建材质”积木中使用！";
-            if (Cast.toString(YN) === "ture") {
-                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]['fog'] = true;
-            } else {
-                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]['fog'] = false;
+            try {
+                if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1] === undefined) return "⚠️请在“创建材质”积木中使用！";
+                if (Cast.toString(YN) === "ture") {
+                    this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]['fog'] = true;
+                } else {
+                    this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]['fog'] = false;
+                }
+            } catch(err) {
+                return "⚠️请在“创建材质”积木中运行！";
             }
         }
 
         // 实现return方法，用于处理返回值
         return(args, util) {
             const thread = util.thread;
-            if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1] === undefined) return "⚠️请在“创建材质”积木中使用！";
+            if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)]] !== undefined &&
+                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1] === undefined)
+                return "⚠️请在“创建材质”积木中使用！";
 
             let blockID = thread.peekStack();
             while (blockID) {
@@ -2432,23 +2528,22 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
             }
         }
 
-        // "RenderTheWorld.shadowSettings": "设置模型 [name] 的阴影设置: [YN]投射阴影 [YN2]被投射阴影",
         shadowSettings({ name, YN, YN2 }) {
             if (!this.tc) {
                 return "⚠️显示器未初始化！";
             }
-            name = Cast.toString(name);
-            if (name in this.objects) {
+            let model = this._getModel(name);
+            if (model !== -1) {
                 if (Cast.toString(YN) == "true") {
-                    this.objects[name].castShadow = true;
-                    this.objects[name].traverse(function (node) {
+                    model.castShadow = true;
+                    model.traverse(function (node) {
                         if (node.isMesh) {
                             node.castShadow = true;
                         }
                     });
                 } else {
-                    this.objects[name].castShadow = false;
-                    this.objects[name].traverse(function (node) {
+                    model.castShadow = false;
+                    model.traverse(function (node) {
                         if (node.isMesh) {
                             node.castShadow = false;
                         }
@@ -2456,15 +2551,15 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
                 }
 
                 if (Cast.toString(YN2) == "true") {
-                    this.objects[name].receiveShadow = true;
-                    this.objects[name].traverse(function (node) {
+                    model.receiveShadow = true;
+                    model.traverse(function (node) {
                         if (node.isMesh) {
                             node.receiveShadow = true;
                         }
                     });
                 } else {
-                    this.objects[name].receiveShadow = false;
-                    this.objects[name].traverse(function (node) {
+                    model.receiveShadow = false;
+                    model.traverse(function (node) {
                         if (node.isMesh) {
                             node.receiveShadow = false;
                         }
@@ -2477,15 +2572,8 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
             let _group = new THREE.Group()
             const dynamicArgs = getDynamicArgs(args);
             dynamicArgs.forEach((_model) => {
-                _model = Wrapper.unwrap(_model);
-                if (_model instanceof RTW_Model_Box && _model.model.isObject3D) {
-                    _model = _model.model;
-                } else if (typeof _model === 'string') {
-                    if (!(_model in this.objects)) return;
-                    _model = this.objects[_model];
-
-                } else return;
-
+                _model = this._getModel(_model);
+                if (_model === -1) return;
                 _group.add(_model);
             });
 
@@ -3110,7 +3198,6 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
          * @param {string} args.name
          * @param {string} args.animationName
          */
-
         playAnimation(args) {
             if (!this.tc) {
                 return "⚠️显示器未初始化！";
@@ -3178,7 +3265,7 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
 
             time = Cast.toNumber(time);
             if (name in this.animations && this.animations[name].mixer) {
-                this.animations[name].mixer.update(time / 1000);
+                this.animations[name].mixer.update(time);
             }
         }
 
@@ -3218,7 +3305,7 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
             }
             const dynamicArgs = getDynamicArgs(args);
 
-            this.releaseDuplicates(Cast.toString(args.name));
+            this.releaseDuplicates(args.name);
             dynamicArgs.forEach((_name) => {
                 this.releaseDuplicates(_name);
             });
@@ -3230,20 +3317,16 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
                 return "⚠️显示器未初始化！";
             }
 
-            name = Cast.toString(name);
-            if (name in this.objects) {
-                // 设置旋转角度
-                this.objects[name].rotation.set(
-                    THREE.MathUtils.degToRad(Cast.toNumber(x)),
+            let model = this._getModel(name);
+            if (model === -1) return "⚠️传入的名称或物体有误！";
+            model.rotation.set(
+                THREE.MathUtils.degToRad(Cast.toNumber(x)),
 
-                    THREE.MathUtils.degToRad(Cast.toNumber(y)),
+                THREE.MathUtils.degToRad(Cast.toNumber(y)),
 
-                    THREE.MathUtils.degToRad(Cast.toNumber(z)),
-                );
-                this.render();
-            } else {
-                return;
-            }
+                THREE.MathUtils.degToRad(Cast.toNumber(z)),
+            );
+            this.render();
         }
 
         moveObject({ name, x, y, z }) {
@@ -3251,20 +3334,17 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
                 return "⚠️显示器未初始化！";
             }
 
-            name = Cast.toString(name);
-            if (name in this.objects) {
-                // 设置坐标
-                this.objects[name].position.set(
-                    Cast.toNumber(x),
+            let model = this._getModel(name);
+            if (model === -1) return "⚠️传入的名称或物体有误！";
+            // 设置坐标
+            model.position.set(
+                Cast.toNumber(x),
 
-                    Cast.toNumber(y),
+                Cast.toNumber(y),
 
-                    Cast.toNumber(z),
-                );
-                this.render();
-            } else {
-                return;
-            }
+                Cast.toNumber(z),
+            );
+            this.render();
         }
 
         scaleObject({ name, x, y, z }) {
@@ -3272,20 +3352,16 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
                 return "⚠️显示器未初始化！";
             }
 
-            name = Cast.toString(name);
-            if (name in this.objects) {
-                // 设置缩放
-                this.objects[name].scale.set(
-                    Cast.toNumber(x),
+            let model = this._getModel(name);
+            if (model === -1) return "⚠️传入的名称或物体有误！";
+            // 设置缩放
+            model.scale.set(
+                Cast.toNumber(x),
 
-                    Cast.toNumber(y),
+                Cast.toNumber(y),
 
-                    Cast.toNumber(z),
-                );
-                this.render();
-            } else {
-                return;
-            }
+                Cast.toNumber(z),
+            );
         }
 
         /**
@@ -3295,18 +3371,15 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
          * @param {string} args.xyz
          */
         getObjectPos({ name, xyz }) {
-            name = Cast.toString(name);
-            if (name in this.objects) {
-                switch (Cast.toString(xyz)) {
-                    case "x":
-                        return this.objects[name].position.x;
-                    case "y":
-                        return this.objects[name].position.y;
-                    case "z":
-                        return this.objects[name].position.z;
-                }
-            } else {
-                return;
+            let model = this._getModel(name);
+            if (model === -1) return "⚠️传入的名称或物体有误！";
+            switch (Cast.toString(xyz)) {
+                case "x":
+                    return model.position.x;
+                case "y":
+                    return model.position.y;
+                case "z":
+                    return model.position.z;
             }
         }
 
@@ -3318,24 +3391,21 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
          */
 
         getObjectRotation({ name, xyz }) {
-            name = Cast.toString(name);
-            if (name in this.objects) {
-                switch (Cast.toString(xyz)) {
-                    case "x":
-                        return THREE.MathUtils.radToDeg(
-                            this.objects[name].rotation.x,
-                        );
-                    case "y":
-                        return THREE.MathUtils.radToDeg(
-                            this.objects[name].rotation.y,
-                        );
-                    case "z":
-                        return THREE.MathUtils.radToDeg(
-                            this.objects[name].rotation.z,
-                        );
-                }
-            } else {
-                return;
+            let model = this._getModel(name);
+            if (model === -1) return "⚠️传入的名称或物体有误！";
+            switch (Cast.toString(xyz)) {
+                case "x":
+                    return THREE.MathUtils.radToDeg(
+                        model.rotation.x,
+                    );
+                case "y":
+                    return THREE.MathUtils.radToDeg(
+                        model.rotation.y,
+                    );
+                case "z":
+                    return THREE.MathUtils.radToDeg(
+                        model.rotation.z,
+                    );
             }
         }
 
@@ -3346,20 +3416,42 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
          * @param {string} args.xyz
          */
         getObjectScale({ name, xyz }) {
-            name = Cast.toString(name);
-            if (name in this.objects) {
-                switch (Cast.toString(xyz)) {
-                    case "x":
-                        return this.objects[name].scale.x;
-                    case "y":
-                        return this.objects[name].scale.y;
-                    case "z":
-                        return this.objects[name].scale.z;
-                }
-            } else {
-                return;
+            let model = this._getModel(name);
+            if (model === -1) return "⚠️传入的名称或物体有误！";
+            switch (Cast.toString(xyz)) {
+                case "x":
+                    return model.scale.x;
+                case "y":
+                    return model.scale.y;
+                case "z":
+                    return model.scale.z;
             }
         }
+
+        getChildrenNumInObject({ name }) {
+            let model = this._getModel(name);
+            if (model === -1) return -1;
+            return model.children.length;
+        }
+
+        getChildrenInObject({ name, num }) {
+            let model = this._getModel(name);
+            if (model === -1) return "";
+            num = Cast.toNumber(num) - 1;
+            if (num >= 0 && model.children[num]) {
+                return new Wrapper(
+                    new RTW_Model_Box(
+                        model.children[num],
+                        false,
+                        false,
+                        false,
+                        undefined,
+                    ),
+                );
+            } else return "";
+        }
+
+
 
         pointLight({ color, intensity, x, y, z, decay, YN }) {
             let _point_light = new THREE.PointLight(
@@ -3440,27 +3532,34 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
          * @param {number} args.top
          * @param {number} args.bottom
          */
-        setDirectionalLightShawdowCamera({ name, left, right, top, bottom }) {
+        setDirectionalLightShawdowCamera({ name, left, right, top, bottom, near, far }) {
             if (!this.tc) {
                 return "⚠️显示器未初始化！";
             }
 
-            name = Cast.toString(name);
-            if (name in this.objects) {
-                if (this.objects[name].type === "DirectionalLight") {
-                    let _camera = new THREE.OrthographicCamera(
-                        Cast.toNumber(left),
-                        Cast.toNumber(right),
-                        Cast.toNumber(top),
-                        Cast.toNumber(bottom),
-                        this.objects[name].shadow.camera.near,
-                        this.objects[name].shadow.camera.far,
-                    );
-                    _camera.zoom = this.objects[name].shadow.camera.zoom;
-                    this.objects[name].shadow.camera = _camera;
-                } else {
-                    return "⚠️'" + name + "'不是平行光！";
-                }
+            let model = this._getModel(name);
+            if (model === -1) return "⚠️传入的名称或物体有误！";
+            console.log(model);
+            
+            if (model.type === "DirectionalLight") {
+                // let _camera = new THREE.OrthographicCamera(
+                //     Cast.toNumber(left),
+                //     Cast.toNumber(right),
+                //     Cast.toNumber(top),
+                //     Cast.toNumber(bottom),
+                //     Cast.toNumber(near),
+                //     Cast.toNumber(far),
+                // );
+                // _camera.zoom = model.shadow.camera.zoom;
+                // model.shadow.camera = _camera;
+                model.shadow.camera.left = Cast.toNumber(left);
+                model.shadow.camera.right = Cast.toNumber(right);
+                model.shadow.camera.top = Cast.toNumber(top);
+                model.shadow.camera.bottom = Cast.toNumber(bottom);
+                model.shadow.camera.near = Cast.toNumber(near);
+                model.shadow.camera.far = Cast.toNumber(far);
+            } else {
+                return "⚠️'" + Cast.toString(name) + "'不是平行光！";
             }
         }
 
@@ -3476,14 +3575,12 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
                 return "⚠️显示器未初始化！";
             }
 
-            name = Cast.toString(name);
-            if (name in this.objects) {
-                if (this.objects[name].isLight) {
-                    this.objects[name].shadow.mapSize.width = Cast.toNumber(xsize);
-                    this.objects[name].shadow.mapSize.height = Cast.toNumber(ysize);
-                } else {
-                    return "⚠️'" + name + "'不是光源！";
-                }
+            let model = this._getModel(name);
+            if (model === -1) return "⚠️传入的名称或物体有误！";
+            if (model.isLight) {
+                model.shadow.mapSize.set(Cast.toNumber(xsize), Cast.toNumber(ysize));
+            } else {
+                return "⚠️'" + Cast.toString(name) + "'不是光源！";
             }
         }
 
@@ -3765,7 +3862,7 @@ import { log } from "./assets/threejs/src/Three.TSL.js";
          * @param {number} args.R
          * @param {number} args.G
          * @param {number} args.B
-         * @return {number}
+         * @returns {number}
          */
         color_RGB({ R, G, B }) {
             return (

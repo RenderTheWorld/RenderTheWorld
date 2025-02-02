@@ -69,7 +69,7 @@ class SpriteNodeMaterial extends NodeMaterial {
 		 * the rotation with a node instead.
 		 *
 		 * If you don't want to overwrite the rotation but modify the existing
-		 * value instead, use {@link module:MaterialNode.materialRotation}.
+		 * value instead, use {@link materialRotation}.
 		 *
 		 * @type {Node<float>?}
 		 * @default null
@@ -85,6 +85,14 @@ class SpriteNodeMaterial extends NodeMaterial {
 		 * @default null
 		 */
 		this.scaleNode = null;
+
+		/**
+		 * In Sprites, the transparent property is enabled by default.
+		 *
+		 * @type {Boolean}
+		 * @default true
+		 */
+		this.transparent = true;
 
 		this.setDefaultValues( _defaultValues );
 

@@ -604,7 +604,7 @@ function getCacheKey$1( object, force = false ) {
 
 	for ( const { property, childNode } of getNodeChildren( object ) ) {
 
-		values.push( cyrb53( property.slice( 0, -4 ) ), childNode.getCacheKey( force ) );
+		values.push( cyrb53( property.slice( 0, - 4 ) ), childNode.getCacheKey( force ) );
 
 	}
 
@@ -827,7 +827,7 @@ function getValueType( value ) {
  */
 function getValueFromType( type, ...params ) {
 
-	const last4 = type ? type.slice( -4 ) : undefined;
+	const last4 = type ? type.slice( - 4 ) : undefined;
 
 	if ( params.length === 1 ) { // ensure same behaviour as in NodeBuilder.format()
 
@@ -1441,6 +1441,19 @@ class Node extends EventDispatcher {
 		const elementType = builder.getElementType( type );
 
 		return elementType;
+
+	}
+
+	/**
+	 * Returns the node member type for the given name.
+	 *
+	 * @param {NodeBuilder} builder - The current node builder.
+	 * @param {String} name - The name of the member.
+	 * @return {String} The type of the node.
+	 */
+	getMemberType( /*uilder, name*/ ) {
+
+		return 'void';
 
 	}
 
@@ -2806,6 +2819,71 @@ class ConstNode extends InputNode {
 
 }
 
+/**
+ * Base class for representing member access on an object-like
+ * node data structures.
+ *
+ * @augments Node
+ */
+class MemberNode extends Node {
+
+	static get type() {
+
+		return 'MemberNode';
+
+	}
+
+	/**
+	 * Constructs an array element node.
+	 *
+	 * @param {Node} node - The array-like node.
+	 * @param {String} property - The property name.
+	 */
+	constructor( node, property ) {
+
+		super();
+
+		/**
+		 * The array-like node.
+		 *
+		 * @type {Node}
+		 */
+		this.node = node;
+
+		/**
+		 * The property name.
+		 *
+		 * @type {Node}
+		 */
+		this.property = property;
+
+		/**
+		 * This flag can be used for type testing.
+		 *
+		 * @type {Boolean}
+		 * @readonly
+		 * @default true
+		 */
+		this.isMemberNode = true;
+
+	}
+
+	getNodeType( builder ) {
+
+		return this.node.getMemberType( builder, this.property );
+
+	}
+
+	generate( builder ) {
+
+		const propertyName = this.node.build( builder );
+
+		return propertyName + '.' + this.property;
+
+	}
+
+}
+
 /** @module TSLCore **/
 
 let currentStack = null;
@@ -2909,6 +2987,12 @@ const shaderNodeHandler = {
 				// accessing array
 
 				return nodeObject( new ArrayElementNode( nodeObj, new ConstNode( Number( prop ), 'uint' ) ) );
+
+			} else if ( /^get$/.test( prop ) === true ) {
+
+				// accessing properties
+
+				return ( value ) => nodeObject( new MemberNode( nodeObj, value ) );
 
 			}
 
@@ -3059,6 +3143,12 @@ class ShaderCallNodeInternal extends Node {
 
 	}
 
+	getMemberType( builder, name ) {
+
+		return this.getOutputNode( builder ).getMemberType( builder, name );
+
+	}
+
 	call( builder ) {
 
 		const { shaderNode, inputNodes } = this;
@@ -3200,7 +3290,7 @@ class ShaderNodeInternal extends Node {
 
 const bools = [ false, true ];
 const uints = [ 0, 1, 2, 3 ];
-const ints = [ -1, -2 ];
+const ints = [ - 1, - 2 ];
 const floats = [ 0.5, 1.5, 1 / 3, 1e-6, 1e6, Math.PI, Math.PI * 2, 1 / Math.PI, 2 / Math.PI, 1 / ( Math.PI * 2 ), Math.PI / 2 ];
 
 const boolsCacheMap = new Map();
@@ -6596,6 +6686,12 @@ class VarNode extends Node {
 	getHash( builder ) {
 
 		return this.name || super.getHash( builder );
+
+	}
+
+	getMemberType( builder, name ) {
+
+		return this.node.getMemberType( builder, name );
 
 	}
 
@@ -15750,7 +15846,7 @@ class NodeMaterial extends Material {
 		 * material.transparent = true;
 		 *
 		 * // everything behind the object will be monochromatic
-		 * material.backdropNode = viewportSharedTexture().rgb.saturation( 0 );
+		 * material.backdropNode = saturation( viewportSharedTexture().rgb, 0 );
 		 * ```
 		 *
 		 * Backdrop computations are part of the lighting so only lit materials can use this property.
@@ -17068,7 +17164,7 @@ class Line2NodeMaterial extends NodeMaterial {
 
 			const a = cameraProjectionMatrix.element( 2 ).element( 2 ); // 3nd entry in 3th column
 			const b = cameraProjectionMatrix.element( 3 ).element( 2 ); // 3nd entry in 4th column
-			const nearEstimate = b.mul( -0.5 ).div( a );
+			const nearEstimate = b.mul( - 0.5 ).div( a );
 
 			const alpha = nearEstimate.sub( start.z ).div( end.z.sub( start.z ) );
 
@@ -17122,7 +17218,7 @@ class Line2NodeMaterial extends NodeMaterial {
 			// but we need to perform ndc-space calculations in the shader, so we must address this issue directly
 			// perhaps there is a more elegant solution -- WestLangley
 
-			const perspective = cameraProjectionMatrix.element( 2 ).element( 3 ).equal( -1 ); // 4th entry in the 3rd column
+			const perspective = cameraProjectionMatrix.element( 2 ).element( 3 ).equal( - 1.0 ); // 4th entry in the 3rd column
 
 			If( perspective, () => {
 
@@ -17280,7 +17376,7 @@ class Line2NodeMaterial extends NodeMaterial {
 
 				const vLineDistance = varyingProperty( 'float', 'lineDistance' );
 
-				vUv.y.lessThan( -1 ).or( vUv.y.greaterThan( 1.0 ) ).discard(); // discard endcaps
+				vUv.y.lessThan( - 1.0 ).or( vUv.y.greaterThan( 1.0 ) ).discard(); // discard endcaps
 				vLineDistance.mod( dashSize.add( gapSize ) ).greaterThan( dashSize ).discard(); // todo - FIX
 
 			}
@@ -17583,7 +17679,7 @@ class EquirectUVNode extends TempNode {
 		const dir = this.dirNode;
 
 		const u = dir.z.atan( dir.x ).mul( 1 / ( Math.PI * 2 ) ).add( 0.5 );
-		const v = dir.y.clamp( -1, 1.0 ).asin().mul( 1 / Math.PI ).add( 0.5 );
+		const v = dir.y.clamp( - 1.0, 1.0 ).asin().mul( 1 / Math.PI ).add( 0.5 );
 
 		return vec2( u, v );
 
@@ -18295,7 +18391,7 @@ const F_Schlick = /*@__PURE__*/ Fn( ( { f0, f90, dotVH } ) => {
 
 	// Optimized variant (presented by Epic at SIGGRAPH '13)
 	// https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
-	const fresnel = dotVH.mul( -5.55473 ).sub( 6.98316 ).mul( dotVH ).exp2();
+	const fresnel = dotVH.mul( - 5.55473 ).sub( 6.98316 ).mul( dotVH ).exp2();
 
 	return f0.mul( fresnel.oneMinus() ).add( f90.mul( fresnel ) );
 
@@ -18778,15 +18874,15 @@ const BRDF_GGX = /*@__PURE__*/ Fn( ( inputs ) => {
 // https://www.unrealengine.com/blog/physically-based-shading-on-mobile
 const DFGApprox = /*@__PURE__*/ Fn( ( { roughness, dotNV } ) => {
 
-	const c0 = vec4( -1, -0.0275, -0.572, 0.022 );
+	const c0 = vec4( - 1, - 0.0275, - 0.572, 0.022 );
 
-	const c1 = vec4( 1, 0.0425, 1.04, -0.04 );
+	const c1 = vec4( 1, 0.0425, 1.04, - 0.04 );
 
 	const r = roughness.mul( c0 ).add( c1 );
 
-	const a004 = r.x.mul( r.x ).min( dotNV.mul( -9.28 ).exp2() ).mul( r.x ).add( r.y );
+	const a004 = r.x.mul( r.x ).min( dotNV.mul( - 9.28 ).exp2() ).mul( r.x ).add( r.y );
 
-	const fab = vec2( -1.04, 1.04 ).mul( a004 ).add( r.zw );
+	const fab = vec2( - 1.04, 1.04 ).mul( a004 ).add( r.zw );
 
 	return fab;
 
@@ -19014,7 +19110,7 @@ const w0 = ( a ) => mul( bC, mul( a, mul( a, a.negate().add( 3.0 ) ).sub( 3.0 ) 
 
 const w1 = ( a ) => mul( bC, mul( a, mul( a, mul( 3.0, a ).sub( 6.0 ) ) ).add( 4.0 ) );
 
-const w2 = ( a ) => mul( bC, mul( a, mul( a, mul( -3, a ).add( 3.0 ) ).add( 3.0 ) ).add( 1.0 ) );
+const w2 = ( a ) => mul( bC, mul( a, mul( a, mul( - 3.0, a ).add( 3.0 ) ).add( 3.0 ) ).add( 1.0 ) );
 
 const w3 = ( a ) => mul( bC, pow( a, 3 ) );
 
@@ -19023,7 +19119,7 @@ const g0 = ( a ) => w0( a ).add( w1( a ) );
 const g1 = ( a ) => w2( a ).add( w3( a ) );
 
 // h0 and h1 are the two offset functions
-const h0 = ( a ) => add( -1, w1( a ).div( w0( a ).add( w1( a ) ) ) );
+const h0 = ( a ) => add( - 1.0, w1( a ).div( w0( a ).add( w1( a ) ) ) );
 
 const h1 = ( a ) => add( 1.0, w3( a ).div( w2( a ).add( w3( a ) ) ) );
 
@@ -19243,9 +19339,9 @@ const getIBLVolumeRefraction = /*@__PURE__*/ Fn( ( [ n, v, roughness, diffuseCol
 
 // XYZ to linear-sRGB color space
 const XYZ_TO_REC709 = /*@__PURE__*/ mat3(
-	3.2404542, -0.969266, 0.0556434,
-	-1.5371385, 1.8760108, -0.2040259,
-	-0.4985314, 0.0415560, 1.0572252
+	3.2404542, - 0.9692660, 0.0556434,
+	- 1.5371385, 1.8760108, - 0.2040259,
+	- 0.4985314, 0.0415560, 1.0572252
 );
 
 // Assume air interface for top
@@ -19274,7 +19370,7 @@ const evalSensitivity = ( OPD, shift ) => {
 	const pos = vec3( 1.6810e+06, 1.7953e+06, 2.2084e+06 );
 	const VAR = vec3( 4.3278e+09, 9.3046e+09, 6.6121e+09 );
 
-	const x = float( 9.7470e-14 * Math.sqrt( 2.0 * Math.PI * 4.5282e+09 ) ).mul( phase.mul( 2.2399e+06 ).add( shift.x ).cos() ).mul( phase.pow2().mul( -45282e5 ).exp() );
+	const x = float( 9.7470e-14 * Math.sqrt( 2.0 * Math.PI * 4.5282e+09 ) ).mul( phase.mul( 2.2399e+06 ).add( shift.x ).cos() ).mul( phase.pow2().mul( - 4.5282e+09 ).exp() );
 
 	let xyz = val.mul( VAR.mul( 2.0 * Math.PI ).sqrt() ).mul( pos.mul( phase ).add( shift ).cos() ).mul( phase.pow2().negate().mul( VAR ).exp() );
 	xyz = vec3( xyz.x.add( x ), xyz.y, xyz.z ).div( 1.0685e-7 );
@@ -19375,8 +19471,8 @@ const IBLSheenBRDF = /*@__PURE__*/ Fn( ( { normal, viewDir, roughness } ) => {
 
 	const a = select(
 		roughness.lessThan( 0.25 ),
-		float( -339.2 ).mul( r2 ).add( float( 161.4 ).mul( roughness ) ).sub( 25.9 ),
-		float( -8.48 ).mul( r2 ).add( float( 14.3 ).mul( roughness ) ).sub( 9.95 )
+		float( - 339.2 ).mul( r2 ).add( float( 161.4 ).mul( roughness ) ).sub( 25.9 ),
+		float( - 8.48 ).mul( r2 ).add( float( 14.3 ).mul( roughness ) ).sub( 9.95 )
 	);
 
 	const b = select(
@@ -19787,7 +19883,7 @@ class PhysicalLightingModel extends LightingModel {
 		const dotNV = transformedNormalView.dot( positionViewDirection ).clamp(); // @ TODO: Move to core dotNV
 
 		const aoNV = dotNV.add( ambientOcclusion );
-		const aoExp = roughness.mul( -16 ).oneMinus().negate().exp2();
+		const aoExp = roughness.mul( - 16.0 ).oneMinus().negate().exp2();
 
 		const aoNode = ambientOcclusion.sub( aoNV.pow( aoExp ).oneMinus() ).clamp();
 
@@ -19851,9 +19947,9 @@ class PhysicalLightingModel extends LightingModel {
 // These defines must match with PMREMGenerator
 
 const cubeUV_r0 = /*@__PURE__*/ float( 1.0 );
-const cubeUV_m0 = /*@__PURE__*/ float( -2 );
+const cubeUV_m0 = /*@__PURE__*/ float( - 2.0 );
 const cubeUV_r1 = /*@__PURE__*/ float( 0.8 );
-const cubeUV_m1 = /*@__PURE__*/ float( -1 );
+const cubeUV_m1 = /*@__PURE__*/ float( - 1.0 );
 const cubeUV_r4 = /*@__PURE__*/ float( 0.4 );
 const cubeUV_m4 = /*@__PURE__*/ float( 2.0 );
 const cubeUV_r5 = /*@__PURE__*/ float( 0.305 );
@@ -19871,7 +19967,7 @@ const cubeUV_minTileSize = /*@__PURE__*/ float( 16.0 );
 const getFace = /*@__PURE__*/ Fn( ( [ direction ] ) => {
 
 	const absDirection = vec3( abs( direction ) ).toVar();
-	const face = float( -1 ).toVar();
+	const face = float( - 1.0 ).toVar();
 
 	If( absDirection.x.greaterThan( absDirection.z ), () => {
 
@@ -19973,7 +20069,7 @@ const roughnessToMip = /*@__PURE__*/ Fn( ( [ roughness ] ) => {
 
 	} ).Else( () => {
 
-		mip.assign( float( -2 ).mul( log2( mul( 1.16, roughness ) ) ) ); // 1.16 = 1.79^0.25
+		mip.assign( float( - 2.0 ).mul( log2( mul( 1.16, roughness ) ) ) ); // 1.16 = 1.79^0.25
 
 	} );
 
@@ -20001,25 +20097,25 @@ const getDirection = /*@__PURE__*/ Fn( ( [ uv_immutable, face ] ) => {
 	} ).ElseIf( face.equal( 1.0 ), () => {
 
 		direction.assign( direction.xzy );
-		direction.xz.mulAssign( -1 ); // ( -u, 1, -v ) pos y
+		direction.xz.mulAssign( - 1.0 ); // ( -u, 1, -v ) pos y
 
 	} ).ElseIf( face.equal( 2.0 ), () => {
 
-		direction.x.mulAssign( -1 ); // ( -u, v, 1 ) pos z
+		direction.x.mulAssign( - 1.0 ); // ( -u, v, 1 ) pos z
 
 	} ).ElseIf( face.equal( 3.0 ), () => {
 
 		direction.assign( direction.zyx );
-		direction.xz.mulAssign( -1 ); // ( -1, v, -u ) neg x
+		direction.xz.mulAssign( - 1.0 ); // ( -1, v, -u ) neg x
 
 	} ).ElseIf( face.equal( 4.0 ), () => {
 
 		direction.assign( direction.xzy );
-		direction.xy.mulAssign( -1 ); // ( -u, -1, v ) neg y
+		direction.xy.mulAssign( - 1.0 ); // ( -u, -1, v ) neg y
 
 	} ).ElseIf( face.equal( 5.0 ), () => {
 
-		direction.z.mulAssign( -1 ); // ( u, v, -1 ) neg zS
+		direction.z.mulAssign( - 1.0 ); // ( u, v, -1 ) neg zS
 
 	} );
 
@@ -20122,7 +20218,7 @@ const blur = /*@__PURE__*/ Fn( ( { n, latitudinal, poleAxis, outputDirection, we
 		} );
 
 		const theta = float( dTheta.mul( float( i ) ) ).toVar();
-		gl_FragColor.addAssign( weights.element( i ).mul( getSample( { theta: theta.mul( -1 ), axis, outputDirection, mipInt, envMap, CUBEUV_TEXEL_WIDTH, CUBEUV_TEXEL_HEIGHT, CUBEUV_MAX_MIP } ) ) );
+		gl_FragColor.addAssign( weights.element( i ).mul( getSample( { theta: theta.mul( - 1.0 ), axis, outputDirection, mipInt, envMap, CUBEUV_TEXEL_WIDTH, CUBEUV_TEXEL_HEIGHT, CUBEUV_MAX_MIP } ) ) );
 		gl_FragColor.addAssign( weights.element( i ).mul( getSample( { theta, axis, outputDirection, mipInt, envMap, CUBEUV_TEXEL_WIDTH, CUBEUV_TEXEL_HEIGHT, CUBEUV_MAX_MIP } ) ) );
 
 	} );
@@ -20167,7 +20263,7 @@ function _getPMREMFromTexture( texture ) {
 
 	let cacheTexture = _cache.get( texture );
 
-	const pmremVersion = cacheTexture !== undefined ? cacheTexture.pmremVersion : -1;
+	const pmremVersion = cacheTexture !== undefined ? cacheTexture.pmremVersion : - 1;
 
 	if ( pmremVersion !== texture.pmremVersion ) {
 
@@ -20363,7 +20459,7 @@ class PMREMNode extends TempNode {
 
 		let pmrem = this._pmrem;
 
-		const pmremVersion = pmrem ? pmrem.pmremVersion : -1;
+		const pmremVersion = pmrem ? pmrem.pmremVersion : - 1;
 		const texture = this._value;
 
 		if ( pmremVersion !== texture.pmremVersion ) {
@@ -22270,23 +22366,23 @@ const normal = Fn( ( { texture, uv } ) => {
 
 	} ).ElseIf( uv.x.greaterThan( 1 - epsilon ), () => {
 
-		ret.assign( vec3( -1, 0, 0 ) );
+		ret.assign( vec3( - 1, 0, 0 ) );
 
 	} ).ElseIf( uv.y.greaterThan( 1 - epsilon ), () => {
 
-		ret.assign( vec3( 0, -1, 0 ) );
+		ret.assign( vec3( 0, - 1, 0 ) );
 
 	} ).ElseIf( uv.z.greaterThan( 1 - epsilon ), () => {
 
-		ret.assign( vec3( 0, 0, -1 ) );
+		ret.assign( vec3( 0, 0, - 1 ) );
 
 	} ).Else( () => {
 
 		const step = 0.01;
 
-		const x = texture.sample( uv.add( vec3( -0.01, 0.0, 0.0 ) ) ).r.sub( texture.sample( uv.add( vec3( step, 0.0, 0.0 ) ) ).r );
-		const y = texture.sample( uv.add( vec3( 0.0, -0.01, 0.0 ) ) ).r.sub( texture.sample( uv.add( vec3( 0.0, step, 0.0 ) ) ).r );
-		const z = texture.sample( uv.add( vec3( 0.0, 0.0, -0.01 ) ) ).r.sub( texture.sample( uv.add( vec3( 0.0, 0.0, step ) ) ).r );
+		const x = texture.sample( uv.add( vec3( - step, 0.0, 0.0 ) ) ).r.sub( texture.sample( uv.add( vec3( step, 0.0, 0.0 ) ) ).r );
+		const y = texture.sample( uv.add( vec3( 0.0, - step, 0.0 ) ) ).r.sub( texture.sample( uv.add( vec3( 0.0, step, 0.0 ) ) ).r );
+		const z = texture.sample( uv.add( vec3( 0.0, 0.0, - step ) ) ).r.sub( texture.sample( uv.add( vec3( 0.0, 0.0, step ) ) ).r );
 
 		ret.assign( vec3( x, y, z ) );
 
@@ -22531,7 +22627,7 @@ class VolumeNodeMaterial extends NodeMaterial {
 
 		const hitBox = Fn( ( { orig, dir } ) => {
 
-			const box_min = vec3( -0.5 );
+			const box_min = vec3( - 0.5 );
 			const box_max = vec3( 0.5 );
 
 			const inv_dir = dir.reciprocal();
@@ -26494,18 +26590,9 @@ class Textures extends DataMap {
 
 		const options = { sampleCount };
 
-		// when using the WebXR Layers API, the render target uses external textures which
-		// require no manual updates
+		// XR render targets require no texture updates
 
-		if ( renderTarget.isXRRenderTarget === true && renderTarget.hasExternalTextures === true ) {
-
-			if ( depthTexture && renderTarget.autoAllocateDepthBuffer === true ) {
-
-				this.updateTexture( depthTexture, options );
-
-			}
-
-		} else {
+		if ( renderTarget.isXRRenderTarget !== true ) {
 
 			for ( let i = 0; i < textures.length; i ++ ) {
 
@@ -27039,6 +27126,12 @@ class StackNode extends Node {
 
 	}
 
+	getMemberType( builder, name ) {
+
+		return this.outputNode ? this.outputNode.getMemberType( builder, name ) : 'void';
+
+	}
+
 	/**
 	 * Adds a node to this stack.
 	 *
@@ -27160,6 +27253,244 @@ class StackNode extends Node {
  */
 const stack = /*@__PURE__*/ nodeProxy( StackNode );
 
+/** @module StructTypeNode **/
+
+/**
+ * Generates a layout for struct members.
+ * This function takes an object representing struct members and returns an array of member layouts.
+ * Each member layout includes the member's name, type, and whether it is atomic.
+ *
+ * @param {Object.<string, string|Object>} members - An object where keys are member names and values are either types (as strings) or objects with type and atomic properties.
+ * @returns {Array.<{name: string, type: string, atomic: boolean}>} An array of member layouts.
+ */
+function getMembersLayout( members ) {
+
+	return Object.entries( members ).map( ( [ name, value ] ) => {
+
+		if ( typeof value === 'string' ) {
+
+			return { name, type: value, atomic: false };
+
+		}
+
+		return { name, type: value.type, atomic: value.atomic || false };
+
+	} );
+
+}
+
+/**
+ * Represents a struct type node in the node-based system.
+ * This class is used to define and manage the layout and types of struct members.
+ * It extends the base Node class and provides methods to get the length of the struct,
+ * retrieve member types, and generate the struct type for a builder.
+ *
+ * @augments Node
+ */
+class StructTypeNode extends Node {
+
+	static get type() {
+
+		return 'StructTypeNode';
+
+	}
+
+	/**
+	 * Creates an instance of StructTypeNode.
+	 *
+	 * @param {Object} membersLayout - The layout of the members for the struct.
+	 * @param {string} [name=null] - The optional name of the struct.
+	 */
+	constructor( membersLayout, name = null ) {
+
+		super( 'struct' );
+
+		/**
+		 * The layout of the members for the struct
+		 *
+		 * @type {Array.<{name: string, type: string, atomic: boolean}>}
+		 */
+		this.membersLayout = getMembersLayout( membersLayout );
+
+		/**
+		 * The name of the struct.
+		 *
+		 * @type {String}
+		 * @default null
+		 */
+		this.name = name;
+
+		/**
+		 * This flag can be used for type testing.
+		 *
+		 * @type {Boolean}
+		 * @readonly
+		 * @default true
+		 */
+		this.isStructLayoutNode = true;
+
+	}
+
+	/**
+	 * Returns the length of the struct.
+	 * The length is calculated by summing the lengths of the struct's members.
+	 *
+	 * @returns {Number} The length of the struct.
+	 */
+	getLength() {
+
+		let length = 0;
+
+		for ( const member of this.membersLayout ) {
+
+			length += getLengthFromType( member.type );
+
+		}
+
+		return length;
+
+	}
+
+	getMemberType( builder, name ) {
+
+		const member = this.membersLayout.find( m => m.name === name );
+
+		return member ? member.type : 'void';
+
+	}
+
+	getNodeType( builder ) {
+
+		const structType = builder.getStructTypeFromNode( this, this.membersLayout, this.name );
+
+		return structType.name;
+
+	}
+
+	generate( builder ) {
+
+		return this.getNodeType( builder );
+
+	}
+
+}
+
+/** @module StructNode **/
+
+/**
+ * StructNode allows to create custom structures with multiple members.
+ * This can also be used to define structures in attribute and uniform data.
+ *
+ * ```js
+ * // Define a custom struct
+ * const BoundingBox = struct( { min: 'vec3', max: 'vec3' } );
+ *
+ * // Create a new instance of the struct
+ * const bb = BoundingBox( vec3( 0 ), vec3( 1 ) ); // style 1
+ * const bb = BoundingBox( { min: vec3( 0 ), max: vec3( 1 ) } ); // style 2
+ *
+ * // Access the struct members
+ * const min = bb.get( 'min' );
+ *
+ * // Assign a new value to a member
+ * min.assign( vec3() );
+ * ```
+ * @augments Node
+ */
+class StructNode extends Node {
+
+	static get type() {
+
+		return 'StructNode';
+
+	}
+
+	constructor( structLayoutNode, values ) {
+
+		super( 'vec3' );
+
+		this.structLayoutNode = structLayoutNode;
+		this.values = values;
+
+		this.isStructNode = true;
+
+	}
+
+	getNodeType( builder ) {
+
+		return this.structLayoutNode.getNodeType( builder );
+
+	}
+
+	getMemberType( builder, name ) {
+
+		return this.structLayoutNode.getMemberType( builder, name );
+
+	}
+
+	generate( builder ) {
+
+		const nodeVar = builder.getVarFromNode( this );
+		const structType = nodeVar.type;
+		const propertyName = builder.getPropertyName( nodeVar );
+
+		builder.addLineFlowCode( `${ propertyName } = ${ builder.generateStruct( structType, this.structLayoutNode.membersLayout, this.values ) }`, this );
+
+		return nodeVar.name;
+
+	}
+
+}
+
+/**
+ * TSL function for creating a struct node.
+ *
+ * @function
+ * @param {Object} membersLayout - The layout of the struct members.
+ * @param {string} [name=null] - The name of the struct.
+ * @returns {Function} The struct function.
+ */
+const struct = ( membersLayout, name = null ) => {
+
+	const structLayout = new StructTypeNode( membersLayout, name );
+
+	const struct = ( ...params ) => {
+
+		let values = null;
+
+		if ( params.length > 0 ) {
+
+			if ( params[ 0 ].isNode ) {
+
+				values = {};
+
+				const names = Object.keys( membersLayout );
+
+				for ( let i = 0; i < params.length; i ++ ) {
+
+					values[ names[ i ] ] = params[ i ];
+
+				}
+
+			} else {
+
+				values = params[ 0 ];
+
+			}
+
+		}
+
+		return nodeObject( new StructNode( structLayout, values ) );
+
+	};
+
+	struct.layout = structLayout;
+	struct.isStruct = true;
+
+	return struct;
+
+};
+
 /** @module OutputStructNode **/
 
 /**
@@ -27203,24 +27534,34 @@ class OutputStructNode extends Node {
 
 	}
 
-	setup( builder ) {
+	getNodeType( builder ) {
 
-		super.setup( builder );
+		const properties = builder.getNodeProperties( this );
 
-		const members = this.members;
-		const types = [];
+		if ( properties.membersLayout === undefined ) {
 
-		for ( let i = 0; i < members.length; i ++ ) {
+			const members = this.members;
+			const membersLayout = [];
 
-			types.push( members[ i ].getNodeType( builder ) );
+			for ( let i = 0; i < members.length; i ++ ) {
+
+				const name = 'm' + i;
+				const type = members[ i ].getNodeType( builder );
+
+				membersLayout.push( { name, type, index: i } );
+
+			}
+
+			properties.membersLayout = membersLayout;
+			properties.structType = builder.getOutputStructTypeFromNode( this, properties.membersLayout );
 
 		}
 
-		this.nodeType = builder.getStructTypeFromNode( this, types ).name;
+		return properties.structType.name;
 
 	}
 
-	generate( builder, output ) {
+	generate( builder ) {
 
 		const propertyName = builder.getOutputStructName();
 		const members = this.members;
@@ -27229,7 +27570,7 @@ class OutputStructNode extends Node {
 
 		for ( let i = 0; i < members.length; i ++ ) {
 
-			const snippet = members[ i ].build( builder, output );
+			const snippet = members[ i ].build( builder );
 
 			builder.addLineFlowCode( `${ structPrefix }m${ i } = ${ snippet }`, this );
 
@@ -27271,7 +27612,7 @@ function getTextureIndex( textures, name ) {
 
 	}
 
-	return -1;
+	return - 1;
 
 }
 
@@ -27620,7 +27961,7 @@ class FunctionOverloadingNode extends Node {
 		if ( candidateFnCall === null ) {
 
 			let candidateFn = null;
-			let candidateScore = -1;
+			let candidateScore = - 1;
 
 			for ( const functionNode of this.functionNodes ) {
 
@@ -28146,7 +28487,7 @@ const _normal = new Vector3();
 const _reflectorWorldPosition = new Vector3();
 const _cameraWorldPosition = new Vector3();
 const _rotationMatrix = new Matrix4();
-const _lookAtPosition = new Vector3( 0, 0, -1 );
+const _lookAtPosition = new Vector3( 0, 0, - 1 );
 const clipPlane = new Vector4();
 
 const _view = new Vector3();
@@ -28523,7 +28864,7 @@ class ReflectorBaseNode extends Node {
 
 		_rotationMatrix.extractRotation( camera.matrixWorld );
 
-		_lookAtPosition.set( 0, 0, -1 );
+		_lookAtPosition.set( 0, 0, - 1 );
 		_lookAtPosition.applyMatrix4( _rotationMatrix );
 		_lookAtPosition.add( _cameraWorldPosition );
 
@@ -28557,7 +28898,7 @@ class ReflectorBaseNode extends Node {
 
 		_q.x = ( Math.sign( clipPlane.x ) + projectionMatrix.elements[ 8 ] ) / projectionMatrix.elements[ 0 ];
 		_q.y = ( Math.sign( clipPlane.y ) + projectionMatrix.elements[ 9 ] ) / projectionMatrix.elements[ 5 ];
-		_q.z = -1;
+		_q.z = - 1.0;
 		_q.w = ( 1.0 + projectionMatrix.elements[ 10 ] ) / projectionMatrix.elements[ 14 ];
 
 		// Calculate the scaled plane vector
@@ -28621,7 +28962,7 @@ class ReflectorBaseNode extends Node {
  */
 const reflector = ( parameters ) => nodeObject( new ReflectorNode( parameters ) );
 
-const _camera = /*@__PURE__*/ new OrthographicCamera( -1, 1, 1, -1, 0, 1 );
+const _camera = /*@__PURE__*/ new OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
 
 /**
  * The purpose of this special geometry is to fill the entire viewport with a single triangle.
@@ -28642,9 +28983,9 @@ class QuadGeometry extends BufferGeometry {
 
 		super();
 
-		const uv = flipY === false ? [ 0, -1, 0, 1, 2, 1 ] : [ 0, 2, 0, 0, 2, 0 ];
+		const uv = flipY === false ? [ 0, - 1, 0, 1, 2, 1 ] : [ 0, 2, 0, 0, 2, 0 ];
 
-		this.setAttribute( 'position', new Float32BufferAttribute( [ -1, 3, 0, -1, -1, 0, 3, -1, 0 ], 3 ) );
+		this.setAttribute( 'position', new Float32BufferAttribute( [ - 1, 3, 0, - 1, - 1, 0, 3, - 1, 0 ], 3 ) );
 		this.setAttribute( 'uv', new Float32BufferAttribute( uv, 2 ) );
 
 	}
@@ -29205,6 +29546,20 @@ class StorageArrayElementNode extends ArrayElementNode {
 
 	}
 
+	getMemberType( builder, name ) {
+
+		const structTypeNode = this.storageBufferNode.structTypeNode;
+
+		if ( structTypeNode ) {
+
+			return structTypeNode.getMemberType( builder, name );
+
+		}
+
+		return 'void';
+
+	}
+
 	setup( builder ) {
 
 		if ( builder.isAvailable( 'storageBuffer' ) === false ) {
@@ -29316,19 +29671,30 @@ class StorageBufferNode extends BufferNode {
 	 * Constructs a new storage buffer node.
 	 *
 	 * @param {StorageBufferAttribute|StorageInstancedBufferAttribute|BufferAttribute} value - The buffer data.
-	 * @param {String?} [bufferType=null] - The buffer type (e.g. `'vec3'`).
+	 * @param {(String|Struct)?} [bufferType=null] - The buffer type (e.g. `'vec3'`).
 	 * @param {Number} [bufferCount=0] - The buffer count.
 	 */
 	constructor( value, bufferType = null, bufferCount = 0 ) {
 
-		if ( bufferType === null && ( value.isStorageBufferAttribute || value.isStorageInstancedBufferAttribute ) ) {
+		let nodeType, structTypeNode = null;
 
-			bufferType = getTypeFromLength( value.itemSize );
+		if ( bufferType && bufferType.isStruct ) {
+
+			nodeType = 'struct';
+			structTypeNode = bufferType.layout;
+
+		} else if ( bufferType === null && ( value.isStorageBufferAttribute || value.isStorageInstancedBufferAttribute ) ) {
+
+			nodeType = getTypeFromLength( value.itemSize );
 			bufferCount = value.count;
+
+		} else {
+
+			nodeType = bufferType;
 
 		}
 
-		super( value, bufferType, bufferCount );
+		super( value, nodeType, bufferCount );
 
 		/**
 		 * This flag can be used for type testing.
@@ -29338,6 +29704,15 @@ class StorageBufferNode extends BufferNode {
 		 * @default true
 		 */
 		this.isStorageBufferNode = true;
+
+
+		/**
+		 * The buffer struct type.
+		 *
+		 * @type {structTypeNode?}
+		 * @default null
+		 */
+		this.structTypeNode = structTypeNode;
 
 		/**
 		 * The access type of the texture node.
@@ -29559,6 +29934,12 @@ class StorageBufferNode extends BufferNode {
 	 */
 	getNodeType( builder ) {
 
+		if ( this.structTypeNode !== null ) {
+
+			return this.structTypeNode.getNodeType( builder );
+
+		}
+
 		if ( builder.isAvailable( 'storageBuffer' ) || builder.isAvailable( 'indirectStorageBuffer' ) ) {
 
 			return super.getNodeType( builder );
@@ -29578,6 +29959,8 @@ class StorageBufferNode extends BufferNode {
 	 * @return {String} The generated code snippet.
 	 */
 	generate( builder ) {
+
+		if ( this.structTypeNode !== null ) this.structTypeNode.build( builder );
 
 		if ( builder.isAvailable( 'storageBuffer' ) || builder.isAvailable( 'indirectStorageBuffer' ) ) {
 
@@ -29602,7 +29985,7 @@ class StorageBufferNode extends BufferNode {
  *
  * @function
  * @param {StorageBufferAttribute|StorageInstancedBufferAttribute|BufferAttribute} value - The buffer data.
- * @param {String?} [type=null] - The buffer type (e.g. `'vec3'`).
+ * @param {(String|Struct)?} [type=null] - The buffer type (e.g. `'vec3'`).
  * @param {Number} [count=0] - The buffer count.
  * @returns {StorageBufferNode}
  */
@@ -29632,13 +30015,24 @@ const storageObject = ( value, type, count ) => { // @deprecated, r171
  *
  * @function
  * @param {Number|TypedArray} count - The data count. It is also valid to pass a typed array as an argument.
- * @param {String} [type='float'] - The data type.
+ * @param {String|Struct} [type='float'] - The data type.
  * @returns {StorageBufferNode}
  */
 const attributeArray = ( count, type = 'float' ) => {
 
-	const itemSize = getLengthFromType( type );
-	const typedArray = getTypedArrayFromType( type );
+	let itemSize, typedArray;
+
+	if ( type.isStruct === true ) {
+
+		itemSize = type.layout.getLength();
+		typedArray = getTypedArrayFromType( 'float' );
+
+	} else {
+
+		itemSize = getLengthFromType( type );
+		typedArray = getTypedArrayFromType( type );
+
+	}
 
 	const buffer = new StorageBufferAttribute( count, itemSize, typedArray );
 	const node = storage( buffer, type, count );
@@ -29652,13 +30046,24 @@ const attributeArray = ( count, type = 'float' ) => {
  *
  * @function
  * @param {Number|TypedArray} count - The data count. It is also valid to pass a typed array as an argument.
- * @param {String} [type='float'] - The data type.
+ * @param {String|Struct} [type='float'] - The data type.
  * @returns {StorageBufferNode}
  */
 const instancedArray = ( count, type = 'float' ) => {
 
-	const itemSize = getLengthFromType( type );
-	const typedArray = getTypedArrayFromType( type );
+	let itemSize, typedArray;
+
+	if ( type.isStruct === true ) {
+
+		itemSize = type.layout.getLength();
+		typedArray = getTypedArrayFromType( 'float' );
+
+	} else {
+
+		itemSize = getLengthFromType( type );
+		typedArray = getTypedArrayFromType( type );
+
+	}
 
 	const buffer = new StorageInstancedBufferAttribute( count, itemSize, typedArray );
 	const node = storage( buffer, type, count );
@@ -29908,7 +30313,7 @@ class SceneNode extends Node {
 					_e1.copy( scene.backgroundRotation );
 
 					// accommodate left-handed frame
-					_e1.x *= -1; _e1.y *= -1; _e1.z *= -1;
+					_e1.x *= - 1; _e1.y *= - 1; _e1.z *= - 1;
 
 					_m1.makeRotationFromEuler( _e1 );
 
@@ -30699,7 +31104,7 @@ const vibrance = /*@__PURE__*/ Fn( ( [ color, adjustment = float( 1 ) ] ) => {
 	const average = add( color.r, color.g, color.b ).div( 3.0 );
 
 	const mx = color.r.max( color.g.max( color.b ) );
-	const amt = mx.sub( average ).mul( adjustment ).mul( -3 );
+	const amt = mx.sub( average ).mul( adjustment ).mul( - 3.0 );
 
 	return mix( color.rgb, mx, amt );
 
@@ -31384,12 +31789,14 @@ class PassNode extends TempNode {
 
 		this.renderTarget.samples = this.options.samples === undefined ? renderer.samples : this.options.samples;
 
-		// Disable MSAA for WebGL backend for now
+		// TODO: Disable MSAA for WebGL backend for now
 		if ( renderer.backend.isWebGLBackend === true ) {
 
 			this.renderTarget.samples = 0;
 
 		}
+
+		this.renderTarget.texture.type = renderer.getColorBufferType();
 
 		return this.scope === PassNode.COLOR ? this.getTextureNode() : this.getLinearDepthNode();
 
@@ -31789,9 +32196,9 @@ const acesFilmicToneMapping = /*@__PURE__*/ Fn( ( [ color, exposure ] ) => {
 
 	// ODT_SAT => XYZ => D60_2_D65 => sRGB
 	const ACESOutputMat = mat3(
-		1.60475, -0.53108, -0.07367,
-		-0.10208, 1.10813, -605e-5,
-		-327e-5, -0.07276, 1.07602
+		1.60475, - 0.53108, - 0.07367,
+		- 0.10208, 1.10813, - 0.00605,
+		- 0.00327, - 0.07276, 1.07602
 	);
 
 	color = color.mul( exposure ).div( 0.6 );
@@ -31815,7 +32222,7 @@ const acesFilmicToneMapping = /*@__PURE__*/ Fn( ( [ color, exposure ] ) => {
 	]
 } );
 
-const LINEAR_REC2020_TO_LINEAR_SRGB = /*@__PURE__*/ mat3( vec3( 1.6605, -0.1246, -0.0182 ), vec3( -0.5876, 1.1329, -0.1006 ), vec3( -0.0728, -83e-4, 1.1187 ) );
+const LINEAR_REC2020_TO_LINEAR_SRGB = /*@__PURE__*/ mat3( vec3( 1.6605, - 0.1246, - 0.0182 ), vec3( - 0.5876, 1.1329, - 0.1006 ), vec3( - 0.0728, - 0.0083, 1.1187 ) );
 const LINEAR_SRGB_TO_LINEAR_REC2020 = /*@__PURE__*/ mat3( vec3( 0.6274, 0.0691, 0.0164 ), vec3( 0.3293, 0.9195, 0.0880 ), vec3( 0.0433, 0.0113, 0.8956 ) );
 
 const agxDefaultContrastApprox = /*@__PURE__*/ Fn( ( [ x_immutable ] ) => {
@@ -31840,8 +32247,8 @@ const agxToneMapping = /*@__PURE__*/ Fn( ( [ color, exposure ] ) => {
 
 	const colortone = vec3( color ).toVar();
 	const AgXInsetMatrix = mat3( vec3( 0.856627153315983, 0.137318972929847, 0.11189821299995 ), vec3( 0.0951212405381588, 0.761241990602591, 0.0767994186031903 ), vec3( 0.0482516061458583, 0.101439036467562, 0.811302368396859 ) );
-	const AgXOutsetMatrix = mat3( vec3( 1.1271005818144368, -0.1413297634984383, -0.14132976349843826 ), vec3( -0.11060664309660323, 1.157823702216272, -0.11060664309660294 ), vec3( -0.016493938717834573, -0.016493938717834257, 1.2519364065950405 ) );
-	const AgxMinEv = float( -12.47393 );
+	const AgXOutsetMatrix = mat3( vec3( 1.1271005818144368, - 0.1413297634984383, - 0.14132976349843826 ), vec3( - 0.11060664309660323, 1.157823702216272, - 0.11060664309660294 ), vec3( - 0.016493938717834573, - 0.016493938717834257, 1.2519364065950405 ) );
+	const AgxMinEv = float( - 12.47393 );
 	const AgxMaxEv = float( 4.026069 );
 	colortone.mulAssign( exposure );
 	colortone.assign( LINEAR_SRGB_TO_LINEAR_REC2020.mul( colortone ) );
@@ -35296,7 +35703,7 @@ const VSMPassVertical = /*@__PURE__*/ Fn( ( { samples, radius, size, shadowPass 
 	const squaredMean = float( 0 ).toVar();
 
 	const uvStride = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( 2 ).div( samples.sub( 1 ) ) );
-	const uvStart = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( -1 ) );
+	const uvStart = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( - 1 ) );
 
 	Loop( { start: int( 0 ), end: int( samples ), type: 'int', condition: '<' }, ( { i } ) => {
 
@@ -35333,7 +35740,7 @@ const VSMPassHorizontal = /*@__PURE__*/ Fn( ( { samples, radius, size, shadowPas
 	const squaredMean = float( 0 ).toVar();
 
 	const uvStride = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( 2 ).div( samples.sub( 1 ) ) );
-	const uvStart = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( -1 ) );
+	const uvStart = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( - 1 ) );
 
 	Loop( { start: int( 0 ), end: int( samples ), type: 'int', condition: '<' }, ( { i } ) => {
 
@@ -36180,7 +36587,7 @@ const BasicPointShadowFilter = /*@__PURE__*/ Fn( ( { depthTexture, bd3D, dp, tex
 const PointShadowFilter = /*@__PURE__*/ Fn( ( { depthTexture, bd3D, dp, texelSize, shadow } ) => {
 
 	const radius = reference( 'radius', 'float', shadow ).setGroup( renderGroup );
-	const offset = vec2( -1, 1.0 ).mul( radius ).mul( texelSize.y );
+	const offset = vec2( - 1.0, 1.0 ).mul( radius ).mul( texelSize.y );
 
 	return texture( depthTexture, cubeToUV( bd3D.add( offset.xyy ), texelSize.y ) ).compare( dp )
 		.add( texture( depthTexture, cubeToUV( bd3D.add( offset.yyy ), texelSize.y ) ).compare( dp ) )
@@ -37568,9 +37975,9 @@ const mx_worley_noise_float_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immuta
 	const localpos = vec2( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ) ).toVar();
 	const sqdist = float( 1e6 ).toVar();
 
-	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
+	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
-		Loop( { start: -1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
+		Loop( { start: - 1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
 			const dist = float( mx_worley_distance( localpos, x, y, X, Y, jitter, metric ) ).toVar();
 			sqdist.assign( min$1( sqdist, dist ) );
@@ -37606,9 +38013,9 @@ const mx_worley_noise_vec2_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 	const localpos = vec2( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ) ).toVar();
 	const sqdist = vec2( 1e6, 1e6 ).toVar();
 
-	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
+	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
-		Loop( { start: -1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
+		Loop( { start: - 1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
 			const dist = float( mx_worley_distance( localpos, x, y, X, Y, jitter, metric ) ).toVar();
 
@@ -37654,9 +38061,9 @@ const mx_worley_noise_vec3_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 	const localpos = vec2( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ) ).toVar();
 	const sqdist = vec3( 1e6, 1e6, 1e6 ).toVar();
 
-	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
+	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
-		Loop( { start: -1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
+		Loop( { start: - 1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
 			const dist = float( mx_worley_distance( localpos, x, y, X, Y, jitter, metric ) ).toVar();
 
@@ -37708,11 +38115,11 @@ const mx_worley_noise_float_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immuta
 	const localpos = vec3( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ), mx_floorfrac( p.z, Z ) ).toVar();
 	const sqdist = float( 1e6 ).toVar();
 
-	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
+	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
-		Loop( { start: -1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
+		Loop( { start: - 1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
-			Loop( { start: -1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
+			Loop( { start: - 1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
 
 				const dist = float( mx_worley_distance( localpos, x, y, z, X, Y, Z, jitter, metric ) ).toVar();
 				sqdist.assign( min$1( sqdist, dist ) );
@@ -37752,11 +38159,11 @@ const mx_worley_noise_vec2_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 	const localpos = vec3( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ), mx_floorfrac( p.z, Z ) ).toVar();
 	const sqdist = vec2( 1e6, 1e6 ).toVar();
 
-	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
+	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
-		Loop( { start: -1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
+		Loop( { start: - 1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
-			Loop( { start: -1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
+			Loop( { start: - 1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
 
 				const dist = float( mx_worley_distance( localpos, x, y, z, X, Y, Z, jitter, metric ) ).toVar();
 
@@ -37806,11 +38213,11 @@ const mx_worley_noise_vec3_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 	const localpos = vec3( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ), mx_floorfrac( p.z, Z ) ).toVar();
 	const sqdist = vec3( 1e6, 1e6, 1e6 ).toVar();
 
-	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
+	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
-		Loop( { start: -1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
+		Loop( { start: - 1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
-			Loop( { start: -1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
+			Loop( { start: - 1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
 
 				const dist = float( mx_worley_distance( localpos, x, y, z, X, Y, Z, jitter, metric ) ).toVar();
 
@@ -38079,7 +38486,7 @@ const getParallaxCorrectNormal = /*@__PURE__*/ Fn( ( [ normal, cubeSize, cubePos
 
 	const nDir = normalize( normal ).toVar( 'nDir' );
 	const rbmax = sub( float( 0.5 ).mul( cubeSize.sub( cubePos ) ), positionWorld ).div( nDir ).toVar( 'rbmax' );
-	const rbmin = sub( float( -0.5 ).mul( cubeSize.sub( cubePos ) ), positionWorld ).div( nDir ).toVar( 'rbmin' );
+	const rbmin = sub( float( - 0.5 ).mul( cubeSize.sub( cubePos ) ), positionWorld ).div( nDir ).toVar( 'rbmin' );
 	const rbminmax = vec3().toVar( 'rbminmax' );
 	rbminmax.x = nDir.x.greaterThan( float( 0 ) ).select( rbmax.x, rbmin.x );
 	rbminmax.y = nDir.y.greaterThan( float( 0 ) ).select( rbmax.y, rbmin.y );
@@ -38568,6 +38975,7 @@ var TSL = /*#__PURE__*/Object.freeze({
 	storageObject: storageObject,
 	storageTexture: storageTexture,
 	string: string,
+	struct: struct,
 	sub: sub,
 	subgroupIndex: subgroupIndex,
 	subgroupSize: subgroupSize,
@@ -39419,64 +39827,13 @@ class NodeCache {
 
 }
 
-/**
- * {@link NodeBuilder} is going to create instances of this class during the build process
- * of nodes. They represent the final shader struct data that are going to be generated
- * by the builder. A dictionary of struct types is maintained in {@link NodeBuilder#structs}
- * for this purpose.
- */
-class StructTypeNode extends Node {
+class StructType {
 
-	static get type() {
+	constructor( name, members ) {
 
-		return 'StructTypeNode';
-
-	}
-
-	/**
-	 * Constructs a new struct type node.
-	 *
-	 * @param {String} name - The name of the struct.
-	 * @param {Array<String>} types - An array of types.
-	 */
-	constructor( name, types ) {
-
-		super();
-
-		/**
-		 * The name of the struct.
-		 *
-		 * @type {String}
-		 */
 		this.name = name;
-
-
-		/**
-		 * An array of types.
-		 *
-		 * @type {Array<String>}
-		 */
-		this.types = types;
-
-		/**
-		 * This flag can be used for type testing.
-		 *
-		 * @type {Boolean}
-		 * @readonly
-		 * @default true
-		 */
-		this.isStructTypeNode = true;
-
-	}
-
-	/**
-	 * Returns the member types.
-	 *
-	 * @return {Array<String>} The types.
-	 */
-	getMemberTypes() {
-
-		return this.types;
+		this.members = members;
+		this.output = false;
 
 	}
 
@@ -40257,7 +40614,7 @@ const EXTRA_LOD_SIGMA = [ 0.125, 0.215, 0.35, 0.446, 0.526, 0.582 ];
 // samples and exit early, but not recompile the shader.
 const MAX_SAMPLES = 20;
 
-const _flatCamera = /*@__PURE__*/ new OrthographicCamera( -1, 1, 1, -1, 0, 1 );
+const _flatCamera = /*@__PURE__*/ new OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
 const _cubeCamera = /*@__PURE__*/ new PerspectiveCamera( 90, 1 );
 const _clearColor = /*@__PURE__*/ new Color();
 let _oldTarget = null;
@@ -40277,9 +40634,9 @@ const _axisDirections = [
 	/*@__PURE__*/ new Vector3( INV_PHI, 0, PHI ),
 	/*@__PURE__*/ new Vector3( 0, PHI, - INV_PHI ),
 	/*@__PURE__*/ new Vector3( 0, PHI, INV_PHI ),
-	/*@__PURE__*/ new Vector3( -1, 1, -1 ),
-	/*@__PURE__*/ new Vector3( 1, 1, -1 ),
-	/*@__PURE__*/ new Vector3( -1, 1, 1 ),
+	/*@__PURE__*/ new Vector3( - 1, 1, - 1 ),
+	/*@__PURE__*/ new Vector3( 1, 1, - 1 ),
+	/*@__PURE__*/ new Vector3( - 1, 1, 1 ),
 	/*@__PURE__*/ new Vector3( 1, 1, 1 )
 ];
 
@@ -40679,8 +41036,8 @@ class PMREMGenerator {
 		cubeCamera.far = far;
 
 		// px, py, pz, nx, ny, nz
-		const upSign = [ 1, 1, 1, 1, -1, 1 ];
-		const forwardSign = [ 1, -1, 1, -1, 1, -1 ];
+		const upSign = [ 1, 1, 1, 1, - 1, 1 ];
+		const forwardSign = [ 1, - 1, 1, - 1, 1, - 1 ];
 
 		const renderer = this._renderer;
 
@@ -41001,7 +41358,7 @@ function _createPlanes( lodMax ) {
 		for ( let face = 0; face < cubeFaces; face ++ ) {
 
 			const x = ( face % 3 ) * 2 / 3 - 1;
-			const y = face > 2 ? 0 : -1;
+			const y = face > 2 ? 0 : - 1;
 			const coordinates = [
 				x, y, 0,
 				x + 2 / 3, y, 0,
@@ -42191,6 +42548,39 @@ class NodeBuilder {
 	}
 
 	/**
+	 * Generates the struct shader string.
+	 *
+	 * @param {String} type - The type.
+	 * @param {Array<Object>} [membersLayout] - The count.
+	 * @param {Array<Node>?} [values=null] - The default values.
+	 * @return {String} The generated value as a shader string.
+	 */
+	generateStruct( type, membersLayout, values = null ) {
+
+		const snippets = [];
+
+		for ( const member of membersLayout ) {
+
+			const { name, type } = member;
+
+			if ( values && values[ name ] && values[ name ].isNode ) {
+
+				snippets.push( values[ name ].build( this, type ) );
+
+			} else {
+
+				snippets.push( this.generateConst( type ) );
+
+			}
+
+		}
+
+		return type + '( ' + snippets.join( ', ' ) + ' )';
+
+	}
+
+
+	/**
 	 * Generates the shader string for the given type and value.
 	 *
 	 * @param {String} type - The type.
@@ -42681,14 +43071,15 @@ class NodeBuilder {
 	}
 
 	/**
-	 * Returns an instance of {@link StructTypeNode} for the given output struct node.
+	 * Returns an instance of {@link StructType} for the given output struct node.
 	 *
 	 * @param {OutputStructNode} node - The output struct node.
-	 * @param {Array<String>} types - The output struct types.
+	 * @param {Array<Object>} membersLayout - The output struct types.
+	 * @param {String?} [name=null] - The name of the struct.
 	 * @param {('vertex'|'fragment'|'compute'|'any')} [shaderStage=this.shaderStage] - The shader stage.
-	 * @return {StructTypeNode} The struct type attribute.
+	 * @return {StructType} The struct type attribute.
 	 */
-	getStructTypeFromNode( node, types, shaderStage = this.shaderStage ) {
+	getStructTypeFromNode( node, membersLayout, name = null, shaderStage = this.shaderStage ) {
 
 		const nodeData = this.getDataFromNode( node, shaderStage );
 
@@ -42698,13 +43089,31 @@ class NodeBuilder {
 
 			const index = this.structs.index ++;
 
-			structType = new StructTypeNode( 'StructType' + index, types );
+			if ( name === null ) name = 'StructType' + index;
+
+			structType = new StructType( name, membersLayout );
 
 			this.structs[ shaderStage ].push( structType );
 
 			nodeData.structType = structType;
 
 		}
+
+		return structType;
+
+	}
+
+	/**
+	 * Returns an instance of {@link StructType} for the given output struct node.
+	 *
+	 * @param {OutputStructNode} node - The output struct node.
+	 * @param {Array<Object>} membersLayout - The output struct types.
+	 * @return {StructType} The struct type attribute.
+	 */
+	getOutputStructTypeFromNode( node, membersLayout ) {
+
+		const structType = this.getStructTypeFromNode( node, membersLayout, 'OutputType', 'fragment' );
+		structType.output = true;
 
 		return structType;
 
@@ -43046,7 +43455,7 @@ class NodeBuilder {
 	 */
 	removeFlowTab() {
 
-		this.tab = this.tab.slice( 0, -1 );
+		this.tab = this.tab.slice( 0, - 1 );
 
 		return this;
 
@@ -44652,7 +45061,7 @@ const parse$1 = ( source ) => {
 
 	const pragmaMainIndex = source.indexOf( pragmaMain );
 
-	const mainCode = pragmaMainIndex !== -1 ? source.slice( pragmaMainIndex + pragmaMain.length ) : source;
+	const mainCode = pragmaMainIndex !== - 1 ? source.slice( pragmaMainIndex + pragmaMain.length ) : source;
 
 	const declaration = mainCode.match( declarationRegexp$1 );
 
@@ -44721,7 +45130,7 @@ const parse$1 = ( source ) => {
 
 		const precision = declaration[ 1 ] !== undefined ? declaration[ 1 ] : '';
 
-		const headerCode = pragmaMainIndex !== -1 ? source.slice( 0, pragmaMainIndex ) : '';
+		const headerCode = pragmaMainIndex !== - 1 ? source.slice( 0, pragmaMainIndex ) : '';
 
 		return {
 			type,
@@ -46274,7 +46683,7 @@ class XRRenderTarget extends RenderTarget {
 		 * Allocating a depth buffer is the default behavior of XR render
 		 * targets. However, when using the WebXR Layers API, this flag
 		 * must be set to `false` when the `ignoreDepthValues` property of
-		 * the projection layers evaluates to `true`.
+		 * the projection layers evaluates to `false`.
 		 *
 		 * Reference: {@link https://www.w3.org/TR/webxrlayers-1/#dom-xrprojectionlayer-ignoredepthvalues}.
 		 *
@@ -46878,8 +47287,6 @@ class XRManager extends EventDispatcher {
 
 			//
 
-			const attributes = gl.getContextAttributes();
-
 			if ( this._useLayers === true ) {
 
 				// default path using XRWebGLBinding/XRProjectionLayer
@@ -46888,11 +47295,11 @@ class XRManager extends EventDispatcher {
 				let depthType = null;
 				let glDepthFormat = null;
 
-				if ( attributes.depth ) {
+				if ( renderer.depth ) {
 
-					glDepthFormat = attributes.stencil ? gl.DEPTH24_STENCIL8 : gl.DEPTH_COMPONENT24;
-					depthFormat = attributes.stencil ? DepthStencilFormat : DepthFormat;
-					depthType = attributes.stencil ? UnsignedInt248Type : UnsignedIntType;
+					glDepthFormat = renderer.stencil ? gl.DEPTH24_STENCIL8 : gl.DEPTH_COMPONENT24;
+					depthFormat = renderer.stencil ? DepthStencilFormat : DepthFormat;
+					depthType = renderer.stencil ? UnsignedInt248Type : UnsignedIntType;
 
 				}
 
@@ -46921,8 +47328,8 @@ class XRManager extends EventDispatcher {
 						type: UnsignedByteType,
 						colorSpace: renderer.outputColorSpace,
 						depthTexture: new DepthTexture( glProjLayer.textureWidth, glProjLayer.textureHeight, depthType, undefined, undefined, undefined, undefined, undefined, undefined, depthFormat ),
-						stencilBuffer: attributes.stencil,
-						samples: attributes.antialias ? 4 : 0
+						stencilBuffer: renderer.stencil,
+						samples: renderer.samples
 					} );
 
 				this._xrRenderTarget.hasExternalTextures = true;
@@ -46932,10 +47339,10 @@ class XRManager extends EventDispatcher {
 				// fallback to XRWebGLLayer
 
 				const layerInit = {
-					antialias: attributes.antialias,
+					antialias: renderer.samples > 0,
 					alpha: true,
-					depth: attributes.depth,
-					stencil: attributes.stencil,
+					depth: renderer.depth,
+					stencil: renderer.stencil,
 					framebufferScaleFactor: this.getFramebufferScaleFactor()
 				};
 
@@ -46954,7 +47361,7 @@ class XRManager extends EventDispatcher {
 						format: RGBAFormat,
 						type: UnsignedByteType,
 						colorSpace: renderer.outputColorSpace,
-						stencilBuffer: attributes.stencil
+						stencilBuffer: renderer.stencil
 					}
 				);
 
@@ -47121,7 +47528,7 @@ function setProjectionFromUnion( camera, cameraL, cameraR ) {
 	camera.matrixWorldInverse.copy( camera.matrixWorld ).invert();
 
 	// Check if the projection uses an infinite far plane.
-	if ( projL[ 10 ] === -1 ) {
+	if ( projL[ 10 ] === - 1.0 ) {
 
 		// Use the projection matrix from the left eye.
 		// The camera offset is sufficient to include the view volumes
@@ -47212,7 +47619,7 @@ function onSessionEvent( event ) {
 
 	const controllerIndex = this._controllerInputSources.indexOf( event.inputSource );
 
-	if ( controllerIndex === -1 ) {
+	if ( controllerIndex === - 1 ) {
 
 		return;
 
@@ -47314,7 +47721,7 @@ function onInputSourcesChange( event ) {
 
 		let controllerIndex = controllerInputSources.indexOf( inputSource );
 
-		if ( controllerIndex === -1 ) {
+		if ( controllerIndex === - 1 ) {
 
 			// Assign input source a controller that currently has no input source
 
@@ -47338,7 +47745,7 @@ function onInputSourcesChange( event ) {
 
 			// If all controllers do currently receive input we ignore new ones
 
-			if ( controllerIndex === -1 ) break;
+			if ( controllerIndex === - 1 ) break;
 
 		}
 
@@ -47508,6 +47915,8 @@ class Renderer {
 	 * @param {Number} [parameters.samples=0] - When `antialias` is `true`, `4` samples are used by default. This parameter can set to any other integer value than 0
 	 * to overwrite the default.
 	 * @param {Function?} [parameters.getFallback=null] - This callback function can be used to provide a fallback backend, if the primary backend can't be targeted.
+	 * @param {Number} [parameters.colorBufferType=HalfFloatType] - Defines the type of color buffers. The default `HalfFloatType` is recommend for best
+	 * quality. To save memory and bandwidth, `UnsignedByteType` might be used. This will reduce rendering quality though.
 	 */
 	constructor( backend, parameters = {} ) {
 
@@ -47529,7 +47938,8 @@ class Renderer {
 			stencil = false,
 			antialias = false,
 			samples = 0,
-			getFallback = null
+			getFallback = null,
+			colorBufferType = HalfFloatType
 		} = parameters;
 
 		/**
@@ -48031,6 +48441,17 @@ class Renderer {
 		this.onDeviceLost = this._onDeviceLost;
 
 		/**
+		 * Defines the type of color buffers. The default `HalfFloatType` is recommend for
+		 * best quality. To save memory and bandwidth, `UnsignedByteType` might be used.
+		 * This will reduce rendering quality though.
+		 *
+		 * @private
+		 * @type {Number}
+		 * @default HalfFloatType
+		 */
+		this._colorBufferType = colorBufferType;
+
+		/**
 		 * Whether the renderer has been initialized or not.
 		 *
 		 * @private
@@ -48428,6 +48849,17 @@ class Renderer {
 	}
 
 	/**
+	 * Returns the color buffer type.
+	 *
+	 * @return {Number} The color buffer type.
+	 */
+	getColorBufferType() {
+
+		return this._colorBufferType;
+
+	}
+
+	/**
 	 * Default implementation of the device lost callback.
 	 *
 	 * @private
@@ -48581,7 +49013,7 @@ class Renderer {
 			frameBufferTarget = new RenderTarget( width, height, {
 				depthBuffer: depth,
 				stencilBuffer: stencil,
-				type: HalfFloatType, // FloatType
+				type: this._colorBufferType,
 				format: RGBAFormat,
 				colorSpace: LinearSRGBColorSpace,
 				generateMipmaps: false,
@@ -49478,6 +49910,8 @@ class Renderer {
 		this._renderLists.dispose();
 		this._renderContexts.dispose();
 		this._textures.dispose();
+
+		if ( this._frameBufferTarget !== null ) this._frameBufferTarget.dispose();
 
 		Object.values( this.backend.timestampQueryPool ).forEach( queryPool => {
 
@@ -50614,7 +51048,7 @@ class UniformsGroup extends UniformBuffer {
 
 		const index = this.uniforms.indexOf( uniform );
 
-		if ( index !== -1 ) {
+		if ( index !== - 1 ) {
 
 			this.uniforms.splice( index, 1 );
 
@@ -52030,12 +52464,10 @@ ${ flowData.code }
 	getStructMembers( struct ) {
 
 		const snippets = [];
-		const members = struct.getMemberTypes();
 
-		for ( let i = 0; i < members.length; i ++ ) {
+		for ( const member of struct.members ) {
 
-			const member = members[ i ];
-			snippets.push( `layout( location = ${i} ) out ${ member} m${i};` );
+			snippets.push( `\t${ member.type } ${ member.name };` );
 
 		}
 
@@ -52054,25 +52486,37 @@ ${ flowData.code }
 		const snippets = [];
 		const structs = this.structs[ shaderStage ];
 
-		if ( structs.length === 0 ) {
+		const outputSnippet = [];
 
-			return 'layout( location = 0 ) out vec4 fragColor;\n';
+		for ( const struct of structs ) {
+
+			if ( struct.output ) {
+
+				for ( const member of struct.members ) {
+
+					outputSnippet.push( `layout( location = ${ member.index } ) out ${ member.type } ${ member.name };` );
+
+				}
+
+			} else {
+
+				let snippet = 'struct ' + struct.name + ' {\n';
+				snippet += this.getStructMembers( struct );
+				snippet += '\n};\n';
+
+				snippets.push( snippet );
+
+			}
 
 		}
 
-		for ( let index = 0, length = structs.length; index < length; index ++ ) {
+		if ( outputSnippet.length === 0 ) {
 
-			const struct = structs[ index ];
-
-			let snippet = '\n';
-			snippet += this.getStructMembers( struct );
-			snippet += '\n';
-
-			snippets.push( snippet );
+			outputSnippet.push( 'layout( location = 0 ) out vec4 fragColor;' );
 
 		}
 
-		return snippets.join( '\n\n' );
+		return '\n' + outputSnippet.join( '\n' ) + '\n\n' + snippets.join( '\n' );
 
 	}
 
@@ -52093,10 +52537,20 @@ ${ flowData.code }
 			for ( const varying of varyings ) {
 
 				if ( shaderStage === 'compute' ) varying.needsInterpolation = true;
-				const type = this.getType( varying.type );
-				const flat = type.includes( 'int' ) || type.includes( 'uv' ) || type.includes( 'iv' ) ? 'flat ' : '';
 
-				snippet += `${flat}${varying.needsInterpolation ? 'out' : '/*out*/'} ${type} ${varying.name};\n`;
+				const type = this.getType( varying.type );
+
+				if ( varying.needsInterpolation ) {
+
+					const flat = type.includes( 'int' ) || type.includes( 'uv' ) || type.includes( 'iv' ) ? 'flat ' : '';
+
+					snippet += `${flat} out ${type} ${varying.name};\n`;
+
+				} else {
+
+					snippet += `${type} ${varying.name};\n`; // generate variable (no varying required)
+
+				}
 
 			}
 
@@ -52490,6 +52944,7 @@ ${shaderData.varyings}
 // codes
 ${shaderData.codes}
 
+// structs
 ${shaderData.structs}
 
 void main() {
@@ -55296,7 +55751,8 @@ class WebGLTextureUtils {
 
 		if ( glFormat === gl.DEPTH_COMPONENT ) {
 
-			if ( glType === gl.UNSIGNED_INT ) internalFormat = gl.DEPTH24_STENCIL8;
+			if ( glType === gl.UNSIGNED_SHORT ) internalFormat = gl.DEPTH_COMPONENT16;
+			if ( glType === gl.UNSIGNED_INT ) internalFormat = gl.DEPTH_COMPONENT24;
 			if ( glType === gl.FLOAT ) internalFormat = gl.DEPTH_COMPONENT32F;
 
 		}
@@ -55952,13 +56408,15 @@ class WebGLTextureUtils {
 	 *
 	 * @param {WebGLRenderbuffer} renderbuffer - The render buffer.
 	 * @param {RenderContext} renderContext - The render context.
+	 * @param {Number} samples - The MSAA sample count.
+	 * @param {Boolean} [useMultisampledRTT=false] - Whether to use WEBGL_multisampled_render_to_texture or not.
 	 */
-	setupRenderBufferStorage( renderbuffer, renderContext ) {
+	setupRenderBufferStorage( renderbuffer, renderContext, samples, useMultisampledRTT = false ) {
 
 		const { gl } = this;
 		const renderTarget = renderContext.renderTarget;
 
-		const { samples, depthTexture, depthBuffer, stencilBuffer, width, height } = renderTarget;
+		const { depthTexture, depthBuffer, stencilBuffer, width, height } = renderTarget;
 
 		gl.bindRenderbuffer( gl.RENDERBUFFER, renderbuffer );
 
@@ -55966,7 +56424,13 @@ class WebGLTextureUtils {
 
 			let glInternalFormat = gl.DEPTH_COMPONENT24;
 
-			if ( samples > 0 ) {
+			if ( useMultisampledRTT === true ) {
+
+				const multisampledRTTExt = this.extensions.get( 'WEBGL_multisampled_render_to_texture' );
+
+				multisampledRTTExt.renderbufferStorageMultisampleEXT( gl.RENDERBUFFER, renderTarget.samples, glInternalFormat, width, height );
+
+			} else if ( samples > 0 ) {
 
 				if ( depthTexture && depthTexture.isDepthTexture ) {
 
@@ -57005,7 +57469,14 @@ class WebGLBackend extends Backend {
 
 		const parameters = this.parameters;
 
-		const glContext = ( parameters.context !== undefined ) ? parameters.context : renderer.domElement.getContext( 'webgl2' );
+		const contextAttributes = {
+			antialias: false, // MSAA is applied via a custom renderbuffer
+			alpha: true, // always true for performance reasons
+			depth: false, // depth and stencil are set to false since the engine always renders into a framebuffer target first
+			stencil: false
+		};
+
+		const glContext = ( parameters.context !== undefined ) ? parameters.context : renderer.domElement.getContext( 'webgl2', contextAttributes );
 
 	 	function onContextLost( event ) {
 
@@ -57139,6 +57610,14 @@ class WebGLBackend extends Backend {
 			this.set( renderTarget.depthTexture, { textureGPU: depthTexture, glInternalFormat: glInternalFormat } );
 
 			renderTarget.autoAllocateDepthBuffer = false;
+
+			// The multisample_render_to_texture extension doesn't work properly if there
+			// are midframe flushes and an external depth texture.
+			if ( this.extensions.has( 'WEBGL_multisampled_render_to_texture' ) === true ) {
+
+				console.warn( 'THREE.WebGLBackend: Render-to-texture extension was disabled because an external texture was provided' );
+
+			}
 
 		}
 
@@ -57317,7 +57796,7 @@ class WebGLBackend extends Backend {
 
 			const { samples } = renderContext.renderTarget;
 
-			if ( samples > 0 ) {
+			if ( samples > 0 && this._useMultisampledRTT( renderContext.renderTarget ) === false ) {
 
 				const fb = renderTargetContextData.framebuffers[ renderContext.getCacheKey() ];
 
@@ -58676,6 +59155,8 @@ class WebGLBackend extends Backend {
 
 			let msaaFb = renderTargetContextData.msaaFrameBuffer;
 			let depthRenderbuffer = renderTargetContextData.depthRenderbuffer;
+			const multisampledRTTExt = this.extensions.get( 'WEBGL_multisampled_render_to_texture' );
+			const useMultisampledRTT = this._useMultisampledRTT( renderTarget );
 
 			const cacheKey = getCacheKey( descriptor );
 
@@ -58738,11 +59219,17 @@ class WebGLBackend extends Backend {
 
 						} else {
 
-							gl.framebufferTexture2D( gl.FRAMEBUFFER, attachment, gl.TEXTURE_2D, textureData.textureGPU, 0 );
+							if ( useMultisampledRTT ) {
+
+								multisampledRTTExt.framebufferTexture2DMultisampleEXT( gl.FRAMEBUFFER, attachment, gl.TEXTURE_2D, textureData.textureGPU, 0, samples );
+
+							} else {
+
+								gl.framebufferTexture2D( gl.FRAMEBUFFER, attachment, gl.TEXTURE_2D, textureData.textureGPU, 0 );
+
+							}
 
 						}
-
-
 
 					}
 
@@ -58750,14 +59237,32 @@ class WebGLBackend extends Backend {
 
 				}
 
-				if ( descriptor.depthTexture !== null ) {
+				if ( renderTarget.isXRRenderTarget && renderTarget.autoAllocateDepthBuffer === true ) {
 
-					const textureData = this.get( descriptor.depthTexture );
-					const depthStyle = stencilBuffer ? gl.DEPTH_STENCIL_ATTACHMENT : gl.DEPTH_ATTACHMENT;
-					textureData.renderTarget = descriptor.renderTarget;
-					textureData.cacheKey = cacheKey; // required for copyTextureToTexture()
+					const renderbuffer = gl.createRenderbuffer();
+					this.textureUtils.setupRenderBufferStorage( renderbuffer, descriptor, 0, useMultisampledRTT );
+					renderTargetContextData.xrDepthRenderbuffer = renderbuffer;
 
-					gl.framebufferTexture2D( gl.FRAMEBUFFER, depthStyle, gl.TEXTURE_2D, textureData.textureGPU, 0 );
+				} else {
+
+					if ( descriptor.depthTexture !== null ) {
+
+						const textureData = this.get( descriptor.depthTexture );
+						const depthStyle = stencilBuffer ? gl.DEPTH_STENCIL_ATTACHMENT : gl.DEPTH_ATTACHMENT;
+						textureData.renderTarget = descriptor.renderTarget;
+						textureData.cacheKey = cacheKey; // required for copyTextureToTexture()
+
+						if ( useMultisampledRTT ) {
+
+							multisampledRTTExt.framebufferTexture2DMultisampleEXT( gl.FRAMEBUFFER, depthStyle, gl.TEXTURE_2D, textureData.textureGPU, 0, samples );
+
+						} else {
+
+							gl.framebufferTexture2D( gl.FRAMEBUFFER, depthStyle, gl.TEXTURE_2D, textureData.textureGPU, 0 );
+
+						}
+
+					}
 
 				}
 
@@ -58772,16 +59277,40 @@ class WebGLBackend extends Backend {
 					// rebind color
 
 					const textureData = this.get( descriptor.textures[ 0 ] );
-					gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, textureData.textureGPU, 0 );
+
+					if ( useMultisampledRTT ) {
+
+						multisampledRTTExt.framebufferTexture2DMultisampleEXT( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, textureData.textureGPU, 0, samples );
+
+					} else {
+
+						gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, textureData.textureGPU, 0 );
+
+					}
 
 					// rebind depth
 
-					if ( descriptor.depthTexture !== null ) {
+					const depthStyle = stencilBuffer ? gl.DEPTH_STENCIL_ATTACHMENT : gl.DEPTH_ATTACHMENT;
+
+					if ( renderTarget.autoAllocateDepthBuffer === true ) {
+
+						const renderbuffer = renderTargetContextData.xrDepthRenderbuffer;
+						gl.bindRenderbuffer( gl.RENDERBUFFER, renderbuffer );
+						gl.framebufferRenderbuffer( gl.FRAMEBUFFER, depthStyle, gl.RENDERBUFFER, renderbuffer );
+
+					} else {
 
 						const textureData = this.get( descriptor.depthTexture );
-						const depthStyle = stencilBuffer ? gl.DEPTH_STENCIL_ATTACHMENT : gl.DEPTH_ATTACHMENT;
 
-						gl.framebufferTexture2D( gl.FRAMEBUFFER, depthStyle, gl.TEXTURE_2D, textureData.textureGPU, 0 );
+						if ( useMultisampledRTT ) {
+
+							multisampledRTTExt.framebufferTexture2DMultisampleEXT( gl.FRAMEBUFFER, depthStyle, gl.TEXTURE_2D, textureData.textureGPU, 0, samples );
+
+						} else {
+
+							gl.framebufferTexture2D( gl.FRAMEBUFFER, depthStyle, gl.TEXTURE_2D, textureData.textureGPU, 0 );
+
+						}
 
 					}
 
@@ -58789,7 +59318,7 @@ class WebGLBackend extends Backend {
 
 			}
 
-			if ( samples > 0 ) {
+			if ( samples > 0 && useMultisampledRTT === false ) {
 
 				if ( msaaFb === undefined ) {
 
@@ -58833,7 +59362,7 @@ class WebGLBackend extends Backend {
 					if ( depthRenderbuffer === undefined ) {
 
 						depthRenderbuffer = gl.createRenderbuffer();
-						this.textureUtils.setupRenderBufferStorage( depthRenderbuffer, descriptor );
+						this.textureUtils.setupRenderBufferStorage( depthRenderbuffer, descriptor, samples );
 
 						renderTargetContextData.depthRenderbuffer = depthRenderbuffer;
 
@@ -59091,6 +59620,20 @@ class WebGLBackend extends Backend {
 			}
 
 		}
+
+	}
+
+	/**
+	 * Returns `true` if the `WEBGL_multisampled_render_to_texture` extension
+	 * should be used when MSAA is enabled.
+	 *
+	 * @private
+	 * @param {RenderTarget} renderTarget - The render target that should be multisampled.
+	 * @return {Boolean} Whether to use the `WEBGL_multisampled_render_to_texture` extension for MSAA or not.
+	 */
+	_useMultisampledRTT( renderTarget ) {
+
+		return renderTarget.samples > 0 && this.extensions.has( 'WEBGL_multisampled_render_to_texture' ) === true && renderTarget.autoAllocateDepthBuffer !== false;
 
 	}
 
@@ -62417,7 +62960,13 @@ class WGSLNodeBuilder extends NodeBuilder {
 
 			} else if ( type === 'buffer' || type === 'storageBuffer' || type === 'indirectStorageBuffer' ) {
 
-				return `NodeBuffer_${ node.id }.${name}`;
+				if ( this.isCustomStruct( node ) ) {
+
+					return name;
+
+				}
+
+				return name + '.value';
 
 			} else {
 
@@ -62558,7 +63107,7 @@ class WGSLNodeBuilder extends NodeBuilder {
 
 				if ( ( shaderStage === 'fragment' || shaderStage === 'compute' ) && this.isUnfilterable( node.value ) === false && texture.store === false ) {
 
-					const sampler = new NodeSampler( `${uniformNode.name}_sampler`, uniformNode.node, group );
+					const sampler = new NodeSampler( `${ uniformNode.name }_sampler`, uniformNode.node, group );
 					sampler.setVisibility( gpuShaderStageLib[ shaderStage ] );
 
 					bindings.push( sampler, texture );
@@ -62583,6 +63132,8 @@ class WGSLNodeBuilder extends NodeBuilder {
 				bindings.push( buffer );
 
 				uniformGPU = buffer;
+
+				uniformNode.name = name ? name : 'NodeBuffer_' + uniformNode.id;
 
 			} else {
 
@@ -63083,18 +63634,22 @@ ${ flowData.code }
 	getStructMembers( struct ) {
 
 		const snippets = [];
-		const members = struct.getMemberTypes();
 
-		for ( let i = 0; i < members.length; i ++ ) {
+		for ( const member of struct.members ) {
 
-			const member = members[ i ];
-			snippets.push( `\t@location( ${i} ) m${i} : ${ member }<f32>` );
+			const prefix = struct.output ? '@location( ' + member.index + ' ) ' : '';
+
+			let type = this.getType( member.type );
+
+			if ( member.atomic ) {
+
+				type = 'atomic< ' + type + ' >';
+
+			}
+
+			snippets.push( `\t${ prefix + member.name } : ${ type }` );
 
 		}
-
-		const builtins = this.getBuiltins( 'output' );
-
-		if ( builtins ) snippets.push( '\t' + builtins );
 
 		return snippets.join( ',\n' );
 
@@ -63108,26 +63663,29 @@ ${ flowData.code }
 	 */
 	getStructs( shaderStage ) {
 
-		const snippets = [];
+		let result = '';
+
 		const structs = this.structs[ shaderStage ];
 
-		for ( let index = 0, length = structs.length; index < length; index ++ ) {
+		if ( structs.length > 0 ) {
 
-			const struct = structs[ index ];
-			const name = struct.name;
+			const snippets = [];
 
-			let snippet = `\struct ${ name } {\n`;
-			snippet += this.getStructMembers( struct );
-			snippet += '\n}';
+			for ( const struct of structs ) {
 
+				let snippet = `struct ${ struct.name } {\n`;
+				snippet += this.getStructMembers( struct );
+				snippet += '\n};';
 
-			snippets.push( snippet );
+				snippets.push( snippet );
 
-			snippets.push( `\nvar<private> output : ${ name };\n\n` );
+			}
+
+			result = '\n' + snippets.join( '\n\n' ) + '\n';
 
 		}
 
-		return snippets.join( '\n\n' );
+		return result;
 
 	}
 
@@ -63240,6 +63798,12 @@ ${ flowData.code }
 
 	}
 
+	isCustomStruct( nodeUniform ) {
+
+		return nodeUniform.value.isStorageBufferAttribute && nodeUniform.node.structTypeNode !== null;
+
+	}
+
 	/**
 	 * Returns the uniforms of the given shader stage as a WGSL string.
 	 *
@@ -63321,7 +63885,7 @@ ${ flowData.code }
 
 					const componentPrefix = this.getComponentTypeFromTexture( texture ).charAt( 0 );
 
-					textureType = `texture${multisampled}_2d<${ componentPrefix }32>`;
+					textureType = `texture${ multisampled }_2d<${ componentPrefix }32>`;
 
 				}
 
@@ -63330,15 +63894,23 @@ ${ flowData.code }
 			} else if ( uniform.type === 'buffer' || uniform.type === 'storageBuffer' || uniform.type === 'indirectStorageBuffer' ) {
 
 				const bufferNode = uniform.node;
-				const bufferType = this.getType( bufferNode.bufferType );
+				const bufferType = this.getType( bufferNode.getNodeType( this ) );
 				const bufferCount = bufferNode.bufferCount;
-
 				const bufferCountSnippet = bufferCount > 0 && uniform.type === 'buffer' ? ', ' + bufferCount : '';
-				const bufferTypeSnippet = bufferNode.isAtomic ? `atomic<${bufferType}>` : `${bufferType}`;
-				const bufferSnippet = `\t${ uniform.name } : array< ${ bufferTypeSnippet }${ bufferCountSnippet } >\n`;
 				const bufferAccessMode = bufferNode.isStorageBufferNode ? `storage, ${ this.getStorageAccess( bufferNode, shaderStage ) }` : 'uniform';
 
-				bufferSnippets.push( this._getWGSLStructBinding( 'NodeBuffer_' + bufferNode.id, bufferSnippet, bufferAccessMode, uniformIndexes.binding ++, uniformIndexes.group ) );
+				if ( this.isCustomStruct( uniform ) ) {
+
+					bufferSnippets.push( `@binding( ${ uniformIndexes.binding ++ } ) @group( ${ uniformIndexes.group } ) var<${ bufferAccessMode }> ${ uniform.name } : ${ bufferType };` );
+
+				} else {
+
+					const bufferTypeSnippet = bufferNode.isAtomic ? `atomic<${ bufferType }>` : `${ bufferType }`;
+					const bufferSnippet = `\tvalue : array< ${ bufferTypeSnippet }${ bufferCountSnippet } >`;
+
+					bufferSnippets.push( this._getWGSLStructBinding( uniform.name, bufferSnippet, bufferAccessMode, uniformIndexes.binding ++, uniformIndexes.group ) );
+
+				}
 
 			} else {
 
@@ -63383,6 +63955,8 @@ ${ flowData.code }
 		this.sortBindingGroups();
 
 		for ( const shaderStage in shadersData ) {
+
+			this.shaderStage = shaderStage;
 
 			const stageData = shadersData[ shaderStage ];
 			stageData.uniforms = this.getUniforms( shaderStage );
@@ -63432,7 +64006,8 @@ ${ flowData.code }
 
 						if ( isOutputStruct ) {
 
-							stageData.returnType = outputNode.nodeType;
+							stageData.returnType = outputNode.getNodeType( this );
+							stageData.structs += 'var<private> output : ' + stageData.returnType + ';';
 
 							flow += `return ${ flowSlotData.result };`;
 
@@ -63446,7 +64021,7 @@ ${ flowData.code }
 
 							stageData.returnType = 'OutputStruct';
 							stageData.structs += this._getWGSLStruct( 'OutputStruct', structSnippet );
-							stageData.structs += '\nvar<private> output : OutputStruct;\n\n';
+							stageData.structs += '\nvar<private> output : OutputStruct;';
 
 							flow += `output.color = ${ flowSlotData.result };\n\n\treturn output;`;
 
@@ -63460,8 +64035,9 @@ ${ flowData.code }
 
 			stageData.flow = flow;
 
-
 		}
+
+		this.shaderStage = null;
 
 		if ( this.material !== null ) {
 
@@ -63600,6 +64176,9 @@ ${ flowData.code }
 // directives
 ${shaderData.directives}
 
+// structs
+${shaderData.structs}
+
 // uniforms
 ${shaderData.uniforms}
 
@@ -63639,11 +64218,11 @@ fn main( ${shaderData.attributes} ) -> VaryingsStruct {
 // global
 ${ diagnostics }
 
-// uniforms
-${shaderData.uniforms}
-
 // structs
 ${shaderData.structs}
+
+// uniforms
+${shaderData.uniforms}
 
 // codes
 ${shaderData.codes}
@@ -63681,6 +64260,9 @@ var<private> instanceIndex : u32;
 
 // locals
 ${shaderData.scopedArrays}
+
+// structs
+${shaderData.structs}
 
 // uniforms
 ${shaderData.uniforms}
@@ -63739,8 +64321,8 @@ ${vars}
 		const structSnippet = this._getWGSLStruct( structName, vars );
 
 		return `${structSnippet}
-@binding( ${binding} ) @group( ${group} )
-var<${access}> ${name} : ${structName};`;
+@binding( ${ binding } ) @group( ${ group } )
+var<${access}> ${ name } : ${ structName };`;
 
 	}
 
@@ -67940,6 +68522,8 @@ class WebGPURenderer extends Renderer {
 	 * @param {Number} [parameters.samples=0] - When `antialias` is `true`, `4` samples are used by default. Set this parameter to any other integer value than 0 to overwrite the default.
 	 * @param {Boolean} [parameters.forceWebGL=false] - If set to `true`, the renderer uses a WebGL 2 backend no matter if WebGPU is supported or not.
 	 * @param {Number} [parameters.outputType=undefined] - Texture type for output to canvas. By default, device's preferred format is used; other formats may incur overhead.
+	 * @param {Number} [parameters.colorBufferType=HalfFloatType] - Defines the type of color buffers. The default `HalfFloatType` is recommend for best
+	 * quality. To save memory and bandwidth, `UnsignedByteType` might be used. This will reduce rendering quality though.
 	 */
 	constructor( parameters = {} ) {
 
@@ -68829,4 +69413,4 @@ class ClippingGroup extends Group {
 
 }
 
-export { ACESFilmicToneMapping, AONode, AddEquation, AddOperation, AdditiveBlending, AgXToneMapping, AlphaFormat, AlwaysCompare, AlwaysDepth, AlwaysStencilFunc, AmbientLight, AmbientLightNode, AnalyticLightNode, ArrayCamera, ArrayElementNode, ArrayNode, AssignNode, AttributeNode, BackSide, BasicEnvironmentNode, BasicShadowMap, BatchNode, BoxGeometry, BufferAttribute, BufferAttributeNode, BufferGeometry, BufferNode, BumpMapNode, BundleGroup, BypassNode, ByteType, CacheNode, Camera, CineonToneMapping, ClampToEdgeWrapping, ClippingGroup, CodeNode, Color, ColorManagement, ColorSpaceNode, ComputeNode, ConstNode, ContextNode, ConvertNode, CubeCamera, CubeReflectionMapping, CubeRefractionMapping, CubeTexture, CubeTextureNode, CubeUVReflectionMapping, CullFaceBack, CullFaceFront, CullFaceNone, CustomBlending, DataArrayTexture, DataTexture, DecrementStencilOp, DecrementWrapStencilOp, DepthFormat, DepthStencilFormat, DepthTexture, DirectionalLight, DirectionalLightNode, DoubleSide, DstAlphaFactor, DstColorFactor, DynamicDrawUsage, EnvironmentNode, EqualCompare, EqualDepth, EqualStencilFunc, EquirectUVNode, EquirectangularReflectionMapping, EquirectangularRefractionMapping, Euler, EventDispatcher, ExpressionNode, FileLoader, Float16BufferAttribute, Float32BufferAttribute, FloatType, FramebufferTexture, FrontFacingNode, FrontSide, Frustum, FunctionCallNode, FunctionNode, FunctionOverloadingNode, GLSLNodeParser, GreaterCompare, GreaterDepth, GreaterEqualCompare, GreaterEqualDepth, GreaterEqualStencilFunc, GreaterStencilFunc, Group, HalfFloatType, HemisphereLight, HemisphereLightNode, IESSpotLight, IESSpotLightNode, IncrementStencilOp, IncrementWrapStencilOp, IndexNode, IndirectStorageBufferAttribute, InstanceNode, InstancedBufferAttribute, InstancedInterleavedBuffer, InstancedMeshNode, IntType, InterleavedBuffer, InterleavedBufferAttribute, InvertStencilOp, IrradianceNode, JoinNode, KeepStencilOp, LessCompare, LessDepth, LessEqualCompare, LessEqualDepth, LessEqualStencilFunc, LessStencilFunc, LightProbe, LightProbeNode, Lighting, LightingContextNode, LightingModel, LightingNode, LightsNode, Line2NodeMaterial, LineBasicMaterial, LineBasicNodeMaterial, LineDashedMaterial, LineDashedNodeMaterial, LinearFilter, LinearMipMapLinearFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearSRGBColorSpace, LinearToneMapping, Loader, LoopNode, LuminanceAlphaFormat, LuminanceFormat, MRTNode, MatcapUVNode, Material, MaterialLoader, MaterialNode, MaterialReferenceNode, MathUtils, Matrix2, Matrix3, Matrix4, MaxEquation, MaxMipLevelNode, Mesh, MeshBasicMaterial, MeshBasicNodeMaterial, MeshLambertMaterial, MeshLambertNodeMaterial, MeshMatcapMaterial, MeshMatcapNodeMaterial, MeshNormalMaterial, MeshNormalNodeMaterial, MeshPhongMaterial, MeshPhongNodeMaterial, MeshPhysicalMaterial, MeshPhysicalNodeMaterial, MeshSSSNodeMaterial, MeshStandardMaterial, MeshStandardNodeMaterial, MeshToonMaterial, MeshToonNodeMaterial, MinEquation, MirroredRepeatWrapping, MixOperation, ModelNode, MorphNode, MultiplyBlending, MultiplyOperation, NearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, NeutralToneMapping, NeverCompare, NeverDepth, NeverStencilFunc, NoBlending, NoColorSpace, NoToneMapping, Node, NodeAccess, NodeAttribute, NodeBuilder, NodeCache, NodeCode, NodeFrame, NodeFunctionInput, NodeLoader, NodeMaterial, NodeMaterialLoader, NodeMaterialObserver, NodeObjectLoader, NodeShaderStage, NodeType, NodeUniform, NodeUpdateType, NodeUtils, NodeVar, NodeVarying, NormalBlending, NormalMapNode, NotEqualCompare, NotEqualDepth, NotEqualStencilFunc, Object3D, Object3DNode, ObjectLoader, ObjectSpaceNormalMap, OneFactor, OneMinusDstAlphaFactor, OneMinusDstColorFactor, OneMinusSrcAlphaFactor, OneMinusSrcColorFactor, OrthographicCamera, OutputStructNode, PCFShadowMap, PMREMGenerator, PMREMNode, ParameterNode, PassNode, PerspectiveCamera, PhongLightingModel, PhysicalLightingModel, Plane, PointLight, PointLightNode, PointUVNode, PointsMaterial, PointsNodeMaterial, PostProcessing, PosterizeNode, PropertyNode, QuadMesh, RED_GREEN_RGTC2_Format, RED_RGTC1_Format, REVISION, RGBAFormat, RGBAIntegerFormat, RGBA_ASTC_10x10_Format, RGBA_ASTC_10x5_Format, RGBA_ASTC_10x6_Format, RGBA_ASTC_10x8_Format, RGBA_ASTC_12x10_Format, RGBA_ASTC_12x12_Format, RGBA_ASTC_4x4_Format, RGBA_ASTC_5x4_Format, RGBA_ASTC_5x5_Format, RGBA_ASTC_6x5_Format, RGBA_ASTC_6x6_Format, RGBA_ASTC_8x5_Format, RGBA_ASTC_8x6_Format, RGBA_ASTC_8x8_Format, RGBA_BPTC_Format, RGBA_ETC2_EAC_Format, RGBA_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGBA_S3TC_DXT1_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT5_Format, RGBFormat, RGBIntegerFormat, RGB_ETC1_Format, RGB_ETC2_Format, RGB_PVRTC_2BPPV1_Format, RGB_PVRTC_4BPPV1_Format, RGB_S3TC_DXT1_Format, RGFormat, RGIntegerFormat, RTTNode, RangeNode, RectAreaLight, RectAreaLightNode, RedFormat, RedIntegerFormat, ReferenceNode, ReflectorNode, ReinhardToneMapping, RemapNode, RenderOutputNode, RenderTarget, RendererReferenceNode, RendererUtils, RepeatWrapping, ReplaceStencilOp, ReverseSubtractEquation, RotateNode, SIGNED_RED_GREEN_RGTC2_Format, SIGNED_RED_RGTC1_Format, SRGBColorSpace, SRGBTransfer, Scene, SceneNode, ScreenNode, ScriptableNode, ScriptableValueNode, SetNode, ShadowBaseNode, ShadowMaterial, ShadowNode, ShadowNodeMaterial, ShortType, SkinningNode, SphereGeometry, SplitNode, SpotLight, SpotLightNode, SpriteMaterial, SpriteNodeMaterial, SpriteSheetUVNode, SrcAlphaFactor, SrcAlphaSaturateFactor, SrcColorFactor, StackNode, StaticDrawUsage, StorageArrayElementNode, StorageBufferAttribute, StorageBufferNode, StorageInstancedBufferAttribute, StorageTexture, StorageTextureNode, SubtractEquation, SubtractiveBlending, TSL, TangentSpaceNormalMap, TempNode, Texture, Texture3DNode, TextureNode, TextureSizeNode, ToneMappingNode, ToonOutlinePassNode, TriplanarTexturesNode, UVMapping, Uint16BufferAttribute, Uint32BufferAttribute, UniformArrayNode, UniformGroupNode, UniformNode, UnsignedByteType, UnsignedInt248Type, UnsignedInt5999Type, UnsignedIntType, UnsignedShort4444Type, UnsignedShort5551Type, UnsignedShortType, UserDataNode, VSMShadowMap, VarNode, VaryingNode, Vector2, Vector3, Vector4, VertexColorNode, ViewportDepthNode, ViewportDepthTextureNode, ViewportSharedTextureNode, ViewportTextureNode, VolumeNodeMaterial, WebGLCoordinateSystem, WebGLCubeRenderTarget, WebGPUCoordinateSystem, WebGPURenderer, WebXRController, ZeroFactor, ZeroStencilOp, createCanvasElement, defaultBuildStages, defaultShaderStages, shaderStages, vectorComponents };
+export { ACESFilmicToneMapping, AONode, AddEquation, AddOperation, AdditiveBlending, AgXToneMapping, AlphaFormat, AlwaysCompare, AlwaysDepth, AlwaysStencilFunc, AmbientLight, AmbientLightNode, AnalyticLightNode, ArrayCamera, ArrayElementNode, ArrayNode, AssignNode, AttributeNode, BackSide, BasicEnvironmentNode, BasicShadowMap, BatchNode, BoxGeometry, BufferAttribute, BufferAttributeNode, BufferGeometry, BufferNode, BumpMapNode, BundleGroup, BypassNode, ByteType, CacheNode, Camera, CineonToneMapping, ClampToEdgeWrapping, ClippingGroup, CodeNode, Color, ColorManagement, ColorSpaceNode, ComputeNode, ConstNode, ContextNode, ConvertNode, CubeCamera, CubeReflectionMapping, CubeRefractionMapping, CubeTexture, CubeTextureNode, CubeUVReflectionMapping, CullFaceBack, CullFaceFront, CullFaceNone, CustomBlending, DataArrayTexture, DataTexture, DecrementStencilOp, DecrementWrapStencilOp, DepthFormat, DepthStencilFormat, DepthTexture, DirectionalLight, DirectionalLightNode, DoubleSide, DstAlphaFactor, DstColorFactor, DynamicDrawUsage, EnvironmentNode, EqualCompare, EqualDepth, EqualStencilFunc, EquirectUVNode, EquirectangularReflectionMapping, EquirectangularRefractionMapping, Euler, EventDispatcher, ExpressionNode, FileLoader, Float16BufferAttribute, Float32BufferAttribute, FloatType, FramebufferTexture, FrontFacingNode, FrontSide, Frustum, FunctionCallNode, FunctionNode, FunctionOverloadingNode, GLSLNodeParser, GreaterCompare, GreaterDepth, GreaterEqualCompare, GreaterEqualDepth, GreaterEqualStencilFunc, GreaterStencilFunc, Group, HalfFloatType, HemisphereLight, HemisphereLightNode, IESSpotLight, IESSpotLightNode, IncrementStencilOp, IncrementWrapStencilOp, IndexNode, IndirectStorageBufferAttribute, InstanceNode, InstancedBufferAttribute, InstancedInterleavedBuffer, InstancedMeshNode, IntType, InterleavedBuffer, InterleavedBufferAttribute, InvertStencilOp, IrradianceNode, JoinNode, KeepStencilOp, LessCompare, LessDepth, LessEqualCompare, LessEqualDepth, LessEqualStencilFunc, LessStencilFunc, LightProbe, LightProbeNode, Lighting, LightingContextNode, LightingModel, LightingNode, LightsNode, Line2NodeMaterial, LineBasicMaterial, LineBasicNodeMaterial, LineDashedMaterial, LineDashedNodeMaterial, LinearFilter, LinearMipMapLinearFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearSRGBColorSpace, LinearToneMapping, Loader, LoopNode, LuminanceAlphaFormat, LuminanceFormat, MRTNode, MatcapUVNode, Material, MaterialLoader, MaterialNode, MaterialReferenceNode, MathUtils, Matrix2, Matrix3, Matrix4, MaxEquation, MaxMipLevelNode, MemberNode, Mesh, MeshBasicMaterial, MeshBasicNodeMaterial, MeshLambertMaterial, MeshLambertNodeMaterial, MeshMatcapMaterial, MeshMatcapNodeMaterial, MeshNormalMaterial, MeshNormalNodeMaterial, MeshPhongMaterial, MeshPhongNodeMaterial, MeshPhysicalMaterial, MeshPhysicalNodeMaterial, MeshSSSNodeMaterial, MeshStandardMaterial, MeshStandardNodeMaterial, MeshToonMaterial, MeshToonNodeMaterial, MinEquation, MirroredRepeatWrapping, MixOperation, ModelNode, MorphNode, MultiplyBlending, MultiplyOperation, NearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, NeutralToneMapping, NeverCompare, NeverDepth, NeverStencilFunc, NoBlending, NoColorSpace, NoToneMapping, Node, NodeAccess, NodeAttribute, NodeBuilder, NodeCache, NodeCode, NodeFrame, NodeFunctionInput, NodeLoader, NodeMaterial, NodeMaterialLoader, NodeMaterialObserver, NodeObjectLoader, NodeShaderStage, NodeType, NodeUniform, NodeUpdateType, NodeUtils, NodeVar, NodeVarying, NormalBlending, NormalMapNode, NotEqualCompare, NotEqualDepth, NotEqualStencilFunc, Object3D, Object3DNode, ObjectLoader, ObjectSpaceNormalMap, OneFactor, OneMinusDstAlphaFactor, OneMinusDstColorFactor, OneMinusSrcAlphaFactor, OneMinusSrcColorFactor, OrthographicCamera, OutputStructNode, PCFShadowMap, PMREMGenerator, PMREMNode, ParameterNode, PassNode, PerspectiveCamera, PhongLightingModel, PhysicalLightingModel, Plane, PointLight, PointLightNode, PointUVNode, PointsMaterial, PointsNodeMaterial, PostProcessing, PosterizeNode, PropertyNode, QuadMesh, RED_GREEN_RGTC2_Format, RED_RGTC1_Format, REVISION, RGBAFormat, RGBAIntegerFormat, RGBA_ASTC_10x10_Format, RGBA_ASTC_10x5_Format, RGBA_ASTC_10x6_Format, RGBA_ASTC_10x8_Format, RGBA_ASTC_12x10_Format, RGBA_ASTC_12x12_Format, RGBA_ASTC_4x4_Format, RGBA_ASTC_5x4_Format, RGBA_ASTC_5x5_Format, RGBA_ASTC_6x5_Format, RGBA_ASTC_6x6_Format, RGBA_ASTC_8x5_Format, RGBA_ASTC_8x6_Format, RGBA_ASTC_8x8_Format, RGBA_BPTC_Format, RGBA_ETC2_EAC_Format, RGBA_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGBA_S3TC_DXT1_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT5_Format, RGBFormat, RGBIntegerFormat, RGB_ETC1_Format, RGB_ETC2_Format, RGB_PVRTC_2BPPV1_Format, RGB_PVRTC_4BPPV1_Format, RGB_S3TC_DXT1_Format, RGFormat, RGIntegerFormat, RTTNode, RangeNode, RectAreaLight, RectAreaLightNode, RedFormat, RedIntegerFormat, ReferenceNode, ReflectorNode, ReinhardToneMapping, RemapNode, RenderOutputNode, RenderTarget, RendererReferenceNode, RendererUtils, RepeatWrapping, ReplaceStencilOp, ReverseSubtractEquation, RotateNode, SIGNED_RED_GREEN_RGTC2_Format, SIGNED_RED_RGTC1_Format, SRGBColorSpace, SRGBTransfer, Scene, SceneNode, ScreenNode, ScriptableNode, ScriptableValueNode, SetNode, ShadowBaseNode, ShadowMaterial, ShadowNode, ShadowNodeMaterial, ShortType, SkinningNode, SphereGeometry, SplitNode, SpotLight, SpotLightNode, SpriteMaterial, SpriteNodeMaterial, SpriteSheetUVNode, SrcAlphaFactor, SrcAlphaSaturateFactor, SrcColorFactor, StackNode, StaticDrawUsage, StorageArrayElementNode, StorageBufferAttribute, StorageBufferNode, StorageInstancedBufferAttribute, StorageTexture, StorageTextureNode, StructNode, StructTypeNode, SubtractEquation, SubtractiveBlending, TSL, TangentSpaceNormalMap, TempNode, Texture, Texture3DNode, TextureNode, TextureSizeNode, ToneMappingNode, ToonOutlinePassNode, TriplanarTexturesNode, UVMapping, Uint16BufferAttribute, Uint32BufferAttribute, UniformArrayNode, UniformGroupNode, UniformNode, UnsignedByteType, UnsignedInt248Type, UnsignedInt5999Type, UnsignedIntType, UnsignedShort4444Type, UnsignedShort5551Type, UnsignedShortType, UserDataNode, VSMShadowMap, VarNode, VaryingNode, Vector2, Vector3, Vector4, VertexColorNode, ViewportDepthNode, ViewportDepthTextureNode, ViewportSharedTextureNode, ViewportTextureNode, VolumeNodeMaterial, WebGLCoordinateSystem, WebGLCubeRenderTarget, WebGPUCoordinateSystem, WebGPURenderer, WebXRController, ZeroFactor, ZeroStencilOp, createCanvasElement, defaultBuildStages, defaultShaderStages, shaderStages, vectorComponents };
