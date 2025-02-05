@@ -652,7 +652,7 @@ import { Skins } from './utils/canvasSkin.js';
                     arguments: {},
                     dynamicArgsInfo: {
                         defaultValues: 'MODEL',
-                        dynamicArgTypes: ['s', 'n'],
+                        dynamicArgTypes: ['s'],
                         joinCh: ", ",
                         preText: (n) => (n === 0 ? this.formatMessage("RenderTheWorld.groupModel") : `${this.formatMessage("RenderTheWorld.groupModel")}[`),
                         endText: (n) => (n === 0 ? "" : "]"),
