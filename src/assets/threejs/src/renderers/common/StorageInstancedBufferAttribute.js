@@ -1,4 +1,4 @@
-import { InstancedBufferAttribute } from '../../core/InstancedBufferAttribute.js';
+import { InstancedBufferAttribute } from '../../core/InstancedBufferAttribute.js'
 
 /**
  * This special type of instanced buffer attribute is intended for compute shaders.
@@ -15,7 +15,6 @@ import { InstancedBufferAttribute } from '../../core/InstancedBufferAttribute.js
  * @augments InstancedBufferAttribute
  */
 class StorageInstancedBufferAttribute extends InstancedBufferAttribute {
-
 	/**
 	 * Constructs a new storage instanced buffer attribute.
 	 *
@@ -24,11 +23,12 @@ class StorageInstancedBufferAttribute extends InstancedBufferAttribute {
 	 * @param {Number} itemSize - The item size.
 	 * @param {TypedArray.constructor} [typeClass=Float32Array] - A typed array constructor.
 	 */
-	constructor( count, itemSize, typeClass = Float32Array ) {
+	constructor(count, itemSize, typeClass = Float32Array) {
+		const array = ArrayBuffer.isView(count)
+			? count
+			: new typeClass(count * itemSize)
 
-		const array = ArrayBuffer.isView( count ) ? count : new typeClass( count * itemSize );
-
-		super( array, itemSize );
+		super(array, itemSize)
 
 		/**
 		 * This flag can be used for type testing.
@@ -37,10 +37,8 @@ class StorageInstancedBufferAttribute extends InstancedBufferAttribute {
 		 * @readonly
 		 * @default true
 		 */
-		this.isStorageInstancedBufferAttribute = true;
-
+		this.isStorageInstancedBufferAttribute = true
 	}
-
 }
 
-export default StorageInstancedBufferAttribute;
+export default StorageInstancedBufferAttribute

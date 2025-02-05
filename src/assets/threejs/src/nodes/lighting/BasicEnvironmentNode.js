@@ -1,5 +1,5 @@
-import LightingNode from './LightingNode.js';
-import { cubeMapNode } from '../utils/CubeMapNode.js';
+import LightingNode from './LightingNode.js'
+import { cubeMapNode } from '../utils/CubeMapNode.js'
 
 /**
  * Represents a basic model for Image-based lighting (IBL). The environment
@@ -10,11 +10,8 @@ import { cubeMapNode } from '../utils/CubeMapNode.js';
  * @augments LightingNode
  */
 class BasicEnvironmentNode extends LightingNode {
-
 	static get type() {
-
-		return 'BasicEnvironmentNode';
-
+		return 'BasicEnvironmentNode'
 	}
 
 	/**
@@ -22,9 +19,8 @@ class BasicEnvironmentNode extends LightingNode {
 	 *
 	 * @param {Node} [envNode=null] - A node representing the environment.
 	 */
-	constructor( envNode = null ) {
-
-		super();
+	constructor(envNode = null) {
+		super()
 
 		/**
 		 * A node representing the environment.
@@ -32,18 +28,14 @@ class BasicEnvironmentNode extends LightingNode {
 		 * @type {Node}
 		 * @default null
 		 */
-		this.envNode = envNode;
-
+		this.envNode = envNode
 	}
 
-	setup( builder ) {
-
+	setup(builder) {
 		// environment property is used in the finish() method of BasicLightingModel
 
-		builder.context.environment = cubeMapNode( this.envNode );
-
+		builder.context.environment = cubeMapNode(this.envNode)
 	}
-
 }
 
-export default BasicEnvironmentNode;
+export default BasicEnvironmentNode

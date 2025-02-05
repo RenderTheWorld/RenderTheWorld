@@ -1,5 +1,10 @@
-import TempNode from '../core/TempNode.js';
-import { addMethodChaining, nodeArray, nodeObject, nodeObjects } from '../tsl/TSLCore.js';
+import TempNode from '../core/TempNode.js'
+import {
+	addMethodChaining,
+	nodeArray,
+	nodeObject,
+	nodeObjects
+} from '../tsl/TSLCore.js'
 
 /**
  * This module represents the call of a {@link FunctionNode}. Developers are usually not confronted
@@ -9,11 +14,8 @@ import { addMethodChaining, nodeArray, nodeObject, nodeObjects } from '../tsl/TS
  * @augments TempNode
  */
 class FunctionCallNode extends TempNode {
-
 	static get type() {
-
-		return 'FunctionCallNode';
-
+		return 'FunctionCallNode'
 	}
 
 	/**
@@ -22,9 +24,8 @@ class FunctionCallNode extends TempNode {
 	 * @param {FunctionNode?} functionNode - The function node.
 	 * @param {Object<String, Node>} [parameters={}] - The parameters for the function call.
 	 */
-	constructor( functionNode = null, parameters = {} ) {
-
-		super();
+	constructor(functionNode = null, parameters = {}) {
+		super()
 
 		/**
 		 * The function node.
@@ -32,7 +33,7 @@ class FunctionCallNode extends TempNode {
 		 * @type {FunctionNode}
 		 * @default null
 		 */
-		this.functionNode = functionNode;
+		this.functionNode = functionNode
 
 		/**
 		 * The parameters of the function call.
@@ -40,8 +41,7 @@ class FunctionCallNode extends TempNode {
 		 * @type {Object<String, Node>}
 		 * @default {}
 		 */
-		this.parameters = parameters;
-
+		this.parameters = parameters
 	}
 
 	/**
@@ -50,12 +50,10 @@ class FunctionCallNode extends TempNode {
 	 * @param {Object<String, Node>} parameters - The parameters to set.
 	 * @return {FunctionCallNode} A reference to this node.
 	 */
-	setParameters( parameters ) {
+	setParameters(parameters) {
+		this.parameters = parameters
 
-		this.parameters = parameters;
-
-		return this;
-
+		return this
 	}
 
 	/**
@@ -64,84 +62,66 @@ class FunctionCallNode extends TempNode {
 	 * @return {Object<String, Node>} The parameters of this node.
 	 */
 	getParameters() {
-
-		return this.parameters;
-
+		return this.parameters
 	}
 
-	getNodeType( builder ) {
-
-		return this.functionNode.getNodeType( builder );
-
+	getNodeType(builder) {
+		return this.functionNode.getNodeType(builder)
 	}
 
-	generate( builder ) {
+	generate(builder) {
+		const params = []
 
-		const params = [];
+		const functionNode = this.functionNode
 
-		const functionNode = this.functionNode;
+		const inputs = functionNode.getInputs(builder)
+		const parameters = this.parameters
 
-		const inputs = functionNode.getInputs( builder );
-		const parameters = this.parameters;
+		const generateInput = (node, inputNode) => {
+			const type = inputNode.type
+			const pointer = type === 'pointer'
 
-		const generateInput = ( node, inputNode ) => {
+			let output
 
-			const type = inputNode.type;
-			const pointer = type === 'pointer';
+			if (pointer) output = '&' + node.build(builder)
+			else output = node.build(builder, type)
 
-			let output;
-
-			if ( pointer ) output = '&' + node.build( builder );
-			else output = node.build( builder, type );
-
-			return output;
-
-		};
-
-		if ( Array.isArray( parameters ) ) {
-
-			for ( let i = 0; i < parameters.length; i ++ ) {
-
-				params.push( generateInput( parameters[ i ], inputs[ i ] ) );
-
-			}
-
-		} else {
-
-			for ( const inputNode of inputs ) {
-
-				const node = parameters[ inputNode.name ];
-
-				if ( node !== undefined ) {
-
-					params.push( generateInput( node, inputNode ) );
-
-				} else {
-
-					throw new Error( `FunctionCallNode: Input '${inputNode.name}' not found in FunctionNode.` );
-
-				}
-
-			}
-
+			return output
 		}
 
-		const functionName = functionNode.build( builder, 'property' );
+		if (Array.isArray(parameters)) {
+			for (let i = 0; i < parameters.length; i++) {
+				params.push(generateInput(parameters[i], inputs[i]))
+			}
+		} else {
+			for (const inputNode of inputs) {
+				const node = parameters[inputNode.name]
 
-		return `${functionName}( ${params.join( ', ' )} )`;
+				if (node !== undefined) {
+					params.push(generateInput(node, inputNode))
+				} else {
+					throw new Error(
+						`FunctionCallNode: Input '${inputNode.name}' not found in FunctionNode.`
+					)
+				}
+			}
+		}
 
+		const functionName = functionNode.build(builder, 'property')
+
+		return `${functionName}( ${params.join(', ')} )`
 	}
-
 }
 
-export default FunctionCallNode;
+export default FunctionCallNode
 
-export const call = ( func, ...params ) => {
+export const call = (func, ...params) => {
+	params =
+		params.length > 1 || (params[0] && params[0].isNode === true)
+			? nodeArray(params)
+			: nodeObjects(params[0])
 
-	params = params.length > 1 || ( params[ 0 ] && params[ 0 ].isNode === true ) ? nodeArray( params ) : nodeObjects( params[ 0 ] );
+	return nodeObject(new FunctionCallNode(nodeObject(func), params))
+}
 
-	return nodeObject( new FunctionCallNode( nodeObject( func ), params ) );
-
-};
-
-addMethodChaining( 'call', call );
+addMethodChaining('call', call)

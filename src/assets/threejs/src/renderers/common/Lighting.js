@@ -1,8 +1,8 @@
-import { LightsNode } from '../../nodes/Nodes.js';
-import ChainMap from './ChainMap.js';
+import { LightsNode } from '../../nodes/Nodes.js'
+import ChainMap from './ChainMap.js'
 
-const _defaultLights = /*@__PURE__*/ new LightsNode();
-const _chainKeys = [];
+const _defaultLights = /*@__PURE__*/ new LightsNode()
+const _chainKeys = []
 
 /**
  * This renderer module manages the lights nodes which are unique
@@ -15,14 +15,11 @@ const _chainKeys = [];
  * @augments ChainMap
  */
 class Lighting extends ChainMap {
-
 	/**
 	 * Constructs a lighting management component.
 	 */
 	constructor() {
-
-		super();
-
+		super()
 	}
 
 	/**
@@ -31,10 +28,8 @@ class Lighting extends ChainMap {
 	 * @param {Array<Light>} lights - The render object.
 	 * @return {LightsNode} The lights node.
 	 */
-	createNode( lights = [] ) {
-
-		return new LightsNode().setLights( lights );
-
+	createNode(lights = []) {
+		return new LightsNode().setLights(lights)
 	}
 
 	/**
@@ -44,30 +39,25 @@ class Lighting extends ChainMap {
 	 * @param {Camera} camera - The camera.
 	 * @return {LightsNode} The lights node.
 	 */
-	getNode( scene, camera ) {
-
+	getNode(scene, camera) {
 		// ignore post-processing
 
-		if ( scene.isQuadMesh ) return _defaultLights;
+		if (scene.isQuadMesh) return _defaultLights
 
-		_chainKeys[ 0 ] = scene;
-		_chainKeys[ 1 ] = camera;
+		_chainKeys[0] = scene
+		_chainKeys[1] = camera
 
-		let node = this.get( _chainKeys );
+		let node = this.get(_chainKeys)
 
-		if ( node === undefined ) {
-
-			node = this.createNode();
-			this.set( _chainKeys, node );
-
+		if (node === undefined) {
+			node = this.createNode()
+			this.set(_chainKeys, node)
 		}
 
-		_chainKeys.length = 0;
+		_chainKeys.length = 0
 
-		return node;
-
+		return node
 	}
-
 }
 
-export default Lighting;
+export default Lighting

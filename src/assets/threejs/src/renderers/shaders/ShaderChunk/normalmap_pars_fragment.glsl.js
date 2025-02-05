@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 #ifdef USE_NORMALMAP
 
 	uniform sampler2D normalMap;
@@ -40,4 +40,4 @@ export default /* glsl */`
 	}
 
 #endif
-`;
+`

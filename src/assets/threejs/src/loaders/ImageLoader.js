@@ -1,91 +1,72 @@
-import { Cache } from './Cache.js';
-import { Loader } from './Loader.js';
-import { createElementNS } from '../utils.js';
+import { Cache } from './Cache.js'
+import { Loader } from './Loader.js'
+import { createElementNS } from '../utils.js'
 
 class ImageLoader extends Loader {
-
-	constructor( manager ) {
-
-		super( manager );
-
+	constructor(manager) {
+		super(manager)
 	}
 
-	load( url, onLoad, onProgress, onError ) {
+	load(url, onLoad, onProgress, onError) {
+		if (this.path !== undefined) url = this.path + url
 
-		if ( this.path !== undefined ) url = this.path + url;
+		url = this.manager.resolveURL(url)
 
-		url = this.manager.resolveURL( url );
+		const scope = this
 
-		const scope = this;
+		const cached = Cache.get(url)
 
-		const cached = Cache.get( url );
+		if (cached !== undefined) {
+			scope.manager.itemStart(url)
 
-		if ( cached !== undefined ) {
+			setTimeout(function () {
+				if (onLoad) onLoad(cached)
 
-			scope.manager.itemStart( url );
+				scope.manager.itemEnd(url)
+			}, 0)
 
-			setTimeout( function () {
-
-				if ( onLoad ) onLoad( cached );
-
-				scope.manager.itemEnd( url );
-
-			}, 0 );
-
-			return cached;
-
+			return cached
 		}
 
-		const image = createElementNS( 'img' );
+		const image = createElementNS('img')
 
 		function onImageLoad() {
+			removeEventListeners()
 
-			removeEventListeners();
+			Cache.add(url, this)
 
-			Cache.add( url, this );
+			if (onLoad) onLoad(this)
 
-			if ( onLoad ) onLoad( this );
-
-			scope.manager.itemEnd( url );
-
+			scope.manager.itemEnd(url)
 		}
 
-		function onImageError( event ) {
+		function onImageError(event) {
+			removeEventListeners()
 
-			removeEventListeners();
+			if (onError) onError(event)
 
-			if ( onError ) onError( event );
-
-			scope.manager.itemError( url );
-			scope.manager.itemEnd( url );
-
+			scope.manager.itemError(url)
+			scope.manager.itemEnd(url)
 		}
 
 		function removeEventListeners() {
-
-			image.removeEventListener( 'load', onImageLoad, false );
-			image.removeEventListener( 'error', onImageError, false );
-
+			image.removeEventListener('load', onImageLoad, false)
+			image.removeEventListener('error', onImageError, false)
 		}
 
-		image.addEventListener( 'load', onImageLoad, false );
-		image.addEventListener( 'error', onImageError, false );
+		image.addEventListener('load', onImageLoad, false)
+		image.addEventListener('error', onImageError, false)
 
-		if ( url.slice( 0, 5 ) !== 'data:' ) {
-
-			if ( this.crossOrigin !== undefined ) image.crossOrigin = this.crossOrigin;
-
+		if (url.slice(0, 5) !== 'data:') {
+			if (this.crossOrigin !== undefined) image.crossOrigin = this.crossOrigin
 		}
 
-		scope.manager.itemStart( url );
+		scope.manager.itemStart(url)
 
-		image.src = url;
+		image.src = url
 
-		return image;
-
+		return image
 	}
-
 }
 
-
-export { ImageLoader };
+export { ImageLoader }

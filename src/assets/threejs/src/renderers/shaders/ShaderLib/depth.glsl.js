@@ -1,4 +1,4 @@
-export const vertex = /* glsl */`
+export const vertex = /* glsl */ `
 #include <common>
 #include <batching_pars_vertex>
 #include <uv_pars_vertex>
@@ -41,9 +41,9 @@ void main() {
 	vHighPrecisionZW = gl_Position.zw;
 
 }
-`;
+`
 
-export const fragment = /* glsl */`
+export const fragment = /* glsl */ `
 #if DEPTH_PACKING == 3200
 
 	uniform float opacity;
@@ -102,4 +102,4 @@ void main() {
 	#endif
 
 }
-`;
+`

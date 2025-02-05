@@ -1,119 +1,113 @@
-import { MultiplyOperation, TangentSpaceNormalMap } from '../constants.js';
-import { Material } from './Material.js';
-import { Vector2 } from '../math/Vector2.js';
-import { Color } from '../math/Color.js';
-import { Euler } from '../math/Euler.js';
+import { MultiplyOperation, TangentSpaceNormalMap } from '../constants.js'
+import { Material } from './Material.js'
+import { Vector2 } from '../math/Vector2.js'
+import { Color } from '../math/Color.js'
+import { Euler } from '../math/Euler.js'
 
 class MeshLambertMaterial extends Material {
+	constructor(parameters) {
+		super()
 
-	constructor( parameters ) {
+		this.isMeshLambertMaterial = true
 
-		super();
+		this.type = 'MeshLambertMaterial'
 
-		this.isMeshLambertMaterial = true;
+		this.color = new Color(0xffffff) // diffuse
 
-		this.type = 'MeshLambertMaterial';
+		this.map = null
 
-		this.color = new Color( 0xffffff ); // diffuse
+		this.lightMap = null
+		this.lightMapIntensity = 1.0
 
-		this.map = null;
+		this.aoMap = null
+		this.aoMapIntensity = 1.0
 
-		this.lightMap = null;
-		this.lightMapIntensity = 1.0;
+		this.emissive = new Color(0x000000)
+		this.emissiveIntensity = 1.0
+		this.emissiveMap = null
 
-		this.aoMap = null;
-		this.aoMapIntensity = 1.0;
+		this.bumpMap = null
+		this.bumpScale = 1
 
-		this.emissive = new Color( 0x000000 );
-		this.emissiveIntensity = 1.0;
-		this.emissiveMap = null;
+		this.normalMap = null
+		this.normalMapType = TangentSpaceNormalMap
+		this.normalScale = new Vector2(1, 1)
 
-		this.bumpMap = null;
-		this.bumpScale = 1;
+		this.displacementMap = null
+		this.displacementScale = 1
+		this.displacementBias = 0
 
-		this.normalMap = null;
-		this.normalMapType = TangentSpaceNormalMap;
-		this.normalScale = new Vector2( 1, 1 );
+		this.specularMap = null
 
-		this.displacementMap = null;
-		this.displacementScale = 1;
-		this.displacementBias = 0;
+		this.alphaMap = null
 
-		this.specularMap = null;
+		this.envMap = null
+		this.envMapRotation = new Euler()
+		this.combine = MultiplyOperation
+		this.reflectivity = 1
+		this.refractionRatio = 0.98
 
-		this.alphaMap = null;
+		this.wireframe = false
+		this.wireframeLinewidth = 1
+		this.wireframeLinecap = 'round'
+		this.wireframeLinejoin = 'round'
 
-		this.envMap = null;
-		this.envMapRotation = new Euler();
-		this.combine = MultiplyOperation;
-		this.reflectivity = 1;
-		this.refractionRatio = 0.98;
+		this.flatShading = false
 
-		this.wireframe = false;
-		this.wireframeLinewidth = 1;
-		this.wireframeLinecap = 'round';
-		this.wireframeLinejoin = 'round';
+		this.fog = true
 
-		this.flatShading = false;
-
-		this.fog = true;
-
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
-	copy( source ) {
+	copy(source) {
+		super.copy(source)
 
-		super.copy( source );
+		this.color.copy(source.color)
 
-		this.color.copy( source.color );
+		this.map = source.map
 
-		this.map = source.map;
+		this.lightMap = source.lightMap
+		this.lightMapIntensity = source.lightMapIntensity
 
-		this.lightMap = source.lightMap;
-		this.lightMapIntensity = source.lightMapIntensity;
+		this.aoMap = source.aoMap
+		this.aoMapIntensity = source.aoMapIntensity
 
-		this.aoMap = source.aoMap;
-		this.aoMapIntensity = source.aoMapIntensity;
+		this.emissive.copy(source.emissive)
+		this.emissiveMap = source.emissiveMap
+		this.emissiveIntensity = source.emissiveIntensity
 
-		this.emissive.copy( source.emissive );
-		this.emissiveMap = source.emissiveMap;
-		this.emissiveIntensity = source.emissiveIntensity;
+		this.bumpMap = source.bumpMap
+		this.bumpScale = source.bumpScale
 
-		this.bumpMap = source.bumpMap;
-		this.bumpScale = source.bumpScale;
+		this.normalMap = source.normalMap
+		this.normalMapType = source.normalMapType
+		this.normalScale.copy(source.normalScale)
 
-		this.normalMap = source.normalMap;
-		this.normalMapType = source.normalMapType;
-		this.normalScale.copy( source.normalScale );
+		this.displacementMap = source.displacementMap
+		this.displacementScale = source.displacementScale
+		this.displacementBias = source.displacementBias
 
-		this.displacementMap = source.displacementMap;
-		this.displacementScale = source.displacementScale;
-		this.displacementBias = source.displacementBias;
+		this.specularMap = source.specularMap
 
-		this.specularMap = source.specularMap;
+		this.alphaMap = source.alphaMap
 
-		this.alphaMap = source.alphaMap;
+		this.envMap = source.envMap
+		this.envMapRotation.copy(source.envMapRotation)
+		this.combine = source.combine
+		this.reflectivity = source.reflectivity
+		this.refractionRatio = source.refractionRatio
 
-		this.envMap = source.envMap;
-		this.envMapRotation.copy( source.envMapRotation );
-		this.combine = source.combine;
-		this.reflectivity = source.reflectivity;
-		this.refractionRatio = source.refractionRatio;
+		this.wireframe = source.wireframe
+		this.wireframeLinewidth = source.wireframeLinewidth
+		this.wireframeLinecap = source.wireframeLinecap
+		this.wireframeLinejoin = source.wireframeLinejoin
 
-		this.wireframe = source.wireframe;
-		this.wireframeLinewidth = source.wireframeLinewidth;
-		this.wireframeLinecap = source.wireframeLinecap;
-		this.wireframeLinejoin = source.wireframeLinejoin;
+		this.flatShading = source.flatShading
 
-		this.flatShading = source.flatShading;
+		this.fog = source.fog
 
-		this.fog = source.fog;
-
-		return this;
-
+		return this
 	}
-
 }
 
-export { MeshLambertMaterial };
+export { MeshLambertMaterial }

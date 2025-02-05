@@ -1,159 +1,151 @@
-import Node from '../core/Node.js';
-import { NodeUpdateType } from '../core/constants.js';
-import { float, nodeProxy, Fn, ivec2, int } from '../tsl/TSLBase.js';
-import { uniform } from '../core/UniformNode.js';
-import { reference } from './ReferenceNode.js';
-import { positionLocal } from './Position.js';
-import { normalLocal } from './Normal.js';
-import { textureLoad } from './TextureNode.js';
-import { instanceIndex, vertexIndex } from '../core/IndexNode.js';
-import { Loop } from '../utils/LoopNode.js';
+import Node from '../core/Node.js'
+import { NodeUpdateType } from '../core/constants.js'
+import { float, nodeProxy, Fn, ivec2, int } from '../tsl/TSLBase.js'
+import { uniform } from '../core/UniformNode.js'
+import { reference } from './ReferenceNode.js'
+import { positionLocal } from './Position.js'
+import { normalLocal } from './Normal.js'
+import { textureLoad } from './TextureNode.js'
+import { instanceIndex, vertexIndex } from '../core/IndexNode.js'
+import { Loop } from '../utils/LoopNode.js'
 
-import { DataArrayTexture } from '../../textures/DataArrayTexture.js';
-import { Vector2 } from '../../math/Vector2.js';
-import { Vector4 } from '../../math/Vector4.js';
-import { FloatType } from '../../constants.js';
+import { DataArrayTexture } from '../../textures/DataArrayTexture.js'
+import { Vector2 } from '../../math/Vector2.js'
+import { Vector4 } from '../../math/Vector4.js'
+import { FloatType } from '../../constants.js'
 
-const _morphTextures = /*@__PURE__*/ new WeakMap();
-const _morphVec4 = /*@__PURE__*/ new Vector4();
+const _morphTextures = /*@__PURE__*/ new WeakMap()
+const _morphVec4 = /*@__PURE__*/ new Vector4()
 
-const getMorph = /*@__PURE__*/ Fn( ( { bufferMap, influence, stride, width, depth, offset } ) => {
+const getMorph = /*@__PURE__*/ Fn(
+	({ bufferMap, influence, stride, width, depth, offset }) => {
+		const texelIndex = int(vertexIndex).mul(stride).add(offset)
 
-	const texelIndex = int( vertexIndex ).mul( stride ).add( offset );
+		const y = texelIndex.div(width)
+		const x = texelIndex.sub(y.mul(width))
 
-	const y = texelIndex.div( width );
-	const x = texelIndex.sub( y.mul( width ) );
+		const bufferAttrib = textureLoad(bufferMap, ivec2(x, y)).depth(depth)
 
-	const bufferAttrib = textureLoad( bufferMap, ivec2( x, y ) ).depth( depth );
+		return bufferAttrib.mul(influence)
+	}
+)
 
-	return bufferAttrib.mul( influence );
-
-} );
-
-function getEntry( geometry ) {
-
-	const hasMorphPosition = geometry.morphAttributes.position !== undefined;
-	const hasMorphNormals = geometry.morphAttributes.normal !== undefined;
-	const hasMorphColors = geometry.morphAttributes.color !== undefined;
+function getEntry(geometry) {
+	const hasMorphPosition = geometry.morphAttributes.position !== undefined
+	const hasMorphNormals = geometry.morphAttributes.normal !== undefined
+	const hasMorphColors = geometry.morphAttributes.color !== undefined
 
 	// instead of using attributes, the WebGL 2 code path encodes morph targets
 	// into an array of data textures. Each layer represents a single morph target.
 
-	const morphAttribute = geometry.morphAttributes.position || geometry.morphAttributes.normal || geometry.morphAttributes.color;
-	const morphTargetsCount = ( morphAttribute !== undefined ) ? morphAttribute.length : 0;
+	const morphAttribute =
+		geometry.morphAttributes.position ||
+		geometry.morphAttributes.normal ||
+		geometry.morphAttributes.color
+	const morphTargetsCount =
+		morphAttribute !== undefined ? morphAttribute.length : 0
 
-	let entry = _morphTextures.get( geometry );
+	let entry = _morphTextures.get(geometry)
 
-	if ( entry === undefined || entry.count !== morphTargetsCount ) {
+	if (entry === undefined || entry.count !== morphTargetsCount) {
+		if (entry !== undefined) entry.texture.dispose()
 
-		if ( entry !== undefined ) entry.texture.dispose();
+		const morphTargets = geometry.morphAttributes.position || []
+		const morphNormals = geometry.morphAttributes.normal || []
+		const morphColors = geometry.morphAttributes.color || []
 
-		const morphTargets = geometry.morphAttributes.position || [];
-		const morphNormals = geometry.morphAttributes.normal || [];
-		const morphColors = geometry.morphAttributes.color || [];
+		let vertexDataCount = 0
 
-		let vertexDataCount = 0;
+		if (hasMorphPosition === true) vertexDataCount = 1
+		if (hasMorphNormals === true) vertexDataCount = 2
+		if (hasMorphColors === true) vertexDataCount = 3
 
-		if ( hasMorphPosition === true ) vertexDataCount = 1;
-		if ( hasMorphNormals === true ) vertexDataCount = 2;
-		if ( hasMorphColors === true ) vertexDataCount = 3;
+		let width = geometry.attributes.position.count * vertexDataCount
+		let height = 1
 
-		let width = geometry.attributes.position.count * vertexDataCount;
-		let height = 1;
+		const maxTextureSize = 4096 // @TODO: Use 'capabilities.maxTextureSize'
 
-		const maxTextureSize = 4096; // @TODO: Use 'capabilities.maxTextureSize'
-
-		if ( width > maxTextureSize ) {
-
-			height = Math.ceil( width / maxTextureSize );
-			width = maxTextureSize;
-
+		if (width > maxTextureSize) {
+			height = Math.ceil(width / maxTextureSize)
+			width = maxTextureSize
 		}
 
-		const buffer = new Float32Array( width * height * 4 * morphTargetsCount );
+		const buffer = new Float32Array(width * height * 4 * morphTargetsCount)
 
-		const bufferTexture = new DataArrayTexture( buffer, width, height, morphTargetsCount );
-		bufferTexture.type = FloatType;
-		bufferTexture.needsUpdate = true;
+		const bufferTexture = new DataArrayTexture(
+			buffer,
+			width,
+			height,
+			morphTargetsCount
+		)
+		bufferTexture.type = FloatType
+		bufferTexture.needsUpdate = true
 
 		// fill buffer
 
-		const vertexDataStride = vertexDataCount * 4;
+		const vertexDataStride = vertexDataCount * 4
 
-		for ( let i = 0; i < morphTargetsCount; i ++ ) {
+		for (let i = 0; i < morphTargetsCount; i++) {
+			const morphTarget = morphTargets[i]
+			const morphNormal = morphNormals[i]
+			const morphColor = morphColors[i]
 
-			const morphTarget = morphTargets[ i ];
-			const morphNormal = morphNormals[ i ];
-			const morphColor = morphColors[ i ];
+			const offset = width * height * 4 * i
 
-			const offset = width * height * 4 * i;
+			for (let j = 0; j < morphTarget.count; j++) {
+				const stride = j * vertexDataStride
 
-			for ( let j = 0; j < morphTarget.count; j ++ ) {
+				if (hasMorphPosition === true) {
+					_morphVec4.fromBufferAttribute(morphTarget, j)
 
-				const stride = j * vertexDataStride;
-
-				if ( hasMorphPosition === true ) {
-
-					_morphVec4.fromBufferAttribute( morphTarget, j );
-
-					buffer[ offset + stride + 0 ] = _morphVec4.x;
-					buffer[ offset + stride + 1 ] = _morphVec4.y;
-					buffer[ offset + stride + 2 ] = _morphVec4.z;
-					buffer[ offset + stride + 3 ] = 0;
-
+					buffer[offset + stride + 0] = _morphVec4.x
+					buffer[offset + stride + 1] = _morphVec4.y
+					buffer[offset + stride + 2] = _morphVec4.z
+					buffer[offset + stride + 3] = 0
 				}
 
-				if ( hasMorphNormals === true ) {
+				if (hasMorphNormals === true) {
+					_morphVec4.fromBufferAttribute(morphNormal, j)
 
-					_morphVec4.fromBufferAttribute( morphNormal, j );
-
-					buffer[ offset + stride + 4 ] = _morphVec4.x;
-					buffer[ offset + stride + 5 ] = _morphVec4.y;
-					buffer[ offset + stride + 6 ] = _morphVec4.z;
-					buffer[ offset + stride + 7 ] = 0;
-
+					buffer[offset + stride + 4] = _morphVec4.x
+					buffer[offset + stride + 5] = _morphVec4.y
+					buffer[offset + stride + 6] = _morphVec4.z
+					buffer[offset + stride + 7] = 0
 				}
 
-				if ( hasMorphColors === true ) {
+				if (hasMorphColors === true) {
+					_morphVec4.fromBufferAttribute(morphColor, j)
 
-					_morphVec4.fromBufferAttribute( morphColor, j );
-
-					buffer[ offset + stride + 8 ] = _morphVec4.x;
-					buffer[ offset + stride + 9 ] = _morphVec4.y;
-					buffer[ offset + stride + 10 ] = _morphVec4.z;
-					buffer[ offset + stride + 11 ] = ( morphColor.itemSize === 4 ) ? _morphVec4.w : 1;
-
+					buffer[offset + stride + 8] = _morphVec4.x
+					buffer[offset + stride + 9] = _morphVec4.y
+					buffer[offset + stride + 10] = _morphVec4.z
+					buffer[offset + stride + 11] =
+						morphColor.itemSize === 4 ? _morphVec4.w : 1
 				}
-
 			}
-
 		}
 
 		entry = {
 			count: morphTargetsCount,
 			texture: bufferTexture,
 			stride: vertexDataCount,
-			size: new Vector2( width, height )
-		};
-
-		_morphTextures.set( geometry, entry );
-
-		function disposeTexture() {
-
-			bufferTexture.dispose();
-
-			_morphTextures.delete( geometry );
-
-			geometry.removeEventListener( 'dispose', disposeTexture );
-
+			size: new Vector2(width, height)
 		}
 
-		geometry.addEventListener( 'dispose', disposeTexture );
+		_morphTextures.set(geometry, entry)
 
+		function disposeTexture() {
+			bufferTexture.dispose()
+
+			_morphTextures.delete(geometry)
+
+			geometry.removeEventListener('dispose', disposeTexture)
+		}
+
+		geometry.addEventListener('dispose', disposeTexture)
 	}
 
-	return entry;
-
+	return entry
 }
 
 /**
@@ -163,11 +155,8 @@ function getEntry( geometry ) {
  * @augments Node
  */
 class MorphNode extends Node {
-
 	static get type() {
-
-		return 'MorphNode';
-
+		return 'MorphNode'
 	}
 
 	/**
@@ -175,31 +164,29 @@ class MorphNode extends Node {
 	 *
 	 * @param {Mesh} mesh - The mesh holding the morph targets.
 	 */
-	constructor( mesh ) {
-
-		super( 'void' );
+	constructor(mesh) {
+		super('void')
 
 		/**
 		 * The mesh holding the morph targets.
 		 *
 		 * @type {Mesh}
 		 */
-		this.mesh = mesh;
+		this.mesh = mesh
 
 		/**
 		 * A uniform node which represents the morph base influence value.
 		 *
 		 * @type {UniformNode<float>}
 		 */
-		this.morphBaseInfluence = uniform( 1 );
+		this.morphBaseInfluence = uniform(1)
 
 		/**
 		 * The update type overwritten since morph nodes are updated per object.
 		 *
 		 * @type {String}
 		 */
-		this.updateType = NodeUpdateType.OBJECT;
-
+		this.updateType = NodeUpdateType.OBJECT
 	}
 
 	/**
@@ -207,67 +194,77 @@ class MorphNode extends Node {
 	 *
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	setup( builder ) {
+	setup(builder) {
+		const { geometry } = builder
 
-		const { geometry } = builder;
+		const hasMorphPosition = geometry.morphAttributes.position !== undefined
+		const hasMorphNormals =
+			geometry.hasAttribute('normal') &&
+			geometry.morphAttributes.normal !== undefined
 
-		const hasMorphPosition = geometry.morphAttributes.position !== undefined;
-		const hasMorphNormals = geometry.hasAttribute( 'normal' ) && geometry.morphAttributes.normal !== undefined;
-
-		const morphAttribute = geometry.morphAttributes.position || geometry.morphAttributes.normal || geometry.morphAttributes.color;
-		const morphTargetsCount = ( morphAttribute !== undefined ) ? morphAttribute.length : 0;
+		const morphAttribute =
+			geometry.morphAttributes.position ||
+			geometry.morphAttributes.normal ||
+			geometry.morphAttributes.color
+		const morphTargetsCount =
+			morphAttribute !== undefined ? morphAttribute.length : 0
 
 		// nodes
 
-		const { texture: bufferMap, stride, size } = getEntry( geometry );
+		const { texture: bufferMap, stride, size } = getEntry(geometry)
 
-		if ( hasMorphPosition === true ) positionLocal.mulAssign( this.morphBaseInfluence );
-		if ( hasMorphNormals === true ) normalLocal.mulAssign( this.morphBaseInfluence );
+		if (hasMorphPosition === true)
+			positionLocal.mulAssign(this.morphBaseInfluence)
+		if (hasMorphNormals === true) normalLocal.mulAssign(this.morphBaseInfluence)
 
-		const width = int( size.width );
+		const width = int(size.width)
 
-		Loop( morphTargetsCount, ( { i } ) => {
+		Loop(morphTargetsCount, ({ i }) => {
+			const influence = float(0).toVar()
 
-			const influence = float( 0 ).toVar();
-
-			if ( this.mesh.count > 1 && ( this.mesh.morphTexture !== null && this.mesh.morphTexture !== undefined ) ) {
-
-				influence.assign( textureLoad( this.mesh.morphTexture, ivec2( int( i ).add( 1 ), int( instanceIndex ) ) ).r );
-
+			if (
+				this.mesh.count > 1 &&
+				this.mesh.morphTexture !== null &&
+				this.mesh.morphTexture !== undefined
+			) {
+				influence.assign(
+					textureLoad(
+						this.mesh.morphTexture,
+						ivec2(int(i).add(1), int(instanceIndex))
+					).r
+				)
 			} else {
-
-				influence.assign( reference( 'morphTargetInfluences', 'float' ).element( i ).toVar() );
-
+				influence.assign(
+					reference('morphTargetInfluences', 'float').element(i).toVar()
+				)
 			}
 
-			if ( hasMorphPosition === true ) {
-
-				positionLocal.addAssign( getMorph( {
-					bufferMap,
-					influence,
-					stride,
-					width,
-					depth: i,
-					offset: int( 0 )
-				} ) );
-
+			if (hasMorphPosition === true) {
+				positionLocal.addAssign(
+					getMorph({
+						bufferMap,
+						influence,
+						stride,
+						width,
+						depth: i,
+						offset: int(0)
+					})
+				)
 			}
 
-			if ( hasMorphNormals === true ) {
-
-				normalLocal.addAssign( getMorph( {
-					bufferMap,
-					influence,
-					stride,
-					width,
-					depth: i,
-					offset: int( 1 )
-				} ) );
-
+			if (hasMorphNormals === true) {
+				normalLocal.addAssign(
+					getMorph({
+						bufferMap,
+						influence,
+						stride,
+						width,
+						depth: i,
+						offset: int(1)
+					})
+				)
 			}
-
-		} );
-
+		})
 	}
 
 	/**
@@ -275,25 +272,19 @@ class MorphNode extends Node {
 	 *
 	 * @param {NodeFrame} frame - The current node frame.
 	 */
-	update( /*frame*/ ) {
+	update(/*frame*/) {
+		const morphBaseInfluence = this.morphBaseInfluence
 
-		const morphBaseInfluence = this.morphBaseInfluence;
-
-		if ( this.mesh.geometry.morphTargetsRelative ) {
-
-			morphBaseInfluence.value = 1;
-
+		if (this.mesh.geometry.morphTargetsRelative) {
+			morphBaseInfluence.value = 1
 		} else {
-
-			morphBaseInfluence.value = 1 - this.mesh.morphTargetInfluences.reduce( ( a, b ) => a + b, 0 );
-
+			morphBaseInfluence.value =
+				1 - this.mesh.morphTargetInfluences.reduce((a, b) => a + b, 0)
 		}
-
 	}
-
 }
 
-export default MorphNode;
+export default MorphNode
 
 /**
  * TSL function for creating a morph node.
@@ -302,4 +293,4 @@ export default MorphNode;
  * @param {Mesh} mesh - The mesh holding the morph targets.
  * @returns {MorphNode}
  */
-export const morphReference = /*@__PURE__*/ nodeProxy( MorphNode );
+export const morphReference = /*@__PURE__*/ nodeProxy(MorphNode)

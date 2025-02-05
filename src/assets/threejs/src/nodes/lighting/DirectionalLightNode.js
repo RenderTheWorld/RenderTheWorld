@@ -1,5 +1,5 @@
-import AnalyticLightNode from './AnalyticLightNode.js';
-import { lightTargetDirection } from '../accessors/Lights.js';
+import AnalyticLightNode from './AnalyticLightNode.js'
+import { lightTargetDirection } from '../accessors/Lights.js'
 
 /**
  * Module for representing directional lights as nodes.
@@ -7,11 +7,8 @@ import { lightTargetDirection } from '../accessors/Lights.js';
  * @augments AnalyticLightNode
  */
 class DirectionalLightNode extends AnalyticLightNode {
-
 	static get type() {
-
-		return 'DirectionalLightNode';
-
+		return 'DirectionalLightNode'
 	}
 
 	/**
@@ -19,30 +16,29 @@ class DirectionalLightNode extends AnalyticLightNode {
 	 *
 	 * @param {DirectionalLight?} [light=null] - The directional light source.
 	 */
-	constructor( light = null ) {
-
-		super( light );
-
+	constructor(light = null) {
+		super(light)
 	}
 
-	setup( builder ) {
+	setup(builder) {
+		super.setup(builder)
 
-		super.setup( builder );
+		const lightingModel = builder.context.lightingModel
 
-		const lightingModel = builder.context.lightingModel;
+		const lightColor = this.colorNode
+		const lightDirection = lightTargetDirection(this.light)
+		const reflectedLight = builder.context.reflectedLight
 
-		const lightColor = this.colorNode;
-		const lightDirection = lightTargetDirection( this.light );
-		const reflectedLight = builder.context.reflectedLight;
-
-		lightingModel.direct( {
-			lightDirection,
-			lightColor,
-			reflectedLight
-		}, builder.stack, builder );
-
+		lightingModel.direct(
+			{
+				lightDirection,
+				lightColor,
+				reflectedLight
+			},
+			builder.stack,
+			builder
+		)
 	}
-
 }
 
-export default DirectionalLightNode;
+export default DirectionalLightNode

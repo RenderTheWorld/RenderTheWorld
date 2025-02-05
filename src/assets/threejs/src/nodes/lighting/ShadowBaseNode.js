@@ -1,7 +1,7 @@
-import Node from '../core/Node.js';
-import { NodeUpdateType } from '../core/constants.js';
-import { vec3 } from '../tsl/TSLBase.js';
-import { positionWorld } from '../accessors/Position.js';
+import Node from '../core/Node.js'
+import { NodeUpdateType } from '../core/constants.js'
+import { vec3 } from '../tsl/TSLBase.js'
+import { positionWorld } from '../accessors/Position.js'
 
 /**
  * Base class for all shadow nodes.
@@ -13,11 +13,8 @@ import { positionWorld } from '../accessors/Position.js';
  * @augments Node
  */
 class ShadowBaseNode extends Node {
-
 	static get type() {
-
-		return 'ShadowBaseNode';
-
+		return 'ShadowBaseNode'
 	}
 
 	/**
@@ -25,16 +22,15 @@ class ShadowBaseNode extends Node {
 	 *
 	 * @param {Light} light - The shadow casting light.
 	 */
-	constructor( light ) {
-
-		super();
+	constructor(light) {
+		super()
 
 		/**
 		 * The shadow casting light.
 		 *
 		 * @type {Light}
 		 */
-		this.light = light;
+		this.light = light
 
 		/**
 		 * Overwritten since shadows are updated by default per render.
@@ -42,7 +38,7 @@ class ShadowBaseNode extends Node {
 		 * @type {String}
 		 * @default 'render'
 		 */
-		this.updateBeforeType = NodeUpdateType.RENDER;
+		this.updateBeforeType = NodeUpdateType.RENDER
 
 		/**
 		 * This flag can be used for type testing.
@@ -51,8 +47,7 @@ class ShadowBaseNode extends Node {
 		 * @readonly
 		 * @default true
 		 */
-		this.isShadowBaseNode = true;
-
+		this.isShadowBaseNode = true
 	}
 
 	/**
@@ -60,12 +55,10 @@ class ShadowBaseNode extends Node {
 	 *
 	 * @param {(NodeBuilder|{Material})} object - A configuration object that must at least hold a material reference.
 	 */
-	setupShadowPosition( { material } ) {
-
+	setupShadowPosition({ material }) {
 		// Use assign inside an Fn()
 
-		shadowPositionWorld.assign( material.shadowPositionNode || positionWorld );
-
+		shadowPositionWorld.assign(material.shadowPositionNode || positionWorld)
 	}
 
 	/**
@@ -74,11 +67,8 @@ class ShadowBaseNode extends Node {
 	 * to `false`.
 	 */
 	dispose() {
-
-		this.updateBeforeType = NodeUpdateType.NONE;
-
+		this.updateBeforeType = NodeUpdateType.NONE
 	}
-
 }
 
 /**
@@ -86,6 +76,8 @@ class ShadowBaseNode extends Node {
  *
  * @type {Node<vec3>}
  */
-export const shadowPositionWorld = /*@__PURE__*/ vec3().toVar( 'shadowPositionWorld' );
+export const shadowPositionWorld = /*@__PURE__*/ vec3().toVar(
+	'shadowPositionWorld'
+)
 
-export default ShadowBaseNode;
+export default ShadowBaseNode

@@ -1,4 +1,4 @@
-import { Group } from '../../objects/Group.js';
+import { Group } from '../../objects/Group.js'
 
 /**
  * A specialized group which enables applications access to the
@@ -13,13 +13,11 @@ import { Group } from '../../objects/Group.js';
  * @augments Group
  */
 class BundleGroup extends Group {
-
 	/**
 	 * Constructs a new bundle group.
 	 */
 	constructor() {
-
-		super();
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -28,7 +26,7 @@ class BundleGroup extends Group {
 		 * @readonly
 		 * @default true
 		 */
-		this.isBundleGroup = true;
+		this.isBundleGroup = true
 
 		/**
 		 * This property is only relevant for detecting types
@@ -39,7 +37,7 @@ class BundleGroup extends Group {
 		 * @readonly
 		 * @default 'BundleGroup'
 		 */
-		this.type = 'BundleGroup';
+		this.type = 'BundleGroup'
 
 		/**
 		 * Whether the bundle is static or not. When set to `true`, the structure
@@ -52,7 +50,7 @@ class BundleGroup extends Group {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.static = true;
+		this.static = true
 
 		/**
 		 * The bundle group's version.
@@ -61,8 +59,7 @@ class BundleGroup extends Group {
 		 * @readonly
 		 * @default 0
 		 */
-		this.version = 0;
-
+		this.version = 0
 	}
 
 	/**
@@ -72,12 +69,9 @@ class BundleGroup extends Group {
 	 * @default false
 	 * @param {Boolean} value
 	 */
-	set needsUpdate( value ) {
-
-		if ( value === true ) this.version ++;
-
+	set needsUpdate(value) {
+		if (value === true) this.version++
 	}
-
 }
 
-export default BundleGroup;
+export default BundleGroup

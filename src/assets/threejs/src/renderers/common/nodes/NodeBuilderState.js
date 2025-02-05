@@ -1,4 +1,4 @@
-import BindGroup from '../BindGroup.js';
+import BindGroup from '../BindGroup.js'
 
 /**
  * This module represents the state of a node builder after it was
@@ -10,7 +10,6 @@ import BindGroup from '../BindGroup.js';
  * @private
  */
 class NodeBuilderState {
-
 	/**
 	 * Constructs a new node builder state.
 	 *
@@ -25,28 +24,38 @@ class NodeBuilderState {
 	 * @param {NodeMaterialObserver} observer - A node material observer.
 	 * @param {Array<Object>} transforms - An array with transform attribute objects. Only relevant when using compute shaders with WebGL 2.
 	 */
-	constructor( vertexShader, fragmentShader, computeShader, nodeAttributes, bindings, updateNodes, updateBeforeNodes, updateAfterNodes, observer, transforms = [] ) {
-
+	constructor(
+		vertexShader,
+		fragmentShader,
+		computeShader,
+		nodeAttributes,
+		bindings,
+		updateNodes,
+		updateBeforeNodes,
+		updateAfterNodes,
+		observer,
+		transforms = []
+	) {
 		/**
 		 * The native vertex shader code.
 		 *
 		 * @type {String}
 		 */
-		this.vertexShader = vertexShader;
+		this.vertexShader = vertexShader
 
 		/**
 		 * The native fragment shader code.
 		 *
 		 * @type {String}
 		 */
-		this.fragmentShader = fragmentShader;
+		this.fragmentShader = fragmentShader
 
 		/**
 		 * The native compute shader code.
 		 *
 		 * @type {String}
 		 */
-		this.computeShader = computeShader;
+		this.computeShader = computeShader
 
 		/**
 		 * An array with transform attribute objects.
@@ -54,7 +63,7 @@ class NodeBuilderState {
 		 *
 		 * @type {Array<Object>}
 		 */
-		this.transforms = transforms;
+		this.transforms = transforms
 
 		/**
 		 * An array of node attributes representing
@@ -62,7 +71,7 @@ class NodeBuilderState {
 		 *
 		 * @type {Array<NodeAttribute>}
 		 */
-		this.nodeAttributes = nodeAttributes;
+		this.nodeAttributes = nodeAttributes
 
 		/**
 		 * An array of bind groups representing the uniform or storage
@@ -70,43 +79,42 @@ class NodeBuilderState {
 		 *
 		 * @type {Array<BindGroup>}
 		 */
-		this.bindings = bindings;
+		this.bindings = bindings
 
 		/**
 		 * An array of nodes that implement their `update()` method.
 		 *
 		 * @type {Array<Node>}
 		 */
-		this.updateNodes = updateNodes;
+		this.updateNodes = updateNodes
 
 		/**
 		 * An array of nodes that implement their `updateBefore()` method.
 		 *
 		 * @type {Array<Node>}
 		 */
-		this.updateBeforeNodes = updateBeforeNodes;
+		this.updateBeforeNodes = updateBeforeNodes
 
 		/**
 		 * An array of nodes that implement their `updateAfter()` method.
 		 *
 		 * @type {Array<Node>}
 		 */
-		this.updateAfterNodes = updateAfterNodes;
+		this.updateAfterNodes = updateAfterNodes
 
 		/**
 		 * A node material observer.
 		 *
 		 * @type {NodeMaterialObserver}
 		 */
-		this.observer = observer;
+		this.observer = observer
 
 		/**
 		 * How often this state is used by render objects.
 		 *
 		 * @type {Number}
 		 */
-		this.usedTimes = 0;
-
+		this.usedTimes = 0
 	}
 
 	/**
@@ -117,36 +125,30 @@ class NodeBuilderState {
 	 * @return {Array<BindGroup>} A array of bind groups.
 	 */
 	createBindings() {
+		const bindings = []
 
-		const bindings = [];
+		for (const instanceGroup of this.bindings) {
+			const shared = instanceGroup.bindings[0].groupNode.shared // All bindings in the group must have the same groupNode.
 
-		for ( const instanceGroup of this.bindings ) {
+			if (shared !== true) {
+				const bindingsGroup = new BindGroup(
+					instanceGroup.name,
+					[],
+					instanceGroup.index,
+					instanceGroup
+				)
+				bindings.push(bindingsGroup)
 
-			const shared = instanceGroup.bindings[ 0 ].groupNode.shared; // All bindings in the group must have the same groupNode.
-
-			if ( shared !== true ) {
-
-				const bindingsGroup = new BindGroup( instanceGroup.name, [], instanceGroup.index, instanceGroup );
-				bindings.push( bindingsGroup );
-
-				for ( const instanceBinding of instanceGroup.bindings ) {
-
-					bindingsGroup.bindings.push( instanceBinding.clone() );
-
+				for (const instanceBinding of instanceGroup.bindings) {
+					bindingsGroup.bindings.push(instanceBinding.clone())
 				}
-
 			} else {
-
-				bindings.push( instanceGroup );
-
+				bindings.push(instanceGroup)
 			}
-
 		}
 
-		return bindings;
-
+		return bindings
 	}
-
 }
 
-export default NodeBuilderState;
+export default NodeBuilderState

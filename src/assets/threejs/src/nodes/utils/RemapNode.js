@@ -1,5 +1,5 @@
-import Node from '../core/Node.js';
-import { float, addMethodChaining, nodeProxy } from '../tsl/TSLCore.js';
+import Node from '../core/Node.js'
+import { float, addMethodChaining, nodeProxy } from '../tsl/TSLCore.js'
 
 /**
  * This node allows to remap a node value from one range into another. E.g a value of
@@ -9,11 +9,8 @@ import { float, addMethodChaining, nodeProxy } from '../tsl/TSLCore.js';
  * @augments Node
  */
 class RemapNode extends Node {
-
 	static get type() {
-
-		return 'RemapNode';
-
+		return 'RemapNode'
 	}
 
 	/**
@@ -25,30 +22,35 @@ class RemapNode extends Node {
 	 * @param {Node} [outLowNode=float(0)] - The target lower bound of the range.
 	 * @param {Node} [outHighNode=float(1)] - The target upper bound of the range.
 	 */
-	constructor( node, inLowNode, inHighNode, outLowNode = float( 0 ), outHighNode = float( 1 ) ) {
-
-		super();
+	constructor(
+		node,
+		inLowNode,
+		inHighNode,
+		outLowNode = float(0),
+		outHighNode = float(1)
+	) {
+		super()
 
 		/**
 		 * The node that should be remapped.
 		 *
 		 * @type {Node}
 		 */
-		this.node = node;
+		this.node = node
 
 		/**
 		 * The source or current lower bound of the range.
 		 *
 		 * @type {Node}
 		 */
-		this.inLowNode = inLowNode;
+		this.inLowNode = inLowNode
 
 		/**
 		 * The source or current upper bound of the range.
 		 *
 		 * @type {Node}
 		 */
-		this.inHighNode = inHighNode;
+		this.inHighNode = inHighNode
 
 		/**
 		 * The target lower bound of the range.
@@ -56,7 +58,7 @@ class RemapNode extends Node {
 		 * @type {Node}
 		 * @default float(0)
 		 */
-		this.outLowNode = outLowNode;
+		this.outLowNode = outLowNode
 
 		/**
 		 * The target upper bound of the range.
@@ -64,7 +66,7 @@ class RemapNode extends Node {
 		 * @type {Node}
 		 * @default float(1)
 		 */
-		this.outHighNode = outHighNode;
+		this.outHighNode = outHighNode
 
 		/**
 		 * Whether the node value should be clamped before
@@ -73,25 +75,22 @@ class RemapNode extends Node {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.doClamp = true;
-
+		this.doClamp = true
 	}
 
 	setup() {
+		const { node, inLowNode, inHighNode, outLowNode, outHighNode, doClamp } =
+			this
 
-		const { node, inLowNode, inHighNode, outLowNode, outHighNode, doClamp } = this;
+		let t = node.sub(inLowNode).div(inHighNode.sub(inLowNode))
 
-		let t = node.sub( inLowNode ).div( inHighNode.sub( inLowNode ) );
+		if (doClamp === true) t = t.clamp()
 
-		if ( doClamp === true ) t = t.clamp();
-
-		return t.mul( outHighNode.sub( outLowNode ) ).add( outLowNode );
-
+		return t.mul(outHighNode.sub(outLowNode)).add(outLowNode)
 	}
-
 }
 
-export default RemapNode;
+export default RemapNode
 
 /**
  * TSL function for creating a remap node.
@@ -104,7 +103,9 @@ export default RemapNode;
  * @param {Node} [outHighNode=float(1)] - The target upper bound of the range.
  * @returns {RemapNode}
  */
-export const remap = /*@__PURE__*/ nodeProxy( RemapNode, null, null, { doClamp: false } );
+export const remap = /*@__PURE__*/ nodeProxy(RemapNode, null, null, {
+	doClamp: false
+})
 
 /**
  * TSL function for creating a remap node, but with enabled clamping.
@@ -117,7 +118,7 @@ export const remap = /*@__PURE__*/ nodeProxy( RemapNode, null, null, { doClamp: 
  * @param {Node} [outHighNode=float(1)] - The target upper bound of the range.
  * @returns {RemapNode}
  */
-export const remapClamp = /*@__PURE__*/ nodeProxy( RemapNode );
+export const remapClamp = /*@__PURE__*/ nodeProxy(RemapNode)
 
-addMethodChaining( 'remap', remap );
-addMethodChaining( 'remapClamp', remapClamp );
+addMethodChaining('remap', remap)
+addMethodChaining('remapClamp', remapClamp)

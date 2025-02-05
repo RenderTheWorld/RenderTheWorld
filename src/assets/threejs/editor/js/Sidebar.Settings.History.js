@@ -1,146 +1,118 @@
+import { UIButton, UIPanel, UIBreak, UIText } from './libs/ui.js'
+import { UIBoolean, UIOutliner } from './libs/ui.three.js'
 
-import { UIButton, UIPanel, UIBreak, UIText } from './libs/ui.js';
-import { UIBoolean, UIOutliner } from './libs/ui.three.js';
+function SidebarSettingsHistory(editor) {
+	const strings = editor.strings
+	const signals = editor.signals
+	const config = editor.config
+	const history = editor.history
 
-function SidebarSettingsHistory( editor ) {
+	const container = new UIPanel()
 
-	const strings = editor.strings;
-	const signals = editor.signals;
-	const config = editor.config;
-	const history = editor.history;
-
-	const container = new UIPanel();
-
-	container.add( new UIText( strings.getKey( 'sidebar/history' ).toUpperCase() ) );
+	container.add(new UIText(strings.getKey('sidebar/history').toUpperCase()))
 
 	//
 
-	const persistent = new UIBoolean( config.getKey( 'settings/history' ), strings.getKey( 'sidebar/history/persistent' ) );
-	persistent.setPosition( 'absolute' ).setRight( '8px' );
-	persistent.onChange( function () {
+	const persistent = new UIBoolean(
+		config.getKey('settings/history'),
+		strings.getKey('sidebar/history/persistent')
+	)
+	persistent.setPosition('absolute').setRight('8px')
+	persistent.onChange(function () {
+		const value = this.getValue()
 
-		const value = this.getValue();
+		config.setKey('settings/history', value)
 
-		config.setKey( 'settings/history', value );
+		if (value) {
+			alert(strings.getKey('prompt/history/preserve'))
 
-		if ( value ) {
-
-			alert( strings.getKey( 'prompt/history/preserve' ) );
-
-			const lastUndoCmd = history.undos[ history.undos.length - 1 ];
-			const lastUndoId = ( lastUndoCmd !== undefined ) ? lastUndoCmd.id : 0;
-			editor.history.enableSerialization( lastUndoId );
-
+			const lastUndoCmd = history.undos[history.undos.length - 1]
+			const lastUndoId = lastUndoCmd !== undefined ? lastUndoCmd.id : 0
+			editor.history.enableSerialization(lastUndoId)
 		} else {
-
-			signals.historyChanged.dispatch();
-
+			signals.historyChanged.dispatch()
 		}
+	})
+	container.add(persistent)
 
-	} );
-	container.add( persistent );
+	container.add(new UIBreak(), new UIBreak())
 
-	container.add( new UIBreak(), new UIBreak() );
+	let ignoreObjectSelectedSignal = false
 
-	let ignoreObjectSelectedSignal = false;
+	const outliner = new UIOutliner(editor)
+	outliner.onChange(function () {
+		ignoreObjectSelectedSignal = true
 
-	const outliner = new UIOutliner( editor );
-	outliner.onChange( function () {
+		editor.history.goToState(parseInt(outliner.getValue()))
 
-		ignoreObjectSelectedSignal = true;
+		ignoreObjectSelectedSignal = false
+	})
+	container.add(outliner)
 
-		editor.history.goToState( parseInt( outliner.getValue() ) );
-
-		ignoreObjectSelectedSignal = false;
-
-	} );
-	container.add( outliner );
-
-	container.add( new UIBreak() );
+	container.add(new UIBreak())
 
 	// Clear History
 
-	const option = new UIButton( strings.getKey( 'sidebar/history/clear' ) );
-	option.onClick( function () {
-
-		if ( confirm( strings.getKey( 'prompt/history/clear' ) ) ) {
-
-			editor.history.clear();
-
+	const option = new UIButton(strings.getKey('sidebar/history/clear'))
+	option.onClick(function () {
+		if (confirm(strings.getKey('prompt/history/clear'))) {
+			editor.history.clear()
 		}
-
-	} );
-	container.add( option );
+	})
+	container.add(option)
 
 	//
 
 	const refreshUI = function () {
+		const options = []
 
-		const options = [];
+		function buildOption(object) {
+			const option = document.createElement('div')
+			option.value = object.id
 
-		function buildOption( object ) {
-
-			const option = document.createElement( 'div' );
-			option.value = object.id;
-
-			return option;
-
+			return option
 		}
 
-		( function addObjects( objects ) {
+		;(function addObjects(objects) {
+			for (let i = 0, l = objects.length; i < l; i++) {
+				const object = objects[i]
 
-			for ( let i = 0, l = objects.length; i < l; i ++ ) {
+				const option = buildOption(object)
+				option.innerHTML = '&nbsp;' + object.name
 
-				const object = objects[ i ];
-
-				const option = buildOption( object );
-				option.innerHTML = '&nbsp;' + object.name;
-
-				options.push( option );
-
+				options.push(option)
 			}
+		})(history.undos)
 
-		} )( history.undos );
+		;(function addObjects(objects) {
+			for (let i = objects.length - 1; i >= 0; i--) {
+				const object = objects[i]
 
+				const option = buildOption(object)
+				option.innerHTML = '&nbsp;' + object.name
+				option.style.opacity = 0.3
 
-		( function addObjects( objects ) {
-
-			for ( let i = objects.length - 1; i >= 0; i -- ) {
-
-				const object = objects[ i ];
-
-				const option = buildOption( object );
-				option.innerHTML = '&nbsp;' + object.name;
-				option.style.opacity = 0.3;
-
-				options.push( option );
-
+				options.push(option)
 			}
+		})(history.redos)
 
-		} )( history.redos );
+		outliner.setOptions(options)
+	}
 
-		outliner.setOptions( options );
-
-	};
-
-	refreshUI();
+	refreshUI()
 
 	// events
 
-	signals.editorCleared.add( refreshUI );
+	signals.editorCleared.add(refreshUI)
 
-	signals.historyChanged.add( refreshUI );
-	signals.historyChanged.add( function ( cmd ) {
+	signals.historyChanged.add(refreshUI)
+	signals.historyChanged.add(function (cmd) {
+		if (ignoreObjectSelectedSignal === true) return
 
-		if ( ignoreObjectSelectedSignal === true ) return;
+		outliner.setValue(cmd !== undefined ? cmd.id : null)
+	})
 
-		outliner.setValue( cmd !== undefined ? cmd.id : null );
-
-	} );
-
-
-	return container;
-
+	return container
 }
 
-export { SidebarSettingsHistory };
+export { SidebarSettingsHistory }

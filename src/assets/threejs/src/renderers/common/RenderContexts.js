@@ -1,11 +1,11 @@
-import ChainMap from './ChainMap.js';
-import RenderContext from './RenderContext.js';
-import { Scene } from '../../scenes/Scene.js';
-import { Camera } from '../../cameras/Camera.js';
+import ChainMap from './ChainMap.js'
+import RenderContext from './RenderContext.js'
+import { Scene } from '../../scenes/Scene.js'
+import { Camera } from '../../cameras/Camera.js'
 
-const _chainKeys = [];
-const _defaultScene = /*@__PURE__*/ new Scene();
-const _defaultCamera = /*@__PURE__*/ new Camera();
+const _chainKeys = []
+const _defaultScene = /*@__PURE__*/ new Scene()
+const _defaultCamera = /*@__PURE__*/ new Camera()
 
 /**
  * This module manages the render contexts of the renderer.
@@ -13,20 +13,17 @@ const _defaultCamera = /*@__PURE__*/ new Camera();
  * @private
  */
 class RenderContexts {
-
 	/**
 	 * Constructs a new render context management component.
 	 */
 	constructor() {
-
 		/**
 		 * A dictionary that manages render contexts in chain maps
 		 * for each attachment state.
 		 *
 		 * @type {Object<String,ChainMap>}
 		 */
-		this.chainMaps = {};
-
+		this.chainMaps = {}
 	}
 
 	/**
@@ -37,44 +34,38 @@ class RenderContexts {
 	 * @param {RenderTarget?} [renderTarget=null] - The active render target.
 	 * @return {RenderContext} The render context.
 	 */
-	get( scene, camera, renderTarget = null ) {
+	get(scene, camera, renderTarget = null) {
+		_chainKeys[0] = scene
+		_chainKeys[1] = camera
 
-		_chainKeys[ 0 ] = scene;
-		_chainKeys[ 1 ] = camera;
+		let attachmentState
 
-		let attachmentState;
-
-		if ( renderTarget === null ) {
-
-			attachmentState = 'default';
-
+		if (renderTarget === null) {
+			attachmentState = 'default'
 		} else {
+			const format = renderTarget.texture.format
+			const count = renderTarget.textures.length
 
-			const format = renderTarget.texture.format;
-			const count = renderTarget.textures.length;
-
-			attachmentState = `${ count }:${ format }:${ renderTarget.samples }:${ renderTarget.depthBuffer }:${ renderTarget.stencilBuffer }`;
-
+			attachmentState = `${count}:${format}:${renderTarget.samples}:${renderTarget.depthBuffer}:${renderTarget.stencilBuffer}`
 		}
 
-		const chainMap = this._getChainMap( attachmentState );
+		const chainMap = this._getChainMap(attachmentState)
 
-		let renderState = chainMap.get( _chainKeys );
+		let renderState = chainMap.get(_chainKeys)
 
-		if ( renderState === undefined ) {
+		if (renderState === undefined) {
+			renderState = new RenderContext()
 
-			renderState = new RenderContext();
-
-			chainMap.set( _chainKeys, renderState );
-
+			chainMap.set(_chainKeys, renderState)
 		}
 
-		_chainKeys.length = 0;
+		_chainKeys.length = 0
 
-		if ( renderTarget !== null ) renderState.sampleCount = renderTarget.samples === 0 ? 1 : renderTarget.samples;
+		if (renderTarget !== null)
+			renderState.sampleCount =
+				renderTarget.samples === 0 ? 1 : renderTarget.samples
 
-		return renderState;
-
+		return renderState
 	}
 
 	/**
@@ -83,10 +74,8 @@ class RenderContexts {
 	 * @param {RenderTarget?} [renderTarget=null] - The active render target.
 	 * @return {RenderContext} The render context.
 	 */
-	getForClear( renderTarget = null ) {
-
-		return this.get( _defaultScene, _defaultCamera, renderTarget );
-
+	getForClear(renderTarget = null) {
+		return this.get(_defaultScene, _defaultCamera, renderTarget)
 	}
 
 	/**
@@ -96,21 +85,19 @@ class RenderContexts {
 	 * @param {String} attachmentState - The attachment state.
 	 * @return {ChainMap} The chain map.
 	 */
-	_getChainMap( attachmentState ) {
-
-		return this.chainMaps[ attachmentState ] || ( this.chainMaps[ attachmentState ] = new ChainMap() );
-
+	_getChainMap(attachmentState) {
+		return (
+			this.chainMaps[attachmentState] ||
+			(this.chainMaps[attachmentState] = new ChainMap())
+		)
 	}
 
 	/**
 	 * Frees internal resources.
 	 */
 	dispose() {
-
-		this.chainMaps = {};
-
+		this.chainMaps = {}
 	}
-
 }
 
-export default RenderContexts;
+export default RenderContexts

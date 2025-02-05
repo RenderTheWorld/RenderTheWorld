@@ -1,5 +1,5 @@
-import Node from './Node.js';
-import { nodeProxy } from '../tsl/TSLBase.js';
+import Node from './Node.js'
+import { nodeProxy } from '../tsl/TSLBase.js'
 
 /**
  * This node can be used to define multiple outputs in a shader programs.
@@ -7,11 +7,8 @@ import { nodeProxy } from '../tsl/TSLBase.js';
  * @augments Node
  */
 class OutputStructNode extends Node {
-
 	static get type() {
-
-		return 'OutputStructNode';
-
+		return 'OutputStructNode'
 	}
 
 	/**
@@ -20,16 +17,15 @@ class OutputStructNode extends Node {
 	 *
 	 * @param {...Node} members - A parameter list of nodes.
 	 */
-	constructor( ...members ) {
-
-		super();
+	constructor(...members) {
+		super()
 
 		/**
 		 * An array of nodes which defines the output.
 		 *
 		 * @type {Array<Node>}
 		 */
-		this.members = members;
+		this.members = members
 
 		/**
 		 * This flag can be used for type testing.
@@ -38,59 +34,50 @@ class OutputStructNode extends Node {
 		 * @readonly
 		 * @default true
 		 */
-		this.isOutputStructNode = true;
-
+		this.isOutputStructNode = true
 	}
 
-	getNodeType( builder ) {
+	getNodeType(builder) {
+		const properties = builder.getNodeProperties(this)
 
-		const properties = builder.getNodeProperties( this );
+		if (properties.membersLayout === undefined) {
+			const members = this.members
+			const membersLayout = []
 
-		if ( properties.membersLayout === undefined ) {
+			for (let i = 0; i < members.length; i++) {
+				const name = 'm' + i
+				const type = members[i].getNodeType(builder)
 
-			const members = this.members;
-			const membersLayout = [];
-
-			for ( let i = 0; i < members.length; i ++ ) {
-
-				const name = 'm' + i;
-				const type = members[ i ].getNodeType( builder );
-
-				membersLayout.push( { name, type, index: i } );
-
+				membersLayout.push({ name, type, index: i })
 			}
 
-			properties.membersLayout = membersLayout;
-			properties.structType = builder.getOutputStructTypeFromNode( this, properties.membersLayout );
-
+			properties.membersLayout = membersLayout
+			properties.structType = builder.getOutputStructTypeFromNode(
+				this,
+				properties.membersLayout
+			)
 		}
 
-		return properties.structType.name;
-
+		return properties.structType.name
 	}
 
-	generate( builder ) {
+	generate(builder) {
+		const propertyName = builder.getOutputStructName()
+		const members = this.members
 
-		const propertyName = builder.getOutputStructName();
-		const members = this.members;
+		const structPrefix = propertyName !== '' ? propertyName + '.' : ''
 
-		const structPrefix = propertyName !== '' ? propertyName + '.' : '';
+		for (let i = 0; i < members.length; i++) {
+			const snippet = members[i].build(builder)
 
-		for ( let i = 0; i < members.length; i ++ ) {
-
-			const snippet = members[ i ].build( builder );
-
-			builder.addLineFlowCode( `${ structPrefix }m${ i } = ${ snippet }`, this );
-
+			builder.addLineFlowCode(`${structPrefix}m${i} = ${snippet}`, this)
 		}
 
-		return propertyName;
-
+		return propertyName
 	}
-
 }
 
-export default OutputStructNode;
+export default OutputStructNode
 
 /**
  * TSL function for creating an output struct node.
@@ -99,4 +86,4 @@ export default OutputStructNode;
  * @param {...Node} members - A parameter list of nodes.
  * @returns {OutputStructNode}
  */
-export const outputStruct = /*@__PURE__*/ nodeProxy( OutputStructNode );
+export const outputStruct = /*@__PURE__*/ nodeProxy(OutputStructNode)

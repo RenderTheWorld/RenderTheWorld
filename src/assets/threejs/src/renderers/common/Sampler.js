@@ -1,4 +1,4 @@
-import Binding from './Binding.js';
+import Binding from './Binding.js'
 
 /**
  * Represents a sampler binding type.
@@ -7,30 +7,28 @@ import Binding from './Binding.js';
  * @augments Binding
  */
 class Sampler extends Binding {
-
 	/**
 	 * Constructs a new sampler.
 	 *
 	 * @param {String} name - The samplers's name.
 	 * @param {Texture?} texture - The texture this binding is referring to.
 	 */
-	constructor( name, texture ) {
-
-		super( name );
+	constructor(name, texture) {
+		super(name)
 
 		/**
 		 * The texture the sampler is referring to.
 		 *
 		 * @type {Texture?}
 		 */
-		this.texture = texture;
+		this.texture = texture
 
 		/**
 		 * The binding's version.
 		 *
 		 * @type {Number}
 		 */
-		this.version = texture ? texture.version : 0;
+		this.version = texture ? texture.version : 0
 
 		/**
 		 * This flag can be used for type testing.
@@ -39,10 +37,8 @@ class Sampler extends Binding {
 		 * @readonly
 		 * @default true
 		 */
-		this.isSampler = true;
-
+		this.isSampler = true
 	}
-
 }
 
-export default Sampler;
+export default Sampler

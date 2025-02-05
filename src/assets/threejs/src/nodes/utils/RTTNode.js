@@ -1,15 +1,15 @@
-import { nodeObject } from '../tsl/TSLCore.js';
-import TextureNode from '../accessors/TextureNode.js';
-import { NodeUpdateType } from '../core/constants.js';
-import { uv } from '../accessors/UV.js';
-import NodeMaterial from '../../materials/nodes/NodeMaterial.js';
-import QuadMesh from '../../renderers/common/QuadMesh.js';
+import { nodeObject } from '../tsl/TSLCore.js'
+import TextureNode from '../accessors/TextureNode.js'
+import { NodeUpdateType } from '../core/constants.js'
+import { uv } from '../accessors/UV.js'
+import NodeMaterial from '../../materials/nodes/NodeMaterial.js'
+import QuadMesh from '../../renderers/common/QuadMesh.js'
 
-import { RenderTarget } from '../../core/RenderTarget.js';
-import { Vector2 } from '../../math/Vector2.js';
-import { HalfFloatType } from '../../constants.js';
+import { RenderTarget } from '../../core/RenderTarget.js'
+import { Vector2 } from '../../math/Vector2.js'
+import { HalfFloatType } from '../../constants.js'
 
-const _size = /*@__PURE__*/ new Vector2();
+const _size = /*@__PURE__*/ new Vector2()
 
 /**
  * `RTTNode` takes another node and uses it with a `QuadMesh` to render into a texture (RTT).
@@ -20,11 +20,8 @@ const _size = /*@__PURE__*/ new Vector2();
  * @augments TextureNode
  */
 class RTTNode extends TextureNode {
-
 	static get type() {
-
-		return 'RTTNode';
-
+		return 'RTTNode'
 	}
 
 	/**
@@ -35,18 +32,22 @@ class RTTNode extends TextureNode {
 	 * @param {Number?} [height=null] - The height of the internal render target.
 	 * @param {Object} [options={type:HalfFloatType}] - The options for the internal render target.
 	 */
-	constructor( node, width = null, height = null, options = { type: HalfFloatType } ) {
+	constructor(
+		node,
+		width = null,
+		height = null,
+		options = { type: HalfFloatType }
+	) {
+		const renderTarget = new RenderTarget(width, height, options)
 
-		const renderTarget = new RenderTarget( width, height, options );
-
-		super( renderTarget.texture, uv() );
+		super(renderTarget.texture, uv())
 
 		/**
 		 * The node to render a texture with.
 		 *
 		 * @type {Node}
 		 */
-		this.node = node;
+		this.node = node
 
 		/**
 		 * The width of the internal render target.
@@ -55,7 +56,7 @@ class RTTNode extends TextureNode {
 		 * @type {Number?}
 		 * @default null
 		 */
-		this.width = width;
+		this.width = width
 
 		/**
 		 * The height of the internal render target.
@@ -63,7 +64,7 @@ class RTTNode extends TextureNode {
 		 * @type {Number?}
 		 * @default null
 		 */
-		this.height = height;
+		this.height = height
 
 		/**
 		 * The pixel ratio
@@ -71,14 +72,14 @@ class RTTNode extends TextureNode {
 		 * @type {Number}
 		 * @default 1
 		 */
-		this.pixelRatio = 1;
+		this.pixelRatio = 1
 
 		/**
 		 * The render target
 		 *
 		 * @type {RenderTarget}
 		 */
-		this.renderTarget = renderTarget;
+		this.renderTarget = renderTarget
 
 		/**
 		 * Whether the texture requires an update or not.
@@ -86,7 +87,7 @@ class RTTNode extends TextureNode {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.textureNeedsUpdate = true;
+		this.textureNeedsUpdate = true
 
 		/**
 		 * Whether the texture should automatically be updated or not.
@@ -94,7 +95,7 @@ class RTTNode extends TextureNode {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.autoUpdate = true;
+		this.autoUpdate = true
 
 		/**
 		 * The node which is used with the quad mesh for RTT.
@@ -103,7 +104,7 @@ class RTTNode extends TextureNode {
 		 * @type {Node}
 		 * @default null
 		 */
-		this._rttNode = null;
+		this._rttNode = null
 
 		/**
 		 * The internal quad mesh for RTT.
@@ -111,7 +112,7 @@ class RTTNode extends TextureNode {
 		 * @private
 		 * @type {QuadMesh}
 		 */
-		this._quadMesh = new QuadMesh( new NodeMaterial() );
+		this._quadMesh = new QuadMesh(new NodeMaterial())
 
 		/**
 		 * The `updateBeforeType` is set to `NodeUpdateType.RENDER` since the node updates
@@ -120,8 +121,7 @@ class RTTNode extends TextureNode {
 		 * @type {String}
 		 * @default 'render'
 		 */
-		this.updateBeforeType = NodeUpdateType.RENDER;
-
+		this.updateBeforeType = NodeUpdateType.RENDER
 	}
 
 	/**
@@ -132,19 +132,15 @@ class RTTNode extends TextureNode {
 	 * @default true
 	 */
 	get autoSize() {
-
-		return this.width === null;
-
+		return this.width === null
 	}
 
-	setup( builder ) {
+	setup(builder) {
+		this._rttNode = this.node.context(builder.getSharedContext())
+		this._quadMesh.material.name = 'RTT'
+		this._quadMesh.material.needsUpdate = true
 
-		this._rttNode = this.node.context( builder.getSharedContext() );
-		this._quadMesh.material.name = 'RTT';
-		this._quadMesh.material.needsUpdate = true;
-
-		return super.setup( builder );
-
+		return super.setup(builder)
 	}
 
 	/**
@@ -153,18 +149,16 @@ class RTTNode extends TextureNode {
 	 * @param {Number} width - The width to set.
 	 * @param {Number} height - The width to set.
 	 */
-	setSize( width, height ) {
+	setSize(width, height) {
+		this.width = width
+		this.height = height
 
-		this.width = width;
-		this.height = height;
+		const effectiveWidth = width * this.pixelRatio
+		const effectiveHeight = height * this.pixelRatio
 
-		const effectiveWidth = width * this.pixelRatio;
-		const effectiveHeight = height * this.pixelRatio;
+		this.renderTarget.setSize(effectiveWidth, effectiveHeight)
 
-		this.renderTarget.setSize( effectiveWidth, effectiveHeight );
-
-		this.textureNeedsUpdate = true;
-
+		this.textureNeedsUpdate = true
 	}
 
 	/**
@@ -172,61 +166,52 @@ class RTTNode extends TextureNode {
 	 *
 	 * @param {Number} pixelRatio - The pixel ratio to set.
 	 */
-	setPixelRatio( pixelRatio ) {
+	setPixelRatio(pixelRatio) {
+		this.pixelRatio = pixelRatio
 
-		this.pixelRatio = pixelRatio;
-
-		this.setSize( this.width, this.height );
-
+		this.setSize(this.width, this.height)
 	}
 
-	updateBefore( { renderer } ) {
+	updateBefore({ renderer }) {
+		if (this.textureNeedsUpdate === false && this.autoUpdate === false) return
 
-		if ( this.textureNeedsUpdate === false && this.autoUpdate === false ) return;
-
-		this.textureNeedsUpdate = false;
+		this.textureNeedsUpdate = false
 
 		//
 
-		if ( this.autoSize === true ) {
+		if (this.autoSize === true) {
+			this.pixelRatio = renderer.getPixelRatio()
 
-			this.pixelRatio = renderer.getPixelRatio();
+			const size = renderer.getSize(_size)
 
-			const size = renderer.getSize( _size );
-
-			this.setSize( size.width, size.height );
-
+			this.setSize(size.width, size.height)
 		}
 
 		//
 
-		this._quadMesh.material.fragmentNode = this._rttNode;
+		this._quadMesh.material.fragmentNode = this._rttNode
 
 		//
 
-		const currentRenderTarget = renderer.getRenderTarget();
+		const currentRenderTarget = renderer.getRenderTarget()
 
-		renderer.setRenderTarget( this.renderTarget );
+		renderer.setRenderTarget(this.renderTarget)
 
-		this._quadMesh.render( renderer );
+		this._quadMesh.render(renderer)
 
-		renderer.setRenderTarget( currentRenderTarget );
-
+		renderer.setRenderTarget(currentRenderTarget)
 	}
 
 	clone() {
+		const newNode = new TextureNode(this.value, this.uvNode, this.levelNode)
+		newNode.sampler = this.sampler
+		newNode.referenceNode = this
 
-		const newNode = new TextureNode( this.value, this.uvNode, this.levelNode );
-		newNode.sampler = this.sampler;
-		newNode.referenceNode = this;
-
-		return newNode;
-
+		return newNode
 	}
-
 }
 
-export default RTTNode;
+export default RTTNode
 
 /**
  * TSL function for creating a RTT node.
@@ -238,7 +223,8 @@ export default RTTNode;
  * @param {Object} [options={type:HalfFloatType}] - The options for the internal render target.
  * @returns {RTTNode}
  */
-export const rtt = ( node, ...params ) => nodeObject( new RTTNode( nodeObject( node ), ...params ) );
+export const rtt = (node, ...params) =>
+	nodeObject(new RTTNode(nodeObject(node), ...params))
 
 /**
  * TSL function for converting nodes to textures nodes.
@@ -250,11 +236,9 @@ export const rtt = ( node, ...params ) => nodeObject( new RTTNode( nodeObject( n
  * @param {Object} [options={type:HalfFloatType}] - The options for the internal render target.
  * @returns {RTTNode}
  */
-export const convertToTexture = ( node, ...params ) => {
+export const convertToTexture = (node, ...params) => {
+	if (node.isTextureNode) return node
+	if (node.isPassNode) return node.getTextureNode()
 
-	if ( node.isTextureNode ) return node;
-	if ( node.isPassNode ) return node.getTextureNode();
-
-	return rtt( node, ...params );
-
-};
+	return rtt(node, ...params)
+}

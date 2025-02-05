@@ -1,17 +1,17 @@
-import AnalyticLightNode from './AnalyticLightNode.js';
-import { texture } from '../accessors/TextureNode.js';
-import { uniform } from '../core/UniformNode.js';
-import { lightViewPosition } from '../accessors/Lights.js';
-import { renderGroup } from '../core/UniformGroupNode.js';
+import AnalyticLightNode from './AnalyticLightNode.js'
+import { texture } from '../accessors/TextureNode.js'
+import { uniform } from '../core/UniformNode.js'
+import { lightViewPosition } from '../accessors/Lights.js'
+import { renderGroup } from '../core/UniformGroupNode.js'
 
-import { Matrix4 } from '../../math/Matrix4.js';
-import { Vector3 } from '../../math/Vector3.js';
-import { NodeUpdateType } from '../core/constants.js';
+import { Matrix4 } from '../../math/Matrix4.js'
+import { Vector3 } from '../../math/Vector3.js'
+import { NodeUpdateType } from '../core/constants.js'
 
-const _matrix41 = /*@__PURE__*/ new Matrix4();
-const _matrix42 = /*@__PURE__*/ new Matrix4();
+const _matrix41 = /*@__PURE__*/ new Matrix4()
+const _matrix42 = /*@__PURE__*/ new Matrix4()
 
-let _ltcLib = null;
+let _ltcLib = null
 
 /**
  * Module for representing rect area lights as nodes.
@@ -19,11 +19,8 @@ let _ltcLib = null;
  * @augments AnalyticLightNode
  */
 class RectAreaLightNode extends AnalyticLightNode {
-
 	static get type() {
-
-		return 'RectAreaLightNode';
-
+		return 'RectAreaLightNode'
 	}
 
 	/**
@@ -31,23 +28,22 @@ class RectAreaLightNode extends AnalyticLightNode {
 	 *
 	 * @param {RectAreaLight?} [light=null] - The rect area light source.
 	 */
-	constructor( light = null ) {
-
-		super( light );
+	constructor(light = null) {
+		super(light)
 
 		/**
 		 * Uniform node representing the half height of the are light.
 		 *
 		 * @type {UniformNode<vec3>}
 		 */
-		this.halfHeight = uniform( new Vector3() ).setGroup( renderGroup );
+		this.halfHeight = uniform(new Vector3()).setGroup(renderGroup)
 
 		/**
 		 * Uniform node representing the half width of the are light.
 		 *
 		 * @type {UniformNode<vec3>}
 		 */
-		this.halfWidth = uniform( new Vector3() ).setGroup( renderGroup );
+		this.halfWidth = uniform(new Vector3()).setGroup(renderGroup)
 
 		/**
 		 * The `updateType` is set to `NodeUpdateType.RENDER` since the light
@@ -56,8 +52,7 @@ class RectAreaLightNode extends AnalyticLightNode {
 		 * @type {String}
 		 * @default 'render'
 		 */
-		this.updateType = NodeUpdateType.RENDER;
-
+		this.updateType = NodeUpdateType.RENDER
 	}
 
 	/**
@@ -65,61 +60,57 @@ class RectAreaLightNode extends AnalyticLightNode {
 	 *
 	 * @param {NodeFrame} frame - A reference to the current node frame.
 	 */
-	update( frame ) {
+	update(frame) {
+		super.update(frame)
 
-		super.update( frame );
+		const { light } = this
 
-		const { light } = this;
+		const viewMatrix = frame.camera.matrixWorldInverse
 
-		const viewMatrix = frame.camera.matrixWorldInverse;
+		_matrix42.identity()
+		_matrix41.copy(light.matrixWorld)
+		_matrix41.premultiply(viewMatrix)
+		_matrix42.extractRotation(_matrix41)
 
-		_matrix42.identity();
-		_matrix41.copy( light.matrixWorld );
-		_matrix41.premultiply( viewMatrix );
-		_matrix42.extractRotation( _matrix41 );
+		this.halfWidth.value.set(light.width * 0.5, 0.0, 0.0)
+		this.halfHeight.value.set(0.0, light.height * 0.5, 0.0)
 
-		this.halfWidth.value.set( light.width * 0.5, 0.0, 0.0 );
-		this.halfHeight.value.set( 0.0, light.height * 0.5, 0.0 );
-
-		this.halfWidth.value.applyMatrix4( _matrix42 );
-		this.halfHeight.value.applyMatrix4( _matrix42 );
-
+		this.halfWidth.value.applyMatrix4(_matrix42)
+		this.halfHeight.value.applyMatrix4(_matrix42)
 	}
 
-	setup( builder ) {
+	setup(builder) {
+		super.setup(builder)
 
-		super.setup( builder );
+		let ltc_1, ltc_2
 
-		let ltc_1, ltc_2;
-
-		if ( builder.isAvailable( 'float32Filterable' ) ) {
-
-			ltc_1 = texture( _ltcLib.LTC_FLOAT_1 );
-			ltc_2 = texture( _ltcLib.LTC_FLOAT_2 );
-
+		if (builder.isAvailable('float32Filterable')) {
+			ltc_1 = texture(_ltcLib.LTC_FLOAT_1)
+			ltc_2 = texture(_ltcLib.LTC_FLOAT_2)
 		} else {
-
-			ltc_1 = texture( _ltcLib.LTC_HALF_1 );
-			ltc_2 = texture( _ltcLib.LTC_HALF_2 );
-
+			ltc_1 = texture(_ltcLib.LTC_HALF_1)
+			ltc_2 = texture(_ltcLib.LTC_HALF_2)
 		}
 
-		const { colorNode, light } = this;
-		const lightingModel = builder.context.lightingModel;
+		const { colorNode, light } = this
+		const lightingModel = builder.context.lightingModel
 
-		const lightPosition = lightViewPosition( light );
-		const reflectedLight = builder.context.reflectedLight;
+		const lightPosition = lightViewPosition(light)
+		const reflectedLight = builder.context.reflectedLight
 
-		lightingModel.directRectArea( {
-			lightColor: colorNode,
-			lightPosition,
-			halfWidth: this.halfWidth,
-			halfHeight: this.halfHeight,
-			reflectedLight,
-			ltc_1,
-			ltc_2
-		}, builder.stack, builder );
-
+		lightingModel.directRectArea(
+			{
+				lightColor: colorNode,
+				lightPosition,
+				halfWidth: this.halfWidth,
+				halfHeight: this.halfHeight,
+				reflectedLight,
+				ltc_1,
+				ltc_2
+			},
+			builder.stack,
+			builder
+		)
 	}
 
 	/**
@@ -127,12 +118,9 @@ class RectAreaLightNode extends AnalyticLightNode {
 	 *
 	 * @param {RectAreaLightTexturesLib} ltc - The BRDF approximation texture data.
 	 */
-	static setLTC( ltc ) {
-
-		_ltcLib = ltc;
-
+	static setLTC(ltc) {
+		_ltcLib = ltc
 	}
-
 }
 
-export default RectAreaLightNode;
+export default RectAreaLightNode

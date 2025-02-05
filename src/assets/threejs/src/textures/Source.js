@@ -1,128 +1,98 @@
-import { ImageUtils } from '../extras/ImageUtils.js';
-import { generateUUID } from '../math/MathUtils.js';
+import { ImageUtils } from '../extras/ImageUtils.js'
+import { generateUUID } from '../math/MathUtils.js'
 
-let _sourceId = 0;
+let _sourceId = 0
 
 class Source {
+	constructor(data = null) {
+		this.isSource = true
 
-	constructor( data = null ) {
+		Object.defineProperty(this, 'id', { value: _sourceId++ })
 
-		this.isSource = true;
+		this.uuid = generateUUID()
 
-		Object.defineProperty( this, 'id', { value: _sourceId ++ } );
+		this.data = data
+		this.dataReady = true
 
-		this.uuid = generateUUID();
-
-		this.data = data;
-		this.dataReady = true;
-
-		this.version = 0;
-
+		this.version = 0
 	}
 
-	set needsUpdate( value ) {
-
-		if ( value === true ) this.version ++;
-
+	set needsUpdate(value) {
+		if (value === true) this.version++
 	}
 
-	toJSON( meta ) {
+	toJSON(meta) {
+		const isRootObject = meta === undefined || typeof meta === 'string'
 
-		const isRootObject = ( meta === undefined || typeof meta === 'string' );
-
-		if ( ! isRootObject && meta.images[ this.uuid ] !== undefined ) {
-
-			return meta.images[ this.uuid ];
-
+		if (!isRootObject && meta.images[this.uuid] !== undefined) {
+			return meta.images[this.uuid]
 		}
 
 		const output = {
 			uuid: this.uuid,
 			url: ''
-		};
+		}
 
-		const data = this.data;
+		const data = this.data
 
-		if ( data !== null ) {
+		if (data !== null) {
+			let url
 
-			let url;
-
-			if ( Array.isArray( data ) ) {
-
+			if (Array.isArray(data)) {
 				// cube texture
 
-				url = [];
+				url = []
 
-				for ( let i = 0, l = data.length; i < l; i ++ ) {
-
-					if ( data[ i ].isDataTexture ) {
-
-						url.push( serializeImage( data[ i ].image ) );
-
+				for (let i = 0, l = data.length; i < l; i++) {
+					if (data[i].isDataTexture) {
+						url.push(serializeImage(data[i].image))
 					} else {
-
-						url.push( serializeImage( data[ i ] ) );
-
+						url.push(serializeImage(data[i]))
 					}
-
 				}
-
 			} else {
-
 				// texture
 
-				url = serializeImage( data );
-
+				url = serializeImage(data)
 			}
 
-			output.url = url;
-
+			output.url = url
 		}
 
-		if ( ! isRootObject ) {
-
-			meta.images[ this.uuid ] = output;
-
+		if (!isRootObject) {
+			meta.images[this.uuid] = output
 		}
 
-		return output;
-
+		return output
 	}
-
 }
 
-function serializeImage( image ) {
-
-	if ( ( typeof HTMLImageElement !== 'undefined' && image instanceof HTMLImageElement ) ||
-		( typeof HTMLCanvasElement !== 'undefined' && image instanceof HTMLCanvasElement ) ||
-		( typeof ImageBitmap !== 'undefined' && image instanceof ImageBitmap ) ) {
-
+function serializeImage(image) {
+	if (
+		(typeof HTMLImageElement !== 'undefined' &&
+			image instanceof HTMLImageElement) ||
+		(typeof HTMLCanvasElement !== 'undefined' &&
+			image instanceof HTMLCanvasElement) ||
+		(typeof ImageBitmap !== 'undefined' && image instanceof ImageBitmap)
+	) {
 		// default images
 
-		return ImageUtils.getDataURL( image );
-
+		return ImageUtils.getDataURL(image)
 	} else {
-
-		if ( image.data ) {
-
+		if (image.data) {
 			// images of DataTexture
 
 			return {
-				data: Array.from( image.data ),
+				data: Array.from(image.data),
 				width: image.width,
 				height: image.height,
 				type: image.data.constructor.name
-			};
-
+			}
 		} else {
-
-			console.warn( 'THREE.Texture: Unable to serialize Texture.' );
-			return {};
-
+			console.warn('THREE.Texture: Unable to serialize Texture.')
+			return {}
 		}
-
 	}
-
 }
 
-export { Source };
+export { Source }

@@ -1,6 +1,6 @@
-import Binding from './Binding.js';
+import Binding from './Binding.js'
 
-let _id = 0;
+let _id = 0
 
 /**
  * Represents a sampled texture binding type.
@@ -9,37 +9,35 @@ let _id = 0;
  * @augments Binding
  */
 class SampledTexture extends Binding {
-
 	/**
 	 * Constructs a new sampled texture.
 	 *
 	 * @param {String} name - The sampled texture's name.
 	 * @param {Texture?} texture - The texture this binding is referring to.
 	 */
-	constructor( name, texture ) {
-
-		super( name );
+	constructor(name, texture) {
+		super(name)
 
 		/**
 		 * This identifier.
 		 *
 		 * @type {Number}
 		 */
-		this.id = _id ++;
+		this.id = _id++
 
 		/**
 		 * The texture this binding is referring to.
 		 *
 		 * @type {Texture?}
 		 */
-		this.texture = texture;
+		this.texture = texture
 
 		/**
 		 * The binding's version.
 		 *
 		 * @type {Number}
 		 */
-		this.version = texture ? texture.version : 0;
+		this.version = texture ? texture.version : 0
 
 		/**
 		 * Whether the texture is a storage texture or not.
@@ -47,7 +45,7 @@ class SampledTexture extends Binding {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.store = false;
+		this.store = false
 
 		/**
 		 * The binding's generation which is an additional version
@@ -56,7 +54,7 @@ class SampledTexture extends Binding {
 		 * @type {Number?}
 		 * @default null
 		 */
-		this.generation = null;
+		this.generation = null
 
 		/**
 		 * This flag can be used for type testing.
@@ -65,8 +63,7 @@ class SampledTexture extends Binding {
 		 * @readonly
 		 * @default true
 		 */
-		this.isSampledTexture = true;
-
+		this.isSampledTexture = true
 	}
 
 	/**
@@ -76,20 +73,16 @@ class SampledTexture extends Binding {
 	 * @param {Number} generation - The generation.
 	 * @return {Boolean} Whether an update is required or not.
 	 */
-	needsBindingsUpdate( generation ) {
+	needsBindingsUpdate(generation) {
+		const { texture } = this
 
-		const { texture } = this;
+		if (generation !== this.generation) {
+			this.generation = generation
 
-		if ( generation !== this.generation ) {
-
-			this.generation = generation;
-
-			return true;
-
+			return true
 		}
 
-		return texture.isVideoTexture;
-
+		return texture.isVideoTexture
 	}
 
 	/**
@@ -99,21 +92,16 @@ class SampledTexture extends Binding {
 	 * uploaded to the GPU.
 	 */
 	update() {
+		const { texture, version } = this
 
-		const { texture, version } = this;
+		if (version !== texture.version) {
+			this.version = texture.version
 
-		if ( version !== texture.version ) {
-
-			this.version = texture.version;
-
-			return true;
-
+			return true
 		}
 
-		return false;
-
+		return false
 	}
-
 }
 
 /**
@@ -123,16 +111,14 @@ class SampledTexture extends Binding {
  * @augments SampledTexture
  */
 class SampledArrayTexture extends SampledTexture {
-
 	/**
 	 * Constructs a new sampled array texture.
 	 *
 	 * @param {String} name - The sampled array texture's name.
 	 * @param {(DataArrayTexture|CompressedArrayTexture)?} texture - The texture this binding is referring to.
 	 */
-	constructor( name, texture ) {
-
-		super( name, texture );
+	constructor(name, texture) {
+		super(name, texture)
 
 		/**
 		 * This flag can be used for type testing.
@@ -141,10 +127,8 @@ class SampledArrayTexture extends SampledTexture {
 		 * @readonly
 		 * @default true
 		 */
-		this.isSampledArrayTexture = true;
-
+		this.isSampledArrayTexture = true
 	}
-
 }
 
 /**
@@ -154,16 +138,14 @@ class SampledArrayTexture extends SampledTexture {
  * @augments SampledTexture
  */
 class Sampled3DTexture extends SampledTexture {
-
 	/**
 	 * Constructs a new sampled 3D texture.
 	 *
 	 * @param {String} name - The sampled 3D texture's name.
 	 * @param {Data3DTexture?} texture - The texture this binding is referring to.
 	 */
-	constructor( name, texture ) {
-
-		super( name, texture );
+	constructor(name, texture) {
+		super(name, texture)
 
 		/**
 		 * This flag can be used for type testing.
@@ -172,10 +154,8 @@ class Sampled3DTexture extends SampledTexture {
 		 * @readonly
 		 * @default true
 		 */
-		this.isSampled3DTexture = true;
-
+		this.isSampled3DTexture = true
 	}
-
 }
 
 /**
@@ -185,16 +165,14 @@ class Sampled3DTexture extends SampledTexture {
  * @augments SampledTexture
  */
 class SampledCubeTexture extends SampledTexture {
-
 	/**
 	 * Constructs a new sampled cube texture.
 	 *
 	 * @param {String} name - The sampled cube texture's name.
 	 * @param {(CubeTexture|CompressedCubeTexture)?} texture - The texture this binding is referring to.
 	 */
-	constructor( name, texture ) {
-
-		super( name, texture );
+	constructor(name, texture) {
+		super(name, texture)
 
 		/**
 		 * This flag can be used for type testing.
@@ -203,10 +181,13 @@ class SampledCubeTexture extends SampledTexture {
 		 * @readonly
 		 * @default true
 		 */
-		this.isSampledCubeTexture = true;
-
+		this.isSampledCubeTexture = true
 	}
-
 }
 
-export { SampledTexture, SampledArrayTexture, Sampled3DTexture, SampledCubeTexture };
+export {
+	SampledTexture,
+	SampledArrayTexture,
+	Sampled3DTexture,
+	SampledCubeTexture
+}

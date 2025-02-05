@@ -1,50 +1,44 @@
-import { Material } from './Material.js';
-import { Color } from '../math/Color.js';
+import { Material } from './Material.js'
+import { Color } from '../math/Color.js'
 
 class PointsMaterial extends Material {
+	constructor(parameters) {
+		super()
 
-	constructor( parameters ) {
+		this.isPointsMaterial = true
 
-		super();
+		this.type = 'PointsMaterial'
 
-		this.isPointsMaterial = true;
+		this.color = new Color(0xffffff)
 
-		this.type = 'PointsMaterial';
+		this.map = null
 
-		this.color = new Color( 0xffffff );
+		this.alphaMap = null
 
-		this.map = null;
+		this.size = 1
+		this.sizeAttenuation = true
 
-		this.alphaMap = null;
+		this.fog = true
 
-		this.size = 1;
-		this.sizeAttenuation = true;
-
-		this.fog = true;
-
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
-	copy( source ) {
+	copy(source) {
+		super.copy(source)
 
-		super.copy( source );
+		this.color.copy(source.color)
 
-		this.color.copy( source.color );
+		this.map = source.map
 
-		this.map = source.map;
+		this.alphaMap = source.alphaMap
 
-		this.alphaMap = source.alphaMap;
+		this.size = source.size
+		this.sizeAttenuation = source.sizeAttenuation
 
-		this.size = source.size;
-		this.sizeAttenuation = source.sizeAttenuation;
+		this.fog = source.fog
 
-		this.fog = source.fog;
-
-		return this;
-
+		return this
 	}
-
 }
 
-export { PointsMaterial };
+export { PointsMaterial }

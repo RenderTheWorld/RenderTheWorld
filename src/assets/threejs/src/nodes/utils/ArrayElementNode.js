@@ -1,4 +1,4 @@
-import Node from '../core/Node.js';
+import Node from '../core/Node.js'
 
 /**
  * Base class for representing element access on an array-like
@@ -6,12 +6,11 @@ import Node from '../core/Node.js';
  *
  * @augments Node
  */
-class ArrayElementNode extends Node { // @TODO: If extending from TempNode it breaks webgpu_compute
+class ArrayElementNode extends Node {
+	// @TODO: If extending from TempNode it breaks webgpu_compute
 
 	static get type() {
-
-		return 'ArrayElementNode';
-
+		return 'ArrayElementNode'
 	}
 
 	/**
@@ -20,23 +19,22 @@ class ArrayElementNode extends Node { // @TODO: If extending from TempNode it br
 	 * @param {Node} node - The array-like node.
 	 * @param {Node} indexNode - The index node that defines the element access.
 	 */
-	constructor( node, indexNode ) {
-
-		super();
+	constructor(node, indexNode) {
+		super()
 
 		/**
 		 * The array-like node.
 		 *
 		 * @type {Node}
 		 */
-		this.node = node;
+		this.node = node
 
 		/**
 		 * The index node that defines the element access.
 		 *
 		 * @type {Node}
 		 */
-		this.indexNode = indexNode;
+		this.indexNode = indexNode
 
 		/**
 		 * This flag can be used for type testing.
@@ -45,8 +43,7 @@ class ArrayElementNode extends Node { // @TODO: If extending from TempNode it br
 		 * @readonly
 		 * @default true
 		 */
-		this.isArrayElementNode = true;
-
+		this.isArrayElementNode = true
 	}
 
 	/**
@@ -55,21 +52,16 @@ class ArrayElementNode extends Node { // @TODO: If extending from TempNode it br
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The node type.
 	 */
-	getNodeType( builder ) {
-
-		return this.node.getElementType( builder );
-
+	getNodeType(builder) {
+		return this.node.getElementType(builder)
 	}
 
-	generate( builder ) {
+	generate(builder) {
+		const nodeSnippet = this.node.build(builder)
+		const indexSnippet = this.indexNode.build(builder, 'uint')
 
-		const nodeSnippet = this.node.build( builder );
-		const indexSnippet = this.indexNode.build( builder, 'uint' );
-
-		return `${ nodeSnippet }[ ${ indexSnippet } ]`;
-
+		return `${nodeSnippet}[ ${indexSnippet} ]`
 	}
-
 }
 
-export default ArrayElementNode;
+export default ArrayElementNode

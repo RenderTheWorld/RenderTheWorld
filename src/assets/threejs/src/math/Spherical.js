@@ -1,4 +1,4 @@
-import { clamp } from './MathUtils.js';
+import { clamp } from './MathUtils.js'
 
 /**
  * Ref: https://en.wikipedia.org/wiki/Spherical_coordinate_system
@@ -7,79 +7,59 @@ import { clamp } from './MathUtils.js';
  * theta (the azimuthal angle) is measured from the positive z-axis.
  */
 class Spherical {
+	constructor(radius = 1, phi = 0, theta = 0) {
+		this.radius = radius
+		this.phi = phi // polar angle
+		this.theta = theta // azimuthal angle
 
-	constructor( radius = 1, phi = 0, theta = 0 ) {
-
-		this.radius = radius;
-		this.phi = phi; // polar angle
-		this.theta = theta; // azimuthal angle
-
-		return this;
-
+		return this
 	}
 
-	set( radius, phi, theta ) {
+	set(radius, phi, theta) {
+		this.radius = radius
+		this.phi = phi
+		this.theta = theta
 
-		this.radius = radius;
-		this.phi = phi;
-		this.theta = theta;
-
-		return this;
-
+		return this
 	}
 
-	copy( other ) {
+	copy(other) {
+		this.radius = other.radius
+		this.phi = other.phi
+		this.theta = other.theta
 
-		this.radius = other.radius;
-		this.phi = other.phi;
-		this.theta = other.theta;
-
-		return this;
-
+		return this
 	}
 
 	// restrict phi to be between EPS and PI-EPS
 	makeSafe() {
+		const EPS = 0.000001
+		this.phi = clamp(this.phi, EPS, Math.PI - EPS)
 
-		const EPS = 0.000001;
-		this.phi = clamp( this.phi, EPS, Math.PI - EPS );
-
-		return this;
-
+		return this
 	}
 
-	setFromVector3( v ) {
-
-		return this.setFromCartesianCoords( v.x, v.y, v.z );
-
+	setFromVector3(v) {
+		return this.setFromCartesianCoords(v.x, v.y, v.z)
 	}
 
-	setFromCartesianCoords( x, y, z ) {
+	setFromCartesianCoords(x, y, z) {
+		this.radius = Math.sqrt(x * x + y * y + z * z)
 
-		this.radius = Math.sqrt( x * x + y * y + z * z );
-
-		if ( this.radius === 0 ) {
-
-			this.theta = 0;
-			this.phi = 0;
-
+		if (this.radius === 0) {
+			this.theta = 0
+			this.phi = 0
 		} else {
-
-			this.theta = Math.atan2( x, z );
-			this.phi = Math.acos( clamp( y / this.radius, - 1, 1 ) );
-
+			this.theta = Math.atan2(x, z)
+			this.phi = Math.acos(clamp(y / this.radius, -1, 1))
 		}
 
-		return this;
-
+		return this
 	}
 
 	clone() {
-
-		return new this.constructor().copy( this );
-
+		return new this.constructor().copy(this)
 	}
-
 }
 
-export { Spherical };
+export { Spherical }

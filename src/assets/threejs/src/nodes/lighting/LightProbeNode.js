@@ -1,8 +1,8 @@
-import AnalyticLightNode from './AnalyticLightNode.js';
-import { normalWorld } from '../accessors/Normal.js';
-import { uniformArray } from '../accessors/UniformArrayNode.js';
-import { Vector3 } from '../../math/Vector3.js';
-import getShIrradianceAt from '../functions/material/getShIrradianceAt.js';
+import AnalyticLightNode from './AnalyticLightNode.js'
+import { normalWorld } from '../accessors/Normal.js'
+import { uniformArray } from '../accessors/UniformArrayNode.js'
+import { Vector3 } from '../../math/Vector3.js'
+import getShIrradianceAt from '../functions/material/getShIrradianceAt.js'
 
 /**
  * Module for representing light probes as nodes.
@@ -10,11 +10,8 @@ import getShIrradianceAt from '../functions/material/getShIrradianceAt.js';
  * @augments AnalyticLightNode
  */
 class LightProbeNode extends AnalyticLightNode {
-
 	static get type() {
-
-		return 'LightProbeNode';
-
+		return 'LightProbeNode'
 	}
 
 	/**
@@ -22,21 +19,19 @@ class LightProbeNode extends AnalyticLightNode {
 	 *
 	 * @param {LightProbe?} [light=null] - The light probe.
 	 */
-	constructor( light = null ) {
+	constructor(light = null) {
+		super(light)
 
-		super( light );
+		const array = []
 
-		const array = [];
-
-		for ( let i = 0; i < 9; i ++ ) array.push( new Vector3() );
+		for (let i = 0; i < 9; i++) array.push(new Vector3())
 
 		/**
 		 * Light probe represented as a uniform of spherical harmonics.
 		 *
 		 * @type {UniformArrayNode}
 		 */
-		this.lightProbe = uniformArray( array );
-
+		this.lightProbe = uniformArray(array)
 	}
 
 	/**
@@ -44,30 +39,25 @@ class LightProbeNode extends AnalyticLightNode {
 	 *
 	 * @param {NodeFrame} frame - A reference to the current node frame.
 	 */
-	update( frame ) {
+	update(frame) {
+		const { light } = this
 
-		const { light } = this;
-
-		super.update( frame );
+		super.update(frame)
 
 		//
 
-		for ( let i = 0; i < 9; i ++ ) {
-
-			this.lightProbe.array[ i ].copy( light.sh.coefficients[ i ] ).multiplyScalar( light.intensity );
-
+		for (let i = 0; i < 9; i++) {
+			this.lightProbe.array[i]
+				.copy(light.sh.coefficients[i])
+				.multiplyScalar(light.intensity)
 		}
-
 	}
 
-	setup( builder ) {
+	setup(builder) {
+		const irradiance = getShIrradianceAt(normalWorld, this.lightProbe)
 
-		const irradiance = getShIrradianceAt( normalWorld, this.lightProbe );
-
-		builder.context.irradiance.addAssign( irradiance );
-
+		builder.context.irradiance.addAssign(irradiance)
 	}
-
 }
 
-export default LightProbeNode;
+export default LightProbeNode

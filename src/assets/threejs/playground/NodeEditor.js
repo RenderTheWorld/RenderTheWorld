@@ -1,796 +1,665 @@
-import * as THREE from 'three';
-import * as TSL from 'three/tsl';
-import { Canvas, CircleMenu, ButtonInput, StringInput, ContextMenu, Tips, Search, Loader, Node, TreeViewNode, TreeViewInput, Element } from 'flow';
-import { FileEditor } from './editors/FileEditor.js';
-import { exportJSON } from './NodeEditorUtils.js';
-import { init, ClassLib, getNodeEditorClass, getNodeList } from './NodeEditorLib.js';
-import { SplitscreenManager } from './SplitscreenManager.js';
+import * as THREE from 'three'
+import * as TSL from 'three/tsl'
+import {
+	Canvas,
+	CircleMenu,
+	ButtonInput,
+	StringInput,
+	ContextMenu,
+	Tips,
+	Search,
+	Loader,
+	Node,
+	TreeViewNode,
+	TreeViewInput,
+	Element
+} from 'flow'
+import { FileEditor } from './editors/FileEditor.js'
+import { exportJSON } from './NodeEditorUtils.js'
+import {
+	init,
+	ClassLib,
+	getNodeEditorClass,
+	getNodeList
+} from './NodeEditorLib.js'
+import { SplitscreenManager } from './SplitscreenManager.js'
 
-init();
+init()
 
-Element.icons.unlink = 'ti ti-unlink';
+Element.icons.unlink = 'ti ti-unlink'
 
 export class NodeEditor extends THREE.EventDispatcher {
+	constructor(scene = null, renderer = null, composer = null) {
+		super()
 
-	constructor( scene = null, renderer = null, composer = null ) {
+		const domElement = document.createElement('flow')
+		const canvas = new Canvas()
 
-		super();
+		domElement.append(canvas.dom)
 
-		const domElement = document.createElement( 'flow' );
-		const canvas = new Canvas();
+		this.scene = scene
+		this.renderer = renderer
 
-		domElement.append( canvas.dom );
+		const { ScriptableNodeResources } = TSL
 
-		this.scene = scene;
-		this.renderer = renderer;
+		ScriptableNodeResources.set('THREE', THREE)
+		ScriptableNodeResources.set('TSL', TSL)
 
-		const { ScriptableNodeResources } = TSL;
+		ScriptableNodeResources.set('scene', scene)
+		ScriptableNodeResources.set('renderer', renderer)
+		ScriptableNodeResources.set('composer', composer)
 
-		ScriptableNodeResources.set( 'THREE', THREE );
-		ScriptableNodeResources.set( 'TSL', TSL );
+		this.nodeClasses = []
 
-		ScriptableNodeResources.set( 'scene', scene );
-		ScriptableNodeResources.set( 'renderer', renderer );
-		ScriptableNodeResources.set( 'composer', composer );
+		this.canvas = canvas
+		this.domElement = domElement
 
-		this.nodeClasses = [];
+		this._preview = false
+		this._splitscreen = false
 
-		this.canvas = canvas;
-		this.domElement = domElement;
+		this.search = null
 
-		this._preview = false;
-		this._splitscreen = false;
+		this.menu = null
+		this.previewMenu = null
 
-		this.search = null;
+		this.nodesContext = null
+		this.examplesContext = null
 
-		this.menu = null;
-		this.previewMenu = null;
-
-		this.nodesContext = null;
-		this.examplesContext = null;
-
-		this._initSplitview();
-		this._initUpload();
-		this._initTips();
-		this._initMenu();
-		this._initSearch();
-		this._initNodesContext();
-		this._initExamplesContext();
-		this._initShortcuts();
-		this._initParams();
-
+		this._initSplitview()
+		this._initUpload()
+		this._initTips()
+		this._initMenu()
+		this._initSearch()
+		this._initNodesContext()
+		this._initExamplesContext()
+		this._initShortcuts()
+		this._initParams()
 	}
 
-	setSize( width, height ) {
+	setSize(width, height) {
+		this.canvas.setSize(width, height)
 
-		this.canvas.setSize( width, height );
-
-		return this;
-
+		return this
 	}
 
-	centralizeNode( node ) {
-
-		const canvas = this.canvas;
-		const nodeRect = node.dom.getBoundingClientRect();
+	centralizeNode(node) {
+		const canvas = this.canvas
+		const nodeRect = node.dom.getBoundingClientRect()
 
 		node.setPosition(
-			( ( canvas.width / 2 ) - canvas.scrollLeft ) - nodeRect.width,
-			( ( canvas.height / 2 ) - canvas.scrollTop ) - nodeRect.height
-		);
+			canvas.width / 2 - canvas.scrollLeft - nodeRect.width,
+			canvas.height / 2 - canvas.scrollTop - nodeRect.height
+		)
 
-		return this;
-
+		return this
 	}
 
-	add( node ) {
-
+	add(node) {
 		const onRemove = () => {
+			node.removeEventListener('remove', onRemove)
 
-			node.removeEventListener( 'remove', onRemove );
+			node.setEditor(null)
+		}
 
-			node.setEditor( null );
+		node.setEditor(this)
+		node.addEventListener('remove', onRemove)
 
-		};
+		this.canvas.add(node)
 
-		node.setEditor( this );
-		node.addEventListener( 'remove', onRemove );
+		this.dispatchEvent({ type: 'add', node })
 
-		this.canvas.add( node );
-
-		this.dispatchEvent( { type: 'add', node } );
-
-		return this;
-
+		return this
 	}
 
 	get nodes() {
-
-		return this.canvas.nodes;
-
+		return this.canvas.nodes
 	}
 
-	set preview( value ) {
+	set preview(value) {
+		if (this._preview === value) return
 
-		if ( this._preview === value ) return;
+		if (value) {
+			this._wasSplitscreen = this.splitscreen
 
-		if ( value ) {
+			this.splitscreen = false
 
-			this._wasSplitscreen = this.splitscreen;
+			this.menu.dom.remove()
+			this.canvas.dom.remove()
+			this.search.dom.remove()
 
-			this.splitscreen = false;
-
-			this.menu.dom.remove();
-			this.canvas.dom.remove();
-			this.search.dom.remove();
-
-			this.domElement.append( this.previewMenu.dom );
-
+			this.domElement.append(this.previewMenu.dom)
 		} else {
+			this.canvas.focusSelected = false
 
-			this.canvas.focusSelected = false;
+			this.domElement.append(this.menu.dom)
+			this.domElement.append(this.canvas.dom)
+			this.domElement.append(this.search.dom)
 
-			this.domElement.append( this.menu.dom );
-			this.domElement.append( this.canvas.dom );
-			this.domElement.append( this.search.dom );
+			this.previewMenu.dom.remove()
 
-			this.previewMenu.dom.remove();
-
-			if ( this._wasSplitscreen == true ) {
-
-				this.splitscreen = true;
-
+			if (this._wasSplitscreen == true) {
+				this.splitscreen = true
 			}
-
 		}
 
-		this._preview = value;
-
+		this._preview = value
 	}
 
 	get preview() {
-
-		return this._preview;
-
+		return this._preview
 	}
 
-	set splitscreen( value ) {
+	set splitscreen(value) {
+		if (this._splitscreen === value) return
 
-		if ( this._splitscreen === value ) return;
+		this.splitview.setSplitview(value)
 
-		this.splitview.setSplitview( value );
-
-		this._splitscreen = value;
-
+		this._splitscreen = value
 	}
 
 	get splitscreen() {
-
-		return this._splitscreen;
-
+		return this._splitscreen
 	}
 
 	newProject() {
+		const canvas = this.canvas
+		canvas.clear()
+		canvas.scrollLeft = 0
+		canvas.scrollTop = 0
+		canvas.zoom = 1
 
-		const canvas = this.canvas;
-		canvas.clear();
-		canvas.scrollLeft = 0;
-		canvas.scrollTop = 0;
-		canvas.zoom = 1;
-
-		this.dispatchEvent( { type: 'new' } );
-
+		this.dispatchEvent({ type: 'new' })
 	}
 
-	async loadURL( url ) {
+	async loadURL(url) {
+		const loader = new Loader(Loader.OBJECTS)
+		const json = await loader.load(url, ClassLib)
 
-		const loader = new Loader( Loader.OBJECTS );
-		const json = await loader.load( url, ClassLib );
-
-		this.loadJSON( json );
-
+		this.loadJSON(json)
 	}
 
-	loadJSON( json ) {
+	loadJSON(json) {
+		const canvas = this.canvas
 
-		const canvas = this.canvas;
+		canvas.clear()
 
-		canvas.clear();
+		canvas.deserialize(json)
 
-		canvas.deserialize( json );
-
-		for ( const node of canvas.nodes ) {
-
-			this.add( node );
-
+		for (const node of canvas.nodes) {
+			this.add(node)
 		}
 
-		this.dispatchEvent( { type: 'load' } );
-
+		this.dispatchEvent({ type: 'load' })
 	}
 
 	_initSplitview() {
-
-		this.splitview = new SplitscreenManager( this );
-
+		this.splitview = new SplitscreenManager(this)
 	}
 
 	_initUpload() {
+		const canvas = this.canvas
 
-		const canvas = this.canvas;
+		canvas.onDrop(() => {
+			for (const item of canvas.droppedItems) {
+				const { relativeClientX, relativeClientY } = canvas
 
-		canvas.onDrop( () => {
-
-			for ( const item of canvas.droppedItems ) {
-
-				const { relativeClientX, relativeClientY } = canvas;
-
-				const file = item.getAsFile();
-				const reader = new FileReader();
+				const file = item.getAsFile()
+				const reader = new FileReader()
 
 				reader.onload = () => {
-
-					const fileEditor = new FileEditor( reader.result, file.name );
+					const fileEditor = new FileEditor(reader.result, file.name)
 
 					fileEditor.setPosition(
-						relativeClientX - ( fileEditor.getWidth() / 2 ),
+						relativeClientX - fileEditor.getWidth() / 2,
 						relativeClientY - 20
-					);
+					)
 
-					this.add( fileEditor );
+					this.add(fileEditor)
+				}
 
-				};
-
-				reader.readAsArrayBuffer( file );
-
+				reader.readAsArrayBuffer(file)
 			}
-
-		} );
-
+		})
 	}
 
 	_initTips() {
+		this.tips = new Tips()
 
-		this.tips = new Tips();
-
-		this.domElement.append( this.tips.dom );
-
+		this.domElement.append(this.tips.dom)
 	}
 
 	_initMenu() {
+		const menu = new CircleMenu()
+		const previewMenu = new CircleMenu()
 
-		const menu = new CircleMenu();
-		const previewMenu = new CircleMenu();
+		menu.setAlign('top left')
+		previewMenu.setAlign('top left')
 
-		menu.setAlign( 'top left' );
-		previewMenu.setAlign( 'top left' );
+		const previewButton = new ButtonInput()
+			.setIcon('ti ti-brand-threejs')
+			.setToolTip('Preview')
+		const splitscreenButton = new ButtonInput()
+			.setIcon('ti ti-layout-sidebar-right-expand')
+			.setToolTip('Splitscreen')
+		const menuButton = new ButtonInput().setIcon('ti ti-apps').setToolTip('Add')
+		const examplesButton = new ButtonInput()
+			.setIcon('ti ti-file-symlink')
+			.setToolTip('Examples')
+		const newButton = new ButtonInput().setIcon('ti ti-file').setToolTip('New')
+		const openButton = new ButtonInput()
+			.setIcon('ti ti-upload')
+			.setToolTip('Open')
+		const saveButton = new ButtonInput()
+			.setIcon('ti ti-download')
+			.setToolTip('Save')
 
-		const previewButton = new ButtonInput().setIcon( 'ti ti-brand-threejs' ).setToolTip( 'Preview' );
-		const splitscreenButton = new ButtonInput().setIcon( 'ti ti-layout-sidebar-right-expand' ).setToolTip( 'Splitscreen' );
-		const menuButton = new ButtonInput().setIcon( 'ti ti-apps' ).setToolTip( 'Add' );
-		const examplesButton = new ButtonInput().setIcon( 'ti ti-file-symlink' ).setToolTip( 'Examples' );
-		const newButton = new ButtonInput().setIcon( 'ti ti-file' ).setToolTip( 'New' );
-		const openButton = new ButtonInput().setIcon( 'ti ti-upload' ).setToolTip( 'Open' );
-		const saveButton = new ButtonInput().setIcon( 'ti ti-download' ).setToolTip( 'Save' );
+		const editorButton = new ButtonInput()
+			.setIcon('ti ti-subtask')
+			.setToolTip('Editor')
 
-		const editorButton = new ButtonInput().setIcon( 'ti ti-subtask' ).setToolTip( 'Editor' );
+		previewButton.onClick(() => (this.preview = true))
+		editorButton.onClick(() => (this.preview = false))
 
-		previewButton.onClick( () => this.preview = true );
-		editorButton.onClick( () => this.preview = false );
+		splitscreenButton.onClick(() => {
+			this.splitscreen = !this.splitscreen
+			splitscreenButton.setIcon(
+				this.splitscreen
+					? 'ti ti-layout-sidebar-right-collapse'
+					: 'ti ti-layout-sidebar-right-expand'
+			)
+		})
 
-		splitscreenButton.onClick( () => {
+		menuButton.onClick(() => this.nodesContext.open())
+		examplesButton.onClick(() => this.examplesContext.open())
 
-			this.splitscreen = ! this.splitscreen;
-			splitscreenButton.setIcon( this.splitscreen ? 'ti ti-layout-sidebar-right-collapse' : 'ti ti-layout-sidebar-right-expand' );
-
-		} );
-
-		menuButton.onClick( () => this.nodesContext.open() );
-		examplesButton.onClick( () => this.examplesContext.open() );
-
-		newButton.onClick( () => {
-
-			if ( confirm( 'Are you sure?' ) === true ) {
-
-				this.newProject();
-
+		newButton.onClick(() => {
+			if (confirm('Are you sure?') === true) {
+				this.newProject()
 			}
+		})
 
-		} );
-
-		openButton.onClick( () => {
-
-			const input = document.createElement( 'input' );
-			input.type = 'file';
+		openButton.onClick(() => {
+			const input = document.createElement('input')
+			input.type = 'file'
 
 			input.onchange = e => {
+				const file = e.target.files[0]
 
-				const file = e.target.files[ 0 ];
-
-				const reader = new FileReader();
-				reader.readAsText( file, 'UTF-8' );
+				const reader = new FileReader()
+				reader.readAsText(file, 'UTF-8')
 
 				reader.onload = readerEvent => {
+					const loader = new Loader(Loader.OBJECTS)
+					const json = loader.parse(
+						JSON.parse(readerEvent.target.result),
+						ClassLib
+					)
 
-					const loader = new Loader( Loader.OBJECTS );
-					const json = loader.parse( JSON.parse( readerEvent.target.result ), ClassLib );
+					this.loadJSON(json)
+				}
+			}
 
-					this.loadJSON( json );
+			input.click()
+		})
 
-				};
+		saveButton.onClick(() => {
+			exportJSON(this.canvas.toJSON(), 'node_editor')
+		})
 
-			};
+		menu
+			.add(previewButton)
+			.add(splitscreenButton)
+			.add(newButton)
+			.add(examplesButton)
+			.add(openButton)
+			.add(saveButton)
+			.add(menuButton)
 
-			input.click();
+		previewMenu.add(editorButton)
 
-		} );
+		this.domElement.appendChild(menu.dom)
 
-		saveButton.onClick( () => {
-
-			exportJSON( this.canvas.toJSON(), 'node_editor' );
-
-		} );
-
-		menu.add( previewButton )
-			.add( splitscreenButton )
-			.add( newButton )
-			.add( examplesButton )
-			.add( openButton )
-			.add( saveButton )
-			.add( menuButton );
-
-		previewMenu.add( editorButton );
-
-		this.domElement.appendChild( menu.dom );
-
-		this.menu = menu;
-		this.previewMenu = previewMenu;
-
+		this.menu = menu
+		this.previewMenu = previewMenu
 	}
 
 	_initExamplesContext() {
-
-		const context = new ContextMenu();
+		const context = new ContextMenu()
 
 		//**************//
 		// MAIN
 		//**************//
 
-		const onClickExample = async ( button ) => {
+		const onClickExample = async button => {
+			this.examplesContext.hide()
 
-			this.examplesContext.hide();
+			const filename = button.getExtra()
 
-			const filename = button.getExtra();
+			this.loadURL(`./examples/${filename}.json`)
+		}
 
-			this.loadURL( `./examples/${filename}.json` );
+		const addExamples = (category, names) => {
+			const subContext = new ContextMenu()
 
-		};
+			for (const name of names) {
+				const filename = name.replaceAll(' ', '-').toLowerCase()
 
-		const addExamples = ( category, names ) => {
-
-			const subContext = new ContextMenu();
-
-			for ( const name of names ) {
-
-				const filename = name.replaceAll( ' ', '-' ).toLowerCase();
-
-				subContext.add( new ButtonInput( name )
-					.setIcon( 'ti ti-file-symlink' )
-					.onClick( onClickExample )
-					.setExtra( category.toLowerCase() + '/' + filename )
-				);
-
+				subContext.add(
+					new ButtonInput(name)
+						.setIcon('ti ti-file-symlink')
+						.onClick(onClickExample)
+						.setExtra(category.toLowerCase() + '/' + filename)
+				)
 			}
 
-			context.add( new ButtonInput( category ), subContext );
+			context.add(new ButtonInput(category), subContext)
 
-			return subContext;
-
-		};
+			return subContext
+		}
 
 		//**************//
 		// EXAMPLES
 		//**************//
 
-		addExamples( 'Basic', [
-			'Teapot',
-			'Matcap',
-			'Fresnel',
-			'Particles'
-		] );
+		addExamples('Basic', ['Teapot', 'Matcap', 'Fresnel', 'Particles'])
 
-		this.examplesContext = context;
-
+		this.examplesContext = context
 	}
 
 	_initShortcuts() {
+		document.addEventListener('keydown', e => {
+			if (e.target === document.body) {
+				const key = e.key
 
-		document.addEventListener( 'keydown', ( e ) => {
+				if (key === 'Tab') {
+					this.search.inputDOM.focus()
 
-			if ( e.target === document.body ) {
-
-				const key = e.key;
-
-				if ( key === 'Tab' ) {
-
-					this.search.inputDOM.focus();
-
-					e.preventDefault();
-					e.stopImmediatePropagation();
-
-				} else if ( key === ' ' ) {
-
-					this.preview = ! this.preview;
-
-				} else if ( key === 'Delete' ) {
-
-					if ( this.canvas.selected ) this.canvas.selected.dispose();
-
-				} else if ( key === 'Escape' ) {
-
-					this.canvas.select( null );
-
+					e.preventDefault()
+					e.stopImmediatePropagation()
+				} else if (key === ' ') {
+					this.preview = !this.preview
+				} else if (key === 'Delete') {
+					if (this.canvas.selected) this.canvas.selected.dispose()
+				} else if (key === 'Escape') {
+					this.canvas.select(null)
 				}
-
 			}
-
-		} );
-
+		})
 	}
 
 	_initParams() {
+		const urlParams = new URLSearchParams(window.location.search)
 
-		const urlParams = new URLSearchParams( window.location.search );
+		const example = urlParams.get('example') || 'basic/teapot'
 
-		const example = urlParams.get( 'example' ) || 'basic/teapot';
-
-		this.loadURL( `./examples/${example}.json` );
-
+		this.loadURL(`./examples/${example}.json`)
 	}
 
-	addClass( nodeData ) {
+	addClass(nodeData) {
+		this.removeClass(nodeData)
 
-		this.removeClass( nodeData );
+		this.nodeClasses.push(nodeData)
 
-		this.nodeClasses.push( nodeData );
+		ClassLib[nodeData.name] = nodeData.nodeClass
 
-		ClassLib[ nodeData.name ] = nodeData.nodeClass;
-
-		return this;
-
+		return this
 	}
 
-	removeClass( nodeData ) {
+	removeClass(nodeData) {
+		const index = this.nodeClasses.indexOf(nodeData)
 
-		const index = this.nodeClasses.indexOf( nodeData );
+		if (index !== -1) {
+			this.nodeClasses.splice(index, 1)
 
-		if ( index !== - 1 ) {
-
-			this.nodeClasses.splice( index, 1 );
-
-			delete ClassLib[ nodeData.name ];
-
+			delete ClassLib[nodeData.name]
 		}
 
-		return this;
-
+		return this
 	}
 
 	_initSearch() {
-
-		const traverseNodeEditors = ( item ) => {
-
-			if ( item.children ) {
-
-				for ( const subItem of item.children ) {
-
-					traverseNodeEditors( subItem );
-
+		const traverseNodeEditors = item => {
+			if (item.children) {
+				for (const subItem of item.children) {
+					traverseNodeEditors(subItem)
 				}
-
 			} else {
+				const button = new ButtonInput(item.name)
+				button.setIcon(`ti ti-${item.icon}`)
+				button.addEventListener('complete', async () => {
+					const nodeClass = await getNodeEditorClass(item)
 
-				const button = new ButtonInput( item.name );
-				button.setIcon( `ti ti-${item.icon}` );
-				button.addEventListener( 'complete', async () => {
+					const node = new nodeClass()
 
-					const nodeClass = await getNodeEditorClass( item );
+					this.add(node)
 
-					const node = new nodeClass();
+					this.centralizeNode(node)
+					this.canvas.select(node)
+				})
 
-					this.add( node );
+				search.add(button)
 
-					this.centralizeNode( node );
-					this.canvas.select( node );
-
-				} );
-
-				search.add( button );
-
-				if ( item.tags !== undefined ) {
-
-					search.setTag( button, item.tags );
-
+				if (item.tags !== undefined) {
+					search.setTag(button, item.tags)
 				}
+			}
+		}
 
+		const search = new Search()
+		search.forceAutoComplete = true
+
+		search.onFilter(async () => {
+			search.clear()
+
+			const nodeList = await getNodeList()
+
+			for (const item of nodeList.nodes) {
+				traverseNodeEditors(item)
 			}
 
-
-
-		};
-
-		const search = new Search();
-		search.forceAutoComplete = true;
-
-		search.onFilter( async () => {
-
-			search.clear();
-
-			const nodeList = await getNodeList();
-
-			for ( const item of nodeList.nodes ) {
-
-				traverseNodeEditors( item );
-
+			for (const item of this.nodeClasses) {
+				traverseNodeEditors(item)
 			}
+		})
 
-			for ( const item of this.nodeClasses ) {
-
-				traverseNodeEditors( item );
-
+		search.onSubmit(() => {
+			if (search.currentFiltered !== null) {
+				search.currentFiltered.button.dispatchEvent(new Event('complete'))
 			}
+		})
 
-		} );
+		this.search = search
 
-		search.onSubmit( () => {
-
-			if ( search.currentFiltered !== null ) {
-
-				search.currentFiltered.button.dispatchEvent( new Event( 'complete' ) );
-
-			}
-
-		} );
-
-		this.search = search;
-
-		this.domElement.append( search.dom );
-
+		this.domElement.append(search.dom)
 	}
 
 	async _initNodesContext() {
+		const context = new ContextMenu(this.canvas.canvas).setWidth(300)
 
-		const context = new ContextMenu( this.canvas.canvas ).setWidth( 300 );
+		let isContext = false
+		const contextPosition = {}
 
-		let isContext = false;
-		const contextPosition = {};
+		const add = node => {
+			context.hide()
 
-		const add = ( node ) => {
+			this.add(node)
 
-			context.hide();
-
-			this.add( node );
-
-			if ( isContext ) {
-
+			if (isContext) {
 				node.setPosition(
-					Math.round( contextPosition.x ),
-					Math.round( contextPosition.y )
-				);
-
+					Math.round(contextPosition.x),
+					Math.round(contextPosition.y)
+				)
 			} else {
-
-				this.centralizeNode( node );
-
+				this.centralizeNode(node)
 			}
 
-			this.canvas.select( node );
+			this.canvas.select(node)
 
-			isContext = false;
+			isContext = false
+		}
 
-		};
+		context.onContext(() => {
+			isContext = true
 
-		context.onContext( () => {
+			const { relativeClientX, relativeClientY } = this.canvas
 
-			isContext = true;
+			contextPosition.x = Math.round(relativeClientX)
+			contextPosition.y = Math.round(relativeClientY)
+		})
 
-			const { relativeClientX, relativeClientY } = this.canvas;
-
-			contextPosition.x = Math.round( relativeClientX );
-			contextPosition.y = Math.round( relativeClientY );
-
-		} );
-
-		context.addEventListener( 'show', () => {
-
-			reset();
-			focus();
-
-		} );
+		context.addEventListener('show', () => {
+			reset()
+			focus()
+		})
 
 		//**************//
 		// INPUTS
 		//**************//
 
-		const nodeButtons = [];
+		const nodeButtons = []
 
-		let nodeButtonsVisible = [];
-		let nodeButtonsIndex = - 1;
+		let nodeButtonsVisible = []
+		let nodeButtonsIndex = -1
 
-		const focus = () => requestAnimationFrame( () => search.inputDOM.focus() );
+		const focus = () => requestAnimationFrame(() => search.inputDOM.focus())
 		const reset = () => {
+			search.setValue('', false)
 
-			search.setValue( '', false );
-
-			for ( const button of nodeButtons ) {
-
-				button.setOpened( false ).setVisible( true ).setSelected( false );
-
+			for (const button of nodeButtons) {
+				button.setOpened(false).setVisible(true).setSelected(false)
 			}
+		}
 
-		};
+		const node = new Node()
+		context.add(node)
 
-		const node = new Node();
-		context.add( node );
+		const search = new StringInput()
+			.setPlaceHolder('Search...')
+			.setIcon('ti ti-list-search')
 
-		const search = new StringInput().setPlaceHolder( 'Search...' ).setIcon( 'ti ti-list-search' );
+		search.inputDOM.addEventListener('keydown', e => {
+			const key = e.key
 
-		search.inputDOM.addEventListener( 'keydown', e => {
+			if (key === 'ArrowDown') {
+				const previous = nodeButtonsVisible[nodeButtonsIndex]
+				if (previous) previous.setSelected(false)
 
-			const key = e.key;
+				const current =
+					nodeButtonsVisible[
+						(nodeButtonsIndex =
+							(nodeButtonsIndex + 1) % nodeButtonsVisible.length)
+					]
+				if (current) current.setSelected(true)
 
-			if ( key === 'ArrowDown' ) {
+				e.preventDefault()
+				e.stopImmediatePropagation()
+			} else if (key === 'ArrowUp') {
+				const previous = nodeButtonsVisible[nodeButtonsIndex]
+				if (previous) previous.setSelected(false)
 
-				const previous = nodeButtonsVisible[ nodeButtonsIndex ];
-				if ( previous ) previous.setSelected( false );
+				const current =
+					nodeButtonsVisible[
+						nodeButtonsIndex > 0
+							? --nodeButtonsIndex
+							: (nodeButtonsIndex = nodeButtonsVisible.length - 1)
+					]
+				if (current) current.setSelected(true)
 
-				const current = nodeButtonsVisible[ nodeButtonsIndex = ( nodeButtonsIndex + 1 ) % nodeButtonsVisible.length ];
-				if ( current ) current.setSelected( true );
-
-				e.preventDefault();
-				e.stopImmediatePropagation();
-
-			} else if ( key === 'ArrowUp' ) {
-
-				const previous = nodeButtonsVisible[ nodeButtonsIndex ];
-				if ( previous ) previous.setSelected( false );
-
-				const current = nodeButtonsVisible[ nodeButtonsIndex > 0 ? -- nodeButtonsIndex : ( nodeButtonsIndex = nodeButtonsVisible.length - 1 ) ];
-				if ( current ) current.setSelected( true );
-
-				e.preventDefault();
-				e.stopImmediatePropagation();
-
-			} else if ( key === 'Enter' ) {
-
-				if ( nodeButtonsVisible[ nodeButtonsIndex ] !== undefined ) {
-
-					nodeButtonsVisible[ nodeButtonsIndex ].dom.click();
-
+				e.preventDefault()
+				e.stopImmediatePropagation()
+			} else if (key === 'Enter') {
+				if (nodeButtonsVisible[nodeButtonsIndex] !== undefined) {
+					nodeButtonsVisible[nodeButtonsIndex].dom.click()
 				} else {
-
-					context.hide();
-
+					context.hide()
 				}
 
-				e.preventDefault();
-				e.stopImmediatePropagation();
-
-			} else if ( key === 'Escape' ) {
-
-				context.hide();
-
+				e.preventDefault()
+				e.stopImmediatePropagation()
+			} else if (key === 'Escape') {
+				context.hide()
 			}
+		})
 
-		} );
+		search.onChange(() => {
+			const value = search.getValue().toLowerCase()
 
-		search.onChange( () => {
+			if (value.length === 0) return reset()
 
-			const value = search.getValue().toLowerCase();
+			nodeButtonsVisible = []
+			nodeButtonsIndex = 0
 
-			if ( value.length === 0 ) return reset();
+			for (const button of nodeButtons) {
+				const buttonLabel = button.getLabel().toLowerCase()
 
-			nodeButtonsVisible = [];
-			nodeButtonsIndex = 0;
+				button.setVisible(false).setSelected(false)
 
-			for ( const button of nodeButtons ) {
+				const visible = buttonLabel.indexOf(value) !== -1
 
-				const buttonLabel = button.getLabel().toLowerCase();
-
-				button.setVisible( false ).setSelected( false );
-
-				const visible = buttonLabel.indexOf( value ) !== - 1;
-
-				if ( visible && button.children.length === 0 ) {
-
-					nodeButtonsVisible.push( button );
-
+				if (visible && button.children.length === 0) {
+					nodeButtonsVisible.push(button)
 				}
-
 			}
 
-			for ( const button of nodeButtonsVisible ) {
+			for (const button of nodeButtonsVisible) {
+				let parent = button
 
-				let parent = button;
+				while (parent !== null) {
+					parent.setOpened(true).setVisible(true)
 
-				while ( parent !== null ) {
-
-					parent.setOpened( true ).setVisible( true );
-
-					parent = parent.parent;
-
+					parent = parent.parent
 				}
-
 			}
 
-			if ( nodeButtonsVisible[ nodeButtonsIndex ] !== undefined ) {
+			if (nodeButtonsVisible[nodeButtonsIndex] !== undefined) {
+				nodeButtonsVisible[nodeButtonsIndex].setSelected(true)
+			}
+		})
 
-				nodeButtonsVisible[ nodeButtonsIndex ].setSelected( true );
+		const treeView = new TreeViewInput()
+		node.add(new Element().setHeight(30).add(search))
+		node.add(new Element().setHeight(200).add(treeView))
 
+		const addNodeEditorElement = nodeData => {
+			const button = new TreeViewNode(nodeData.name)
+			button.setIcon(`ti ti-${nodeData.icon}`)
+
+			if (nodeData.children === undefined) {
+				button.isNodeClass = true
+				button.onClick(async () => {
+					const nodeClass = await getNodeEditorClass(nodeData)
+
+					add(new nodeClass())
+				})
 			}
 
-		} );
-
-		const treeView = new TreeViewInput();
-		node.add( new Element().setHeight( 30 ).add( search ) );
-		node.add( new Element().setHeight( 200 ).add( treeView ) );
-
-		const addNodeEditorElement = ( nodeData ) => {
-
-			const button = new TreeViewNode( nodeData.name );
-			button.setIcon( `ti ti-${nodeData.icon}` );
-
-			if ( nodeData.children === undefined ) {
-
-				button.isNodeClass = true;
-				button.onClick( async () => {
-
-					const nodeClass = await getNodeEditorClass( nodeData );
-
-					add( new nodeClass() );
-
-				} );
-
-			}
-
-			if ( nodeData.tip ) {
-
+			if (nodeData.tip) {
 				//button.setToolTip( item.tip );
-
 			}
 
-			nodeButtons.push( button );
+			nodeButtons.push(button)
 
-			if ( nodeData.children ) {
+			if (nodeData.children) {
+				for (const subItem of nodeData.children) {
+					const subButton = addNodeEditorElement(subItem)
 
-				for ( const subItem of nodeData.children ) {
-
-					const subButton = addNodeEditorElement( subItem );
-
-					button.add( subButton );
-
+					button.add(subButton)
 				}
-
 			}
 
-			return button;
-
-		};
+			return button
+		}
 
 		//
 
-		const nodeList = await getNodeList();
+		const nodeList = await getNodeList()
 
-		for ( const node of nodeList.nodes ) {
+		for (const node of nodeList.nodes) {
+			const button = addNodeEditorElement(node)
 
-			const button = addNodeEditorElement( node );
-
-			treeView.add( button );
-
+			treeView.add(button)
 		}
 
-		this.nodesContext = context;
-
+		this.nodesContext = context
 	}
-
 }

@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 #ifdef USE_BATCHING
 	#if ! defined( GL_ANGLE_multi_draw )
 	#define gl_DrawID _gl_DrawID
@@ -46,4 +46,4 @@ export default /* glsl */`
 	}
 
 #endif
-`;
+`

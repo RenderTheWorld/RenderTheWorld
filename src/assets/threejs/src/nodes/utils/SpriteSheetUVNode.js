@@ -1,6 +1,6 @@
-import Node from '../core/Node.js';
-import { uv } from '../accessors/UV.js';
-import { nodeProxy, float, vec2 } from '../tsl/TSLBase.js';
+import Node from '../core/Node.js'
+import { uv } from '../accessors/UV.js'
+import { nodeProxy, float, vec2 } from '../tsl/TSLBase.js'
 
 /**
  * Can be used to compute texture coordinates for animated sprite sheets.
@@ -14,11 +14,8 @@ import { nodeProxy, float, vec2 } from '../tsl/TSLBase.js';
  * @augments Node
  */
 class SpriteSheetUVNode extends Node {
-
 	static get type() {
-
-		return 'SpriteSheetUVNode';
-
+		return 'SpriteSheetUVNode'
 	}
 
 	/**
@@ -28,54 +25,49 @@ class SpriteSheetUVNode extends Node {
 	 * @param {Node<vec2>} [uvNode=uv()] - The uv node.
 	 * @param {Node<float>} [frameNode=float()] - The node that defines the current frame/sprite.
 	 */
-	constructor( countNode, uvNode = uv(), frameNode = float( 0 ) ) {
-
-		super( 'vec2' );
+	constructor(countNode, uvNode = uv(), frameNode = float(0)) {
+		super('vec2')
 
 		/**
 		 * The node that defines the number of sprites in the x and y direction (e.g 6x6).
 		 *
 		 * @type {Node<vec2>}
 		 */
-		this.countNode = countNode;
+		this.countNode = countNode
 
 		/**
 		 * The uv node.
 		 *
 		 * @type {Node<vec2>}
 		 */
-		this.uvNode = uvNode;
+		this.uvNode = uvNode
 
 		/**
 		 * The node that defines the current frame/sprite.
 		 *
 		 * @type {Node<float>}
 		 */
-		this.frameNode = frameNode;
-
+		this.frameNode = frameNode
 	}
 
 	setup() {
+		const { frameNode, uvNode, countNode } = this
 
-		const { frameNode, uvNode, countNode } = this;
+		const { width, height } = countNode
 
-		const { width, height } = countNode;
+		const frameNum = frameNode.mod(width.mul(height)).floor()
 
-		const frameNum = frameNode.mod( width.mul( height ) ).floor();
+		const column = frameNum.mod(width)
+		const row = height.sub(frameNum.add(1).div(width).ceil())
 
-		const column = frameNum.mod( width );
-		const row = height.sub( frameNum.add( 1 ).div( width ).ceil() );
+		const scale = countNode.reciprocal()
+		const uvFrameOffset = vec2(column, row)
 
-		const scale = countNode.reciprocal();
-		const uvFrameOffset = vec2( column, row );
-
-		return uvNode.add( uvFrameOffset ).mul( scale );
-
+		return uvNode.add(uvFrameOffset).mul(scale)
 	}
-
 }
 
-export default SpriteSheetUVNode;
+export default SpriteSheetUVNode
 
 /**
  * TSL function for creating a sprite sheet uv node.
@@ -86,4 +78,4 @@ export default SpriteSheetUVNode;
  * @param {Node<float>} [frameNode=float()] - The node that defines the current frame/sprite.
  * @returns {SpriteSheetUVNode}
  */
-export const spritesheetUV = /*@__PURE__*/ nodeProxy( SpriteSheetUVNode );
+export const spritesheetUV = /*@__PURE__*/ nodeProxy(SpriteSheetUVNode)

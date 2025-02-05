@@ -1,4 +1,4 @@
-import Pipeline from './Pipeline.js';
+import Pipeline from './Pipeline.js'
 
 /**
  * Class for representing render pipelines.
@@ -7,7 +7,6 @@ import Pipeline from './Pipeline.js';
  * @augments Pipeline
  */
 class RenderPipeline extends Pipeline {
-
 	/**
 	 * Constructs a new render pipeline.
 	 *
@@ -15,26 +14,23 @@ class RenderPipeline extends Pipeline {
 	 * @param {ProgrammableStage} vertexProgram - The pipeline's vertex shader.
 	 * @param {ProgrammableStage} fragmentProgram - The pipeline's fragment shader.
 	 */
-	constructor( cacheKey, vertexProgram, fragmentProgram ) {
-
-		super( cacheKey );
+	constructor(cacheKey, vertexProgram, fragmentProgram) {
+		super(cacheKey)
 
 		/**
 		 * The pipeline's vertex shader.
 		 *
 		 * @type {ProgrammableStage}
 		 */
-		this.vertexProgram = vertexProgram;
+		this.vertexProgram = vertexProgram
 
 		/**
 		 * The pipeline's fragment shader.
 		 *
 		 * @type {ProgrammableStage}
 		 */
-		this.fragmentProgram = fragmentProgram;
-
+		this.fragmentProgram = fragmentProgram
 	}
-
 }
 
-export default RenderPipeline;
+export default RenderPipeline

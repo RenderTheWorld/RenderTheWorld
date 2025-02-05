@@ -1,5 +1,5 @@
-import Node from '../core/Node.js';
-import { nodeObject } from '../tsl/TSLBase.js';
+import Node from '../core/Node.js'
+import { nodeObject } from '../tsl/TSLBase.js'
 
 /**
  * `ComputeBuiltinNode` represents a compute-scope builtin value that expose information
@@ -10,11 +10,8 @@ import { nodeObject } from '../tsl/TSLBase.js';
  * @augments Node
  */
 class ComputeBuiltinNode extends Node {
-
 	static get type() {
-
-		return 'ComputeBuiltinNode';
-
+		return 'ComputeBuiltinNode'
 	}
 
 	/**
@@ -23,9 +20,8 @@ class ComputeBuiltinNode extends Node {
 	 * @param {String} builtinName - The built-in name.
 	 * @param {String} nodeType - The node type.
 	 */
-	constructor( builtinName, nodeType ) {
-
-		super( nodeType );
+	constructor(builtinName, nodeType) {
+		super(nodeType)
 
 		/**
 		 * The built-in name.
@@ -33,8 +29,7 @@ class ComputeBuiltinNode extends Node {
 		 * @private
 		 * @type {String}
 		 */
-		this._builtinName = builtinName;
-
+		this._builtinName = builtinName
 	}
 
 	/**
@@ -43,10 +38,8 @@ class ComputeBuiltinNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The hash.
 	 */
-	getHash( builder ) {
-
-		return this.getBuiltinName( builder );
-
+	getHash(builder) {
+		return this.getBuiltinName(builder)
 	}
 
 	/**
@@ -55,10 +48,8 @@ class ComputeBuiltinNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The node type.
 	 */
-	getNodeType( /*builder*/ ) {
-
-		return this.nodeType;
-
+	getNodeType(/*builder*/) {
+		return this.nodeType
 	}
 
 	/**
@@ -67,12 +58,10 @@ class ComputeBuiltinNode extends Node {
 	 * @param {String} builtinName - The built-in name.
 	 * @return {ComputeBuiltinNode} A reference to this node.
 	 */
-	setBuiltinName( builtinName ) {
+	setBuiltinName(builtinName) {
+		this._builtinName = builtinName
 
-		this._builtinName = builtinName;
-
-		return this;
-
+		return this
 	}
 
 	/**
@@ -81,10 +70,8 @@ class ComputeBuiltinNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The builtin name.
 	 */
-	getBuiltinName( /*builder*/ ) {
-
-		return this._builtinName;
-
+	getBuiltinName(/*builder*/) {
+		return this._builtinName
 	}
 
 	/**
@@ -92,51 +79,40 @@ class ComputeBuiltinNode extends Node {
 	 *
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	hasBuiltin( builder ) {
-
-		builder.hasBuiltin( this._builtinName );
-
+	hasBuiltin(builder) {
+		builder.hasBuiltin(this._builtinName)
 	}
 
-	generate( builder, output ) {
+	generate(builder, output) {
+		const builtinName = this.getBuiltinName(builder)
+		const nodeType = this.getNodeType(builder)
 
-		const builtinName = this.getBuiltinName( builder );
-		const nodeType = this.getNodeType( builder );
-
-		if ( builder.shaderStage === 'compute' ) {
-
-			return builder.format( builtinName, nodeType, output );
-
+		if (builder.shaderStage === 'compute') {
+			return builder.format(builtinName, nodeType, output)
 		} else {
-
-			console.warn( `ComputeBuiltinNode: Compute built-in value ${builtinName} can not be accessed in the ${builder.shaderStage} stage` );
-			return builder.generateConst( nodeType );
-
+			console.warn(
+				`ComputeBuiltinNode: Compute built-in value ${builtinName} can not be accessed in the ${builder.shaderStage} stage`
+			)
+			return builder.generateConst(nodeType)
 		}
-
 	}
 
-	serialize( data ) {
+	serialize(data) {
+		super.serialize(data)
 
-		super.serialize( data );
-
-		data.global = this.global;
-		data._builtinName = this._builtinName;
-
+		data.global = this.global
+		data._builtinName = this._builtinName
 	}
 
-	deserialize( data ) {
+	deserialize(data) {
+		super.deserialize(data)
 
-		super.deserialize( data );
-
-		this.global = data.global;
-		this._builtinName = data._builtinName;
-
+		this.global = data.global
+		this._builtinName = data._builtinName
 	}
-
 }
 
-export default ComputeBuiltinNode;
+export default ComputeBuiltinNode
 
 /**
  * TSL function for creating a compute builtin node.
@@ -146,7 +122,8 @@ export default ComputeBuiltinNode;
  * @param {String} nodeType - The node type.
  * @returns {ComputeBuiltinNode}
  */
-const computeBuiltin = ( name, nodeType ) => nodeObject( new ComputeBuiltinNode( name, nodeType ) );
+const computeBuiltin = (name, nodeType) =>
+	nodeObject(new ComputeBuiltinNode(name, nodeType))
 
 /**
  * TSL function for creating a `numWorkgroups` builtin node.
@@ -172,7 +149,10 @@ const computeBuiltin = ( name, nodeType ) => nodeObject( new ComputeBuiltinNode(
  * @function
  * @returns {ComputeBuiltinNode<uvec3>}
  */
-export const numWorkgroups = /*@__PURE__*/ computeBuiltin( 'numWorkgroups', 'uvec3' );
+export const numWorkgroups = /*@__PURE__*/ computeBuiltin(
+	'numWorkgroups',
+	'uvec3'
+)
 
 /**
  * TSL function for creating a `workgroupId` builtin node.
@@ -200,7 +180,7 @@ export const numWorkgroups = /*@__PURE__*/ computeBuiltin( 'numWorkgroups', 'uve
  * @function
  * @returns {ComputeBuiltinNode<uvec3>}
  */
-export const workgroupId = /*@__PURE__*/ computeBuiltin( 'workgroupId', 'uvec3' );
+export const workgroupId = /*@__PURE__*/ computeBuiltin('workgroupId', 'uvec3')
 
 /**
  * TSL function for creating a `globalId` builtin node. A non-linearized 3-dimensional
@@ -209,7 +189,7 @@ export const workgroupId = /*@__PURE__*/ computeBuiltin( 'workgroupId', 'uvec3' 
  * @function
  * @returns {ComputeBuiltinNode<uvec3>}
  */
-export const globalId = /*@__PURE__*/ computeBuiltin( 'globalId', 'uvec3' );
+export const globalId = /*@__PURE__*/ computeBuiltin('globalId', 'uvec3')
 /**
  * TSL function for creating a `localId` builtin node. A non-linearized 3-dimensional
  * representation of the current invocation's position within a 3D workgroup grid.
@@ -217,7 +197,7 @@ export const globalId = /*@__PURE__*/ computeBuiltin( 'globalId', 'uvec3' );
  * @function
  * @returns {ComputeBuiltinNode<uvec3>}
  */
-export const localId = /*@__PURE__*/ computeBuiltin( 'localId', 'uvec3' );
+export const localId = /*@__PURE__*/ computeBuiltin('localId', 'uvec3')
 
 /**
  * TSL function for creating a `subgroupSize` builtin node. A device dependent variable
@@ -226,5 +206,4 @@ export const localId = /*@__PURE__*/ computeBuiltin( 'localId', 'uvec3' );
  * @function
  * @returns {ComputeBuiltinNode<uint>}
  */
-export const subgroupSize = /*@__PURE__*/ computeBuiltin( 'subgroupSize', 'uint' );
-
+export const subgroupSize = /*@__PURE__*/ computeBuiltin('subgroupSize', 'uint')

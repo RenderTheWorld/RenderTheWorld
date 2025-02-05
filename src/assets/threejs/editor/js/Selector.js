@@ -1,102 +1,74 @@
-import * as THREE from 'three';
+import * as THREE from 'three'
 
-const mouse = new THREE.Vector2();
-const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2()
+const raycaster = new THREE.Raycaster()
 
 class Selector {
+	constructor(editor) {
+		const signals = editor.signals
 
-	constructor( editor ) {
-
-		const signals = editor.signals;
-
-		this.editor = editor;
-		this.signals = signals;
+		this.editor = editor
+		this.signals = signals
 
 		// signals
 
-		signals.intersectionsDetected.add( ( intersects ) => {
+		signals.intersectionsDetected.add(intersects => {
+			if (intersects.length > 0) {
+				const object = intersects[0].object
 
-			if ( intersects.length > 0 ) {
-
-				const object = intersects[ 0 ].object;
-
-				if ( object.userData.object !== undefined ) {
-
+				if (object.userData.object !== undefined) {
 					// helper
 
-					this.select( object.userData.object );
-
+					this.select(object.userData.object)
 				} else {
-
-					this.select( object );
-
+					this.select(object)
 				}
-
 			} else {
-
-				this.select( null );
-
+				this.select(null)
 			}
-
-		} );
-
+		})
 	}
 
-	getIntersects( raycaster ) {
+	getIntersects(raycaster) {
+		const objects = []
 
-		const objects = [];
+		this.editor.scene.traverseVisible(function (child) {
+			objects.push(child)
+		})
 
-		this.editor.scene.traverseVisible( function ( child ) {
+		this.editor.sceneHelpers.traverseVisible(function (child) {
+			if (child.name === 'picker') objects.push(child)
+		})
 
-			objects.push( child );
-
-		} );
-
-		this.editor.sceneHelpers.traverseVisible( function ( child ) {
-
-			if ( child.name === 'picker' ) objects.push( child );
-
-		} );
-
-		return raycaster.intersectObjects( objects, false );
-
+		return raycaster.intersectObjects(objects, false)
 	}
 
-	getPointerIntersects( point, camera ) {
+	getPointerIntersects(point, camera) {
+		mouse.set(point.x * 2 - 1, -(point.y * 2) + 1)
 
-		mouse.set( ( point.x * 2 ) - 1, - ( point.y * 2 ) + 1 );
+		raycaster.setFromCamera(mouse, camera)
 
-		raycaster.setFromCamera( mouse, camera );
-
-		return this.getIntersects( raycaster );
-
+		return this.getIntersects(raycaster)
 	}
 
-	select( object ) {
+	select(object) {
+		if (this.editor.selected === object) return
 
-		if ( this.editor.selected === object ) return;
+		let uuid = null
 
-		let uuid = null;
-
-		if ( object !== null ) {
-
-			uuid = object.uuid;
-
+		if (object !== null) {
+			uuid = object.uuid
 		}
 
-		this.editor.selected = object;
-		this.editor.config.setKey( 'selected', uuid );
+		this.editor.selected = object
+		this.editor.config.setKey('selected', uuid)
 
-		this.signals.objectSelected.dispatch( object );
-
+		this.signals.objectSelected.dispatch(object)
 	}
 
 	deselect() {
-
-		this.select( null );
-
+		this.select(null)
 	}
-
 }
 
-export { Selector };
+export { Selector }

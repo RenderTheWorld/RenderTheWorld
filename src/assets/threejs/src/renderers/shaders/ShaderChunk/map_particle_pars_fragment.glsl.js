@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 #if defined( USE_POINTS_UV )
 
 	varying vec2 vUv;
@@ -24,4 +24,4 @@ export default /* glsl */`
 	uniform sampler2D alphaMap;
 
 #endif
-`;
+`

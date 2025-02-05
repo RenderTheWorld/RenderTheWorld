@@ -1,56 +1,44 @@
-import { Light } from './Light.js';
+import { Light } from './Light.js'
 
 class RectAreaLight extends Light {
+	constructor(color, intensity, width = 10, height = 10) {
+		super(color, intensity)
 
-	constructor( color, intensity, width = 10, height = 10 ) {
+		this.isRectAreaLight = true
 
-		super( color, intensity );
+		this.type = 'RectAreaLight'
 
-		this.isRectAreaLight = true;
-
-		this.type = 'RectAreaLight';
-
-		this.width = width;
-		this.height = height;
-
+		this.width = width
+		this.height = height
 	}
 
 	get power() {
-
 		// compute the light's luminous power (in lumens) from its intensity (in nits)
-		return this.intensity * this.width * this.height * Math.PI;
-
+		return this.intensity * this.width * this.height * Math.PI
 	}
 
-	set power( power ) {
-
+	set power(power) {
 		// set the light's intensity (in nits) from the desired luminous power (in lumens)
-		this.intensity = power / ( this.width * this.height * Math.PI );
-
+		this.intensity = power / (this.width * this.height * Math.PI)
 	}
 
-	copy( source ) {
+	copy(source) {
+		super.copy(source)
 
-		super.copy( source );
+		this.width = source.width
+		this.height = source.height
 
-		this.width = source.width;
-		this.height = source.height;
-
-		return this;
-
+		return this
 	}
 
-	toJSON( meta ) {
+	toJSON(meta) {
+		const data = super.toJSON(meta)
 
-		const data = super.toJSON( meta );
+		data.object.width = this.width
+		data.object.height = this.height
 
-		data.object.width = this.width;
-		data.object.height = this.height;
-
-		return data;
-
+		return data
 	}
-
 }
 
-export { RectAreaLight };
+export { RectAreaLight }

@@ -1,32 +1,29 @@
-
 /**
  * This module manages the internal animation loop of the renderer.
  *
  * @private
  */
 class Animation {
-
 	/**
 	 * Constructs a new animation loop management component.
 	 *
 	 * @param {Nodes} nodes - Renderer component for managing nodes related logic.
 	 * @param {Info} info - Renderer component for managing metrics and monitoring data.
 	 */
-	constructor( nodes, info ) {
-
+	constructor(nodes, info) {
 		/**
 		 * Renderer component for managing nodes related logic.
 		 *
 		 * @type {Nodes}
 		 */
-		this.nodes = nodes;
+		this.nodes = nodes
 
 		/**
 		 * Renderer component for managing metrics and monitoring data.
 		 *
 		 * @type {Info}
 		 */
-		this.info = info;
+		this.info = info
 
 		/**
 		 * A reference to the context from `requestAnimationFrame()` can
@@ -34,7 +31,7 @@ class Animation {
 		 *
 		 * @type {Window|XRSession}
 		 */
-		this._context = self;
+		this._context = self
 
 		/**
 		 * The user-defined animation loop.
@@ -42,7 +39,7 @@ class Animation {
 		 * @type {Function?}
 		 * @default null
 		 */
-		this._animationLoop = null;
+		this._animationLoop = null
 
 		/**
 		 * The requestId which is returned from the `requestAnimationFrame()` call.
@@ -51,42 +48,35 @@ class Animation {
 		 * @type {Number?}
 		 * @default null
 		 */
-		this._requestId = null;
-
+		this._requestId = null
 	}
 
 	/**
 	 * Starts the internal animation loop.
 	 */
 	start() {
+		const update = (time, frame) => {
+			this._requestId = this._context.requestAnimationFrame(update)
 
-		const update = ( time, frame ) => {
+			if (this.info.autoReset === true) this.info.reset()
 
-			this._requestId = this._context.requestAnimationFrame( update );
+			this.nodes.nodeFrame.update()
 
-			if ( this.info.autoReset === true ) this.info.reset();
+			this.info.frame = this.nodes.nodeFrame.frameId
 
-			this.nodes.nodeFrame.update();
+			if (this._animationLoop !== null) this._animationLoop(time, frame)
+		}
 
-			this.info.frame = this.nodes.nodeFrame.frameId;
-
-			if ( this._animationLoop !== null ) this._animationLoop( time, frame );
-
-		};
-
-		update();
-
+		update()
 	}
 
 	/**
 	 * Stops the internal animation loop.
 	 */
 	stop() {
+		this._context.cancelAnimationFrame(this._requestId)
 
-		this._context.cancelAnimationFrame( this._requestId );
-
-		this._requestId = null;
-
+		this._requestId = null
 	}
 
 	/**
@@ -95,9 +85,7 @@ class Animation {
 	 * @return {Function} The animation loop.
 	 */
 	getAnimationLoop() {
-
-		return this._animationLoop;
-
+		return this._animationLoop
 	}
 
 	/**
@@ -105,10 +93,8 @@ class Animation {
 	 *
 	 * @param {Function} callback - The animation loop.
 	 */
-	setAnimationLoop( callback ) {
-
-		this._animationLoop = callback;
-
+	setAnimationLoop(callback) {
+		this._animationLoop = callback
 	}
 
 	/**
@@ -117,9 +103,7 @@ class Animation {
 	 * @return {Window|XRSession} The animation context.
 	 */
 	getContext() {
-
-		return this._context;
-
+		return this._context
 	}
 
 	/**
@@ -127,21 +111,16 @@ class Animation {
 	 *
 	 * @param {Window|XRSession} context - The context to set.
 	 */
-	setContext( context ) {
-
-		this._context = context;
-
+	setContext(context) {
+		this._context = context
 	}
 
 	/**
 	 * Frees all internal resources and stops the animation loop.
 	 */
 	dispose() {
-
-		this.stop();
-
+		this.stop()
 	}
-
 }
 
-export default Animation;
+export default Animation

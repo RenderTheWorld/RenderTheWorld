@@ -1,5 +1,5 @@
-import Node from '../core/Node.js';
-import { nodeImmutable } from '../tsl/TSLBase.js';
+import Node from '../core/Node.js'
+import { nodeImmutable } from '../tsl/TSLBase.js'
 
 /**
  * A node for representing the uv coordinates of points.
@@ -11,19 +11,15 @@ import { nodeImmutable } from '../tsl/TSLBase.js';
  * @augments Node
  */
 class PointUVNode extends Node {
-
 	static get type() {
-
-		return 'PointUVNode';
-
+		return 'PointUVNode'
 	}
 
 	/**
 	 * Constructs a new point uv node.
 	 */
 	constructor() {
-
-		super( 'vec2' );
+		super('vec2')
 
 		/**
 		 * This flag can be used for type testing.
@@ -32,23 +28,19 @@ class PointUVNode extends Node {
 		 * @readonly
 		 * @default true
 		 */
-		this.isPointUVNode = true;
-
+		this.isPointUVNode = true
 	}
 
-	generate( /*builder*/ ) {
-
-		return 'vec2( gl_PointCoord.x, 1.0 - gl_PointCoord.y )';
-
+	generate(/*builder*/) {
+		return 'vec2( gl_PointCoord.x, 1.0 - gl_PointCoord.y )'
 	}
-
 }
 
-export default PointUVNode;
+export default PointUVNode
 
 /**
  * TSL object that represents the uv coordinates of points.
  *
  * @type {PointUVNode}
  */
-export const pointUV = /*@__PURE__*/ nodeImmutable( PointUVNode );
+export const pointUV = /*@__PURE__*/ nodeImmutable(PointUVNode)

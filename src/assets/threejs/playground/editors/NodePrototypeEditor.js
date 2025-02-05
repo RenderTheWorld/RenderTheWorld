@@ -1,6 +1,6 @@
-import { JavaScriptEditor } from './JavaScriptEditor.js';
-import { ScriptableEditor } from './ScriptableEditor.js';
-import { scriptable } from 'three/tsl';
+import { JavaScriptEditor } from './JavaScriptEditor.js'
+import { ScriptableEditor } from './ScriptableEditor.js'
+import { scriptable } from 'three/tsl'
 
 const defaultCode = `// Addition Node Example
 // Enjoy! :)
@@ -31,184 +31,136 @@ function main() {
 	return add( nodeA, nodeB );
 
 }
-`;
+`
 
 export class NodePrototypeEditor extends JavaScriptEditor {
+	constructor(source = defaultCode) {
+		super(source)
 
-	constructor( source = defaultCode ) {
+		this.setName('Node Prototype')
 
-		super( source );
+		this.nodeClass = new WeakMap()
+		this.scriptableNode = scriptable(this.codeNode)
 
-		this.setName( 'Node Prototype' );
+		this.instances = []
 
-		this.nodeClass = new WeakMap();
-		this.scriptableNode = scriptable( this.codeNode );
+		this.editorElement.addEventListener('change', () => {
+			this.updatePrototypes()
+		})
 
-		this.instances = [];
+		this._prototype = null
 
-		this.editorElement.addEventListener( 'change', () => {
-
-			this.updatePrototypes();
-
-		} );
-
-		this._prototype = null;
-
-		this.updatePrototypes();
-
+		this.updatePrototypes()
 	}
 
-	serialize( data ) {
+	serialize(data) {
+		super.serialize(data)
 
-		super.serialize( data );
-
-		data.source = this.source;
-
+		data.source = this.source
 	}
 
-	deserialize( data ) {
+	deserialize(data) {
+		super.deserialize(data)
 
-		super.deserialize( data );
-
-		this.source = data.source;
-
+		this.source = data.source
 	}
 
-	deserializeLib( data, lib ) {
+	deserializeLib(data, lib) {
+		super.deserializeLib(data, lib)
 
-		super.deserializeLib( data, lib );
+		this.source = data.source
 
-		this.source = data.source;
-
-		const nodePrototype = this.createPrototype();
-		lib[ nodePrototype.name ] = nodePrototype.nodeClass;
-
+		const nodePrototype = this.createPrototype()
+		lib[nodePrototype.name] = nodePrototype.nodeClass
 	}
 
-	setEditor( editor ) {
-
-		if ( editor === null && this.editor ) {
-
-			this.editor.removeClass( this._prototype );
-
+	setEditor(editor) {
+		if (editor === null && this.editor) {
+			this.editor.removeClass(this._prototype)
 		}
 
-		super.setEditor( editor );
+		super.setEditor(editor)
 
-		if ( editor === null ) {
-
-			for ( const proto of [ ...this.instances ] ) {
-
-				proto.dispose();
-
+		if (editor === null) {
+			for (const proto of [...this.instances]) {
+				proto.dispose()
 			}
 
-			this.instances = [];
-
+			this.instances = []
 		}
 
-		this.updatePrototypes();
-
+		this.updatePrototypes()
 	}
 
 	createPrototype() {
+		if (this._prototype !== null) return this._prototype
 
-		if ( this._prototype !== null ) return this._prototype;
-
-		const nodePrototype = this;
-		const scriptableNode = this.scriptableNode;
-		const editorElement = this.editorElement;
+		const nodePrototype = this
+		const scriptableNode = this.scriptableNode
+		const editorElement = this.editorElement
 
 		const nodeClass = class extends ScriptableEditor {
-
 			constructor() {
+				super(scriptableNode.codeNode, false)
 
-				super( scriptableNode.codeNode, false );
+				this.serializePriority = -1
 
-				this.serializePriority = - 1;
-
-				this.onCode = this.onCode.bind( this );
-
+				this.onCode = this.onCode.bind(this)
 			}
 
 			onCode() {
-
-				this.update();
-
+				this.update()
 			}
 
-			setEditor( editor ) {
+			setEditor(editor) {
+				super.setEditor(editor)
 
-				super.setEditor( editor );
+				const index = nodePrototype.instances.indexOf(this)
 
-				const index = nodePrototype.instances.indexOf( this );
+				if (editor) {
+					if (index === -1) nodePrototype.instances.push(this)
 
-				if ( editor ) {
-
-					if ( index === - 1 ) nodePrototype.instances.push( this );
-
-					editorElement.addEventListener( 'change', this.onCode );
-
+					editorElement.addEventListener('change', this.onCode)
 				} else {
+					if (index !== -1) nodePrototype.instances.splice(index, 1)
 
-					if ( index !== - 1 ) nodePrototype.instances.splice( index, 1 );
-
-					editorElement.removeEventListener( 'change', this.onCode );
-
+					editorElement.removeEventListener('change', this.onCode)
 				}
-
 			}
 
 			get className() {
-
-				return scriptableNode.getLayout().name;
-
+				return scriptableNode.getLayout().name
 			}
-
-		};
+		}
 
 		this._prototype = {
 			get name() {
-
-				return scriptableNode.getLayout().name;
-
+				return scriptableNode.getLayout().name
 			},
 			get icon() {
-
-				return scriptableNode.getLayout().icon;
-
+				return scriptableNode.getLayout().icon
 			},
 			nodeClass,
 			reference: this,
 			editor: this.editor
-		};
+		}
 
-		return this._prototype;
-
+		return this._prototype
 	}
 
 	updatePrototypes() {
-
-		if ( this._prototype !== null && this._prototype.editor !== null ) {
-
-			this._prototype.editor.removeClass( this._prototype );
-
+		if (this._prototype !== null && this._prototype.editor !== null) {
+			this._prototype.editor.removeClass(this._prototype)
 		}
 
 		//
 
-		const layout = this.scriptableNode.getLayout();
+		const layout = this.scriptableNode.getLayout()
 
-		if ( layout && layout.name ) {
-
-			if ( this.editor ) {
-
-				this.editor.addClass( this.createPrototype() );
-
+		if (layout && layout.name) {
+			if (this.editor) {
+				this.editor.addClass(this.createPrototype())
 			}
-
 		}
-
 	}
-
 }

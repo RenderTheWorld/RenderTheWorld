@@ -1,4 +1,4 @@
-export const vertex = /* glsl */`
+export const vertex = /* glsl */ `
 #define STANDARD
 
 varying vec3 vViewPosition;
@@ -57,9 +57,9 @@ void main() {
 
 #endif
 }
-`;
+`
 
-export const fragment = /* glsl */`
+export const fragment = /* glsl */ `
 #define STANDARD
 
 #ifdef PHYSICAL
@@ -226,4 +226,4 @@ void main() {
 	#include <dithering_fragment>
 
 }
-`;
+`

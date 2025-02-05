@@ -1,127 +1,121 @@
-import { TangentSpaceNormalMap } from '../constants.js';
-import { Material } from './Material.js';
-import { Vector2 } from '../math/Vector2.js';
-import { Color } from '../math/Color.js';
-import { Euler } from '../math/Euler.js';
+import { TangentSpaceNormalMap } from '../constants.js'
+import { Material } from './Material.js'
+import { Vector2 } from '../math/Vector2.js'
+import { Color } from '../math/Color.js'
+import { Euler } from '../math/Euler.js'
 
 class MeshStandardMaterial extends Material {
+	constructor(parameters) {
+		super()
 
-	constructor( parameters ) {
+		this.isMeshStandardMaterial = true
 
-		super();
+		this.type = 'MeshStandardMaterial'
 
-		this.isMeshStandardMaterial = true;
+		this.defines = { STANDARD: '' }
 
-		this.type = 'MeshStandardMaterial';
+		this.color = new Color(0xffffff) // diffuse
+		this.roughness = 1.0
+		this.metalness = 0.0
 
-		this.defines = { 'STANDARD': '' };
+		this.map = null
 
-		this.color = new Color( 0xffffff ); // diffuse
-		this.roughness = 1.0;
-		this.metalness = 0.0;
+		this.lightMap = null
+		this.lightMapIntensity = 1.0
 
-		this.map = null;
+		this.aoMap = null
+		this.aoMapIntensity = 1.0
 
-		this.lightMap = null;
-		this.lightMapIntensity = 1.0;
+		this.emissive = new Color(0x000000)
+		this.emissiveIntensity = 1.0
+		this.emissiveMap = null
 
-		this.aoMap = null;
-		this.aoMapIntensity = 1.0;
+		this.bumpMap = null
+		this.bumpScale = 1
 
-		this.emissive = new Color( 0x000000 );
-		this.emissiveIntensity = 1.0;
-		this.emissiveMap = null;
+		this.normalMap = null
+		this.normalMapType = TangentSpaceNormalMap
+		this.normalScale = new Vector2(1, 1)
 
-		this.bumpMap = null;
-		this.bumpScale = 1;
+		this.displacementMap = null
+		this.displacementScale = 1
+		this.displacementBias = 0
 
-		this.normalMap = null;
-		this.normalMapType = TangentSpaceNormalMap;
-		this.normalScale = new Vector2( 1, 1 );
+		this.roughnessMap = null
 
-		this.displacementMap = null;
-		this.displacementScale = 1;
-		this.displacementBias = 0;
+		this.metalnessMap = null
 
-		this.roughnessMap = null;
+		this.alphaMap = null
 
-		this.metalnessMap = null;
+		this.envMap = null
+		this.envMapRotation = new Euler()
+		this.envMapIntensity = 1.0
 
-		this.alphaMap = null;
+		this.wireframe = false
+		this.wireframeLinewidth = 1
+		this.wireframeLinecap = 'round'
+		this.wireframeLinejoin = 'round'
 
-		this.envMap = null;
-		this.envMapRotation = new Euler();
-		this.envMapIntensity = 1.0;
+		this.flatShading = false
 
-		this.wireframe = false;
-		this.wireframeLinewidth = 1;
-		this.wireframeLinecap = 'round';
-		this.wireframeLinejoin = 'round';
+		this.fog = true
 
-		this.flatShading = false;
-
-		this.fog = true;
-
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
-	copy( source ) {
+	copy(source) {
+		super.copy(source)
 
-		super.copy( source );
+		this.defines = { STANDARD: '' }
 
-		this.defines = { 'STANDARD': '' };
+		this.color.copy(source.color)
+		this.roughness = source.roughness
+		this.metalness = source.metalness
 
-		this.color.copy( source.color );
-		this.roughness = source.roughness;
-		this.metalness = source.metalness;
+		this.map = source.map
 
-		this.map = source.map;
+		this.lightMap = source.lightMap
+		this.lightMapIntensity = source.lightMapIntensity
 
-		this.lightMap = source.lightMap;
-		this.lightMapIntensity = source.lightMapIntensity;
+		this.aoMap = source.aoMap
+		this.aoMapIntensity = source.aoMapIntensity
 
-		this.aoMap = source.aoMap;
-		this.aoMapIntensity = source.aoMapIntensity;
+		this.emissive.copy(source.emissive)
+		this.emissiveMap = source.emissiveMap
+		this.emissiveIntensity = source.emissiveIntensity
 
-		this.emissive.copy( source.emissive );
-		this.emissiveMap = source.emissiveMap;
-		this.emissiveIntensity = source.emissiveIntensity;
+		this.bumpMap = source.bumpMap
+		this.bumpScale = source.bumpScale
 
-		this.bumpMap = source.bumpMap;
-		this.bumpScale = source.bumpScale;
+		this.normalMap = source.normalMap
+		this.normalMapType = source.normalMapType
+		this.normalScale.copy(source.normalScale)
 
-		this.normalMap = source.normalMap;
-		this.normalMapType = source.normalMapType;
-		this.normalScale.copy( source.normalScale );
+		this.displacementMap = source.displacementMap
+		this.displacementScale = source.displacementScale
+		this.displacementBias = source.displacementBias
 
-		this.displacementMap = source.displacementMap;
-		this.displacementScale = source.displacementScale;
-		this.displacementBias = source.displacementBias;
+		this.roughnessMap = source.roughnessMap
 
-		this.roughnessMap = source.roughnessMap;
+		this.metalnessMap = source.metalnessMap
 
-		this.metalnessMap = source.metalnessMap;
+		this.alphaMap = source.alphaMap
 
-		this.alphaMap = source.alphaMap;
+		this.envMap = source.envMap
+		this.envMapRotation.copy(source.envMapRotation)
+		this.envMapIntensity = source.envMapIntensity
 
-		this.envMap = source.envMap;
-		this.envMapRotation.copy( source.envMapRotation );
-		this.envMapIntensity = source.envMapIntensity;
+		this.wireframe = source.wireframe
+		this.wireframeLinewidth = source.wireframeLinewidth
+		this.wireframeLinecap = source.wireframeLinecap
+		this.wireframeLinejoin = source.wireframeLinejoin
 
-		this.wireframe = source.wireframe;
-		this.wireframeLinewidth = source.wireframeLinewidth;
-		this.wireframeLinecap = source.wireframeLinecap;
-		this.wireframeLinejoin = source.wireframeLinejoin;
+		this.flatShading = source.flatShading
 
-		this.flatShading = source.flatShading;
+		this.fog = source.fog
 
-		this.fog = source.fog;
-
-		return this;
-
+		return this
 	}
-
 }
 
-export { MeshStandardMaterial };
+export { MeshStandardMaterial }

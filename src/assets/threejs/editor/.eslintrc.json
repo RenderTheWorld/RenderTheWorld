@@ -1,9 +1,7 @@
 {
-    "extends": [
-        "../.eslintrc.json"
-    ],
-    "parserOptions": {
-        "sourceType": "module",
-        "ecmaVersion": 2020
-    }
+  "extends": ["../.eslintrc.json"],
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 2020
+  }
 }

@@ -1,4 +1,4 @@
-import LightingNode from './LightingNode.js';
+import LightingNode from './LightingNode.js'
 
 /**
  * A generic class that can be used by nodes which contribute
@@ -8,11 +8,8 @@ import LightingNode from './LightingNode.js';
  * @augments LightingNode
  */
 class AONode extends LightingNode {
-
 	static get type() {
-
-		return 'AONode';
-
+		return 'AONode'
 	}
 
 	/**
@@ -20,9 +17,8 @@ class AONode extends LightingNode {
 	 *
 	 * @param {Node<float>?} [aoNode=null] - The ambient occlusion node.
 	 */
-	constructor( aoNode = null ) {
-
-		super();
+	constructor(aoNode = null) {
+		super()
 
 		/**
 		 * The ambient occlusion node.
@@ -30,16 +26,12 @@ class AONode extends LightingNode {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.aoNode = aoNode;
-
+		this.aoNode = aoNode
 	}
 
-	setup( builder ) {
-
-		builder.context.ambientOcclusion.mulAssign( this.aoNode );
-
+	setup(builder) {
+		builder.context.ambientOcclusion.mulAssign(this.aoNode)
 	}
-
 }
 
-export default AONode;
+export default AONode

@@ -1,9 +1,8 @@
-function WebGLInfo( gl ) {
-
+function WebGLInfo(gl) {
 	const memory = {
 		geometries: 0,
 		textures: 0
-	};
+	}
 
 	const render = {
 		frame: 0,
@@ -11,49 +10,43 @@ function WebGLInfo( gl ) {
 		triangles: 0,
 		points: 0,
 		lines: 0
-	};
+	}
 
-	function update( count, mode, instanceCount ) {
+	function update(count, mode, instanceCount) {
+		render.calls++
 
-		render.calls ++;
-
-		switch ( mode ) {
-
+		switch (mode) {
 			case gl.TRIANGLES:
-				render.triangles += instanceCount * ( count / 3 );
-				break;
+				render.triangles += instanceCount * (count / 3)
+				break
 
 			case gl.LINES:
-				render.lines += instanceCount * ( count / 2 );
-				break;
+				render.lines += instanceCount * (count / 2)
+				break
 
 			case gl.LINE_STRIP:
-				render.lines += instanceCount * ( count - 1 );
-				break;
+				render.lines += instanceCount * (count - 1)
+				break
 
 			case gl.LINE_LOOP:
-				render.lines += instanceCount * count;
-				break;
+				render.lines += instanceCount * count
+				break
 
 			case gl.POINTS:
-				render.points += instanceCount * count;
-				break;
+				render.points += instanceCount * count
+				break
 
 			default:
-				console.error( 'THREE.WebGLInfo: Unknown draw mode:', mode );
-				break;
-
+				console.error('THREE.WebGLInfo: Unknown draw mode:', mode)
+				break
 		}
-
 	}
 
 	function reset() {
-
-		render.calls = 0;
-		render.triangles = 0;
-		render.points = 0;
-		render.lines = 0;
-
+		render.calls = 0
+		render.triangles = 0
+		render.points = 0
+		render.lines = 0
 	}
 
 	return {
@@ -63,9 +56,7 @@ function WebGLInfo( gl ) {
 		autoReset: true,
 		reset: reset,
 		update: update
-	};
-
+	}
 }
 
-
-export { WebGLInfo };
+export { WebGLInfo }

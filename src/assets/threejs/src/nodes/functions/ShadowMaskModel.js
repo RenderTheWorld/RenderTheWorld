@@ -1,6 +1,6 @@
-import LightingModel from '../core/LightingModel.js';
-import { diffuseColor } from '../core/PropertyNode.js';
-import { float } from '../tsl/TSLBase.js';
+import LightingModel from '../core/LightingModel.js'
+import { diffuseColor } from '../core/PropertyNode.js'
+import { float } from '../tsl/TSLBase.js'
 
 /**
  * Represents lighting model for a shadow material. Used in {@link ShadowNodeMaterial}.
@@ -8,21 +8,18 @@ import { float } from '../tsl/TSLBase.js';
  * @augments LightingModel
  */
 class ShadowMaskModel extends LightingModel {
-
 	/**
 	 * Constructs a new shadow mask model.
 	 */
 	constructor() {
-
-		super();
+		super()
 
 		/**
 		 * The shadow mask node.
 		 *
 		 * @type {Node}
 		 */
-		this.shadowNode = float( 1 ).toVar( 'shadowMask' );
-
+		this.shadowNode = float(1).toVar('shadowMask')
 	}
 
 	/**
@@ -30,10 +27,8 @@ class ShadowMaskModel extends LightingModel {
 	 *
 	 * @param {Object} input - The input data.
 	 */
-	direct( { shadowMask } ) {
-
-		this.shadowNode.mulAssign( shadowMask );
-
+	direct({ shadowMask }) {
+		this.shadowNode.mulAssign(shadowMask)
 	}
 
 	/**
@@ -41,14 +36,11 @@ class ShadowMaskModel extends LightingModel {
 	 *
 	 * @param {ContextNode} context - The current node context.
 	 */
-	finish( context ) {
+	finish(context) {
+		diffuseColor.a.mulAssign(this.shadowNode.oneMinus())
 
-		diffuseColor.a.mulAssign( this.shadowNode.oneMinus() );
-
-		context.outgoingLight.rgb.assign( diffuseColor.rgb ); // TODO: Optimize LightsNode to avoid this assignment
-
+		context.outgoingLight.rgb.assign(diffuseColor.rgb) // TODO: Optimize LightsNode to avoid this assignment
 	}
-
 }
 
-export default ShadowMaskModel;
+export default ShadowMaskModel

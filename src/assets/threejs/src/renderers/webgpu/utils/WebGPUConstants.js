@@ -3,8 +3,8 @@ export const GPUPrimitiveTopology = {
 	LineList: 'line-list',
 	LineStrip: 'line-strip',
 	TriangleList: 'triangle-list',
-	TriangleStrip: 'triangle-strip',
-};
+	TriangleStrip: 'triangle-strip'
+}
 
 export const GPUCompareFunction = {
 	Never: 'never',
@@ -15,33 +15,33 @@ export const GPUCompareFunction = {
 	NotEqual: 'not-equal',
 	GreaterEqual: 'greater-equal',
 	Always: 'always'
-};
+}
 
 export const GPUStoreOp = {
 	Store: 'store',
 	Discard: 'discard'
-};
+}
 
 export const GPULoadOp = {
 	Load: 'load',
 	Clear: 'clear'
-};
+}
 
 export const GPUFrontFace = {
 	CCW: 'ccw',
 	CW: 'cw'
-};
+}
 
 export const GPUCullMode = {
 	None: 'none',
 	Front: 'front',
 	Back: 'back'
-};
+}
 
 export const GPUIndexFormat = {
 	Uint16: 'uint16',
 	Uint32: 'uint32'
-};
+}
 
 export const GPUVertexFormat = {
 	Uint8x2: 'uint8x2',
@@ -74,10 +74,9 @@ export const GPUVertexFormat = {
 	Sint32x2: 'sint32x2',
 	Sint32x3: 'sint32x3',
 	Sint32x4: 'sint32x4'
-};
+}
 
 export const GPUTextureFormat = {
-
 	// 8-bit formats
 
 	R8Unorm: 'r8unorm',
@@ -204,20 +203,19 @@ export const GPUTextureFormat = {
 	ASTC12x10Unorm: 'astc-12x10-unorm',
 	ASTC12x10UnormSRGB: 'astc-12x10-unorm-srgb',
 	ASTC12x12Unorm: 'astc-12x12-unorm',
-	ASTC12x12UnormSRGB: 'astc-12x12-unorm-srgb',
-
-};
+	ASTC12x12UnormSRGB: 'astc-12x12-unorm-srgb'
+}
 
 export const GPUAddressMode = {
 	ClampToEdge: 'clamp-to-edge',
 	Repeat: 'repeat',
 	MirrorRepeat: 'mirror-repeat'
-};
+}
 
 export const GPUFilterMode = {
 	Linear: 'linear',
 	Nearest: 'nearest'
-};
+}
 
 export const GPUBlendFactor = {
 	Zero: 'zero',
@@ -233,7 +231,7 @@ export const GPUBlendFactor = {
 	SrcAlphaSaturated: 'src-alpha-saturated',
 	Constant: 'constant',
 	OneMinusConstant: 'one-minus-constant'
-};
+}
 
 export const GPUBlendOperation = {
 	Add: 'add',
@@ -241,7 +239,7 @@ export const GPUBlendOperation = {
 	ReverseSubtract: 'reverse-subtract',
 	Min: 'min',
 	Max: 'max'
-};
+}
 
 export const GPUColorWriteFlags = {
 	None: 0,
@@ -249,8 +247,8 @@ export const GPUColorWriteFlags = {
 	Green: 0x2,
 	Blue: 0x4,
 	Alpha: 0x8,
-	All: 0xF
-};
+	All: 0xf
+}
 
 export const GPUStencilOperation = {
 	Keep: 'keep',
@@ -261,25 +259,25 @@ export const GPUStencilOperation = {
 	DecrementClamp: 'decrement-clamp',
 	IncrementWrap: 'increment-wrap',
 	DecrementWrap: 'decrement-wrap'
-};
+}
 
 export const GPUBufferBindingType = {
 	Uniform: 'uniform',
 	Storage: 'storage',
 	ReadOnlyStorage: 'read-only-storage'
-};
+}
 
 export const GPUStorageTextureAccess = {
 	WriteOnly: 'write-only',
 	ReadOnly: 'read-only',
-	ReadWrite: 'read-write',
-};
+	ReadWrite: 'read-write'
+}
 
 export const GPUSamplerBindingType = {
 	Filtering: 'filtering',
 	NonFiltering: 'non-filtering',
 	Comparison: 'comparison'
-};
+}
 
 export const GPUTextureSampleType = {
 	Float: 'float',
@@ -287,13 +285,13 @@ export const GPUTextureSampleType = {
 	Depth: 'depth',
 	SInt: 'sint',
 	UInt: 'uint'
-};
+}
 
 export const GPUTextureDimension = {
 	OneD: '1d',
 	TwoD: '2d',
 	ThreeD: '3d'
-};
+}
 
 export const GPUTextureViewDimension = {
 	OneD: '1d',
@@ -302,18 +300,18 @@ export const GPUTextureViewDimension = {
 	Cube: 'cube',
 	CubeArray: 'cube-array',
 	ThreeD: '3d'
-};
+}
 
 export const GPUTextureAspect = {
 	All: 'all',
 	StencilOnly: 'stencil-only',
 	DepthOnly: 'depth-only'
-};
+}
 
 export const GPUInputStepMode = {
 	Vertex: 'vertex',
 	Instance: 'instance'
-};
+}
 
 export const GPUFeatureName = {
 	DepthClipControl: 'depth-clip-control',
@@ -330,4 +328,4 @@ export const GPUFeatureName = {
 	ClipDistances: 'clip-distances',
 	DualSourceBlending: 'dual-source-blending',
 	Subgroups: 'subgroups'
-};
+}

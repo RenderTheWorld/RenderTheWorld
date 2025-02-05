@@ -1,28 +1,54 @@
-import { GLSLNodeParser, NodeBuilder, TextureNode, vectorComponents } from '../../../nodes/Nodes.js';
+import {
+	GLSLNodeParser,
+	NodeBuilder,
+	TextureNode,
+	vectorComponents
+} from '../../../nodes/Nodes.js'
 
-import NodeUniformBuffer from '../../common/nodes/NodeUniformBuffer.js';
-import NodeUniformsGroup from '../../common/nodes/NodeUniformsGroup.js';
+import NodeUniformBuffer from '../../common/nodes/NodeUniformBuffer.js'
+import NodeUniformsGroup from '../../common/nodes/NodeUniformsGroup.js'
 
-import { NodeSampledTexture, NodeSampledCubeTexture, NodeSampledTexture3D } from '../../common/nodes/NodeSampledTexture.js';
+import {
+	NodeSampledTexture,
+	NodeSampledCubeTexture,
+	NodeSampledTexture3D
+} from '../../common/nodes/NodeSampledTexture.js'
 
-import { NoColorSpace, ByteType, ShortType, RGBAIntegerFormat, RGBIntegerFormat, RedIntegerFormat, RGIntegerFormat, UnsignedByteType, UnsignedIntType, UnsignedShortType, RedFormat, RGFormat, IntType, RGBFormat, RGBAFormat, FloatType } from '../../../constants.js';
-import { DataTexture } from '../../../textures/DataTexture.js';
+import {
+	NoColorSpace,
+	ByteType,
+	ShortType,
+	RGBAIntegerFormat,
+	RGBIntegerFormat,
+	RedIntegerFormat,
+	RGIntegerFormat,
+	UnsignedByteType,
+	UnsignedIntType,
+	UnsignedShortType,
+	RedFormat,
+	RGFormat,
+	IntType,
+	RGBFormat,
+	RGBAFormat,
+	FloatType
+} from '../../../constants.js'
+import { DataTexture } from '../../../textures/DataTexture.js'
 
 const glslMethods = {
 	textureDimensions: 'textureSize',
 	equals: 'equal'
-};
+}
 
 const precisionLib = {
 	low: 'lowp',
 	medium: 'mediump',
 	high: 'highp'
-};
+}
 
 const supports = {
 	swizzleAssign: true,
 	storageBuffer: false
-};
+}
 
 const defaultPrecisions = `
 precision highp float;
@@ -43,7 +69,7 @@ precision highp isamplerCube;
 precision highp isampler2DArray;
 
 precision lowp sampler2DShadow;
-`;
+`
 
 /**
  * A node builder targeting GLSL.
@@ -56,16 +82,14 @@ precision lowp sampler2DShadow;
  * @augments NodeBuilder
  */
 class GLSLNodeBuilder extends NodeBuilder {
-
 	/**
 	 * Constructs a new GLSL node builder renderer.
 	 *
 	 * @param {Object3D} object - The 3D object.
 	 * @param {Renderer} renderer - The renderer.
 	 */
-	constructor( object, renderer ) {
-
-		super( object, renderer, new GLSLNodeParser() );
+	constructor(object, renderer) {
+		super(object, renderer, new GLSLNodeParser())
 
 		/**
 		 * A dictionary holds for each shader stage ('vertex', 'fragment', 'compute')
@@ -73,7 +97,7 @@ class GLSLNodeBuilder extends NodeBuilder {
 		 *
 		 * @type {Object<String,Object<String,NodeUniformsGroup>>}
 		 */
-		this.uniformGroups = {};
+		this.uniformGroups = {}
 
 		/**
 		 * An array that holds objects defining the varying and attribute data in
@@ -81,21 +105,21 @@ class GLSLNodeBuilder extends NodeBuilder {
 		 *
 		 * @type {Object<String,Map<String,Object>>}
 		 */
-		this.transforms = [];
+		this.transforms = []
 
 		/**
 		 * A dictionary that holds for each shader stage a Map of used extensions.
 		 *
 		 * @type {Object<String,Map<String,Object>>}
 		 */
-		this.extensions = {};
+		this.extensions = {}
 
 		/**
 		 * A dictionary that holds for each shader stage an Array of used builtins.
 		 *
 		 * @type {Object<String,Array<String>>}
 		 */
-		this.builtins = { vertex: [], fragment: [], compute: [] };
+		this.builtins = { vertex: [], fragment: [], compute: [] }
 
 		/**
 		 * Whether comparison in shader code are generated with methods or not.
@@ -103,8 +127,7 @@ class GLSLNodeBuilder extends NodeBuilder {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.useComparisonMethod = true;
-
+		this.useComparisonMethod = true
 	}
 
 	/**
@@ -113,10 +136,10 @@ class GLSLNodeBuilder extends NodeBuilder {
 	 * @param {Texture} texture - The texture to check.
 	 * @return {Boolean} Whether the given texture requires a conversion to working color space or not.
 	 */
-	needsToWorkingColorSpace( texture ) {
-
-		return texture.isVideoTexture === true && texture.colorSpace !== NoColorSpace;
-
+	needsToWorkingColorSpace(texture) {
+		return (
+			texture.isVideoTexture === true && texture.colorSpace !== NoColorSpace
+		)
 	}
 
 	/**
@@ -125,10 +148,8 @@ class GLSLNodeBuilder extends NodeBuilder {
 	 * @param {String} method - The method name to resolve.
 	 * @return {String} The resolved GLSL method name.
 	 */
-	getMethod( method ) {
-
-		return glslMethods[ method ] || method;
-
+	getMethod(method) {
+		return glslMethods[method] || method
 	}
 
 	/**
@@ -137,9 +158,7 @@ class GLSLNodeBuilder extends NodeBuilder {
 	 * @return {String}
 	 */
 	getOutputStructName() {
-
-		return '';
-
+		return ''
 	}
 
 	/**
@@ -148,34 +167,30 @@ class GLSLNodeBuilder extends NodeBuilder {
 	 * @param {ShaderNodeInternal} shaderNode - The shader node.
 	 * @return {String} The GLSL function code.
 	 */
-	buildFunctionCode( shaderNode ) {
+	buildFunctionCode(shaderNode) {
+		const layout = shaderNode.layout
+		const flowData = this.flowShaderNode(shaderNode)
 
-		const layout = shaderNode.layout;
-		const flowData = this.flowShaderNode( shaderNode );
+		const parameters = []
 
-		const parameters = [];
-
-		for ( const input of layout.inputs ) {
-
-			parameters.push( this.getType( input.type ) + ' ' + input.name );
-
+		for (const input of layout.inputs) {
+			parameters.push(this.getType(input.type) + ' ' + input.name)
 		}
 
 		//
 
-		const code = `${ this.getType( layout.type ) } ${ layout.name }( ${ parameters.join( ', ' ) } ) {
+		const code = `${this.getType(layout.type)} ${layout.name}( ${parameters.join(', ')} ) {
 
-	${ flowData.vars }
+	${flowData.vars}
 
-${ flowData.code }
-	return ${ flowData.result };
+${flowData.code}
+	return ${flowData.result};
 
-}`;
+}`
 
 		//
 
-		return code;
-
+		return code
 	}
 
 	/**
@@ -184,33 +199,27 @@ ${ flowData.code }
 	 *
 	 * @param {StorageBufferNode} storageBufferNode - The storage buffer node.
 	 */
-	setupPBO( storageBufferNode ) {
+	setupPBO(storageBufferNode) {
+		const attribute = storageBufferNode.value
 
-		const attribute = storageBufferNode.value;
+		if (attribute.pbo === undefined) {
+			const originalArray = attribute.array
+			const numElements = attribute.count * attribute.itemSize
 
-		if ( attribute.pbo === undefined ) {
+			const { itemSize } = attribute
 
-			const originalArray = attribute.array;
-			const numElements = attribute.count * attribute.itemSize;
+			const isInteger = attribute.array.constructor.name
+				.toLowerCase()
+				.includes('int')
 
-			const { itemSize } = attribute;
+			let format = isInteger ? RedIntegerFormat : RedFormat
 
-			const isInteger = attribute.array.constructor.name.toLowerCase().includes( 'int' );
-
-			let format = isInteger ? RedIntegerFormat : RedFormat;
-
-			if ( itemSize === 2 ) {
-
-				format = isInteger ? RGIntegerFormat : RGFormat;
-
-			} else if ( itemSize === 3 ) {
-
-				format = isInteger ? RGBIntegerFormat : RGBFormat;
-
-			} else if ( itemSize === 4 ) {
-
-				format = isInteger ? RGBAIntegerFormat : RGBAFormat;
-
+			if (itemSize === 2) {
+				format = isInteger ? RGIntegerFormat : RGFormat
+			} else if (itemSize === 3) {
+				format = isInteger ? RGBIntegerFormat : RGBFormat
+			} else if (itemSize === 4) {
+				format = isInteger ? RGBAIntegerFormat : RGBAFormat
 			}
 
 			const typeMap = {
@@ -221,35 +230,47 @@ ${ flowData.code }
 				Int8Array: ByteType,
 				Int16Array: ShortType,
 				Int32Array: IntType,
-				Uint8ClampedArray: UnsignedByteType,
-			};
+				Uint8ClampedArray: UnsignedByteType
+			}
 
-			const width = Math.pow( 2, Math.ceil( Math.log2( Math.sqrt( numElements / itemSize ) ) ) );
-			let height = Math.ceil( ( numElements / itemSize ) / width );
-			if ( width * height * itemSize < numElements ) height ++; // Ensure enough space
+			const width = Math.pow(
+				2,
+				Math.ceil(Math.log2(Math.sqrt(numElements / itemSize)))
+			)
+			let height = Math.ceil(numElements / itemSize / width)
+			if (width * height * itemSize < numElements) height++ // Ensure enough space
 
-			const newSize = width * height * itemSize;
+			const newSize = width * height * itemSize
 
-			const newArray = new originalArray.constructor( newSize );
+			const newArray = new originalArray.constructor(newSize)
 
-			newArray.set( originalArray, 0 );
+			newArray.set(originalArray, 0)
 
-			attribute.array = newArray;
+			attribute.array = newArray
 
-			const pboTexture = new DataTexture( attribute.array, width, height, format, typeMap[ attribute.array.constructor.name ] || FloatType );
-			pboTexture.needsUpdate = true;
-			pboTexture.isPBOTexture = true;
+			const pboTexture = new DataTexture(
+				attribute.array,
+				width,
+				height,
+				format,
+				typeMap[attribute.array.constructor.name] || FloatType
+			)
+			pboTexture.needsUpdate = true
+			pboTexture.isPBOTexture = true
 
-			const pbo = new TextureNode( pboTexture, null, null );
-			pbo.setPrecision( 'high' );
+			const pbo = new TextureNode(pboTexture, null, null)
+			pbo.setPrecision('high')
 
-			attribute.pboNode = pbo;
-			attribute.pbo = pbo.value;
+			attribute.pboNode = pbo
+			attribute.pbo = pbo.value
 
-			this.getUniformFromNode( attribute.pboNode, 'texture', this.shaderStage, this.context.label );
-
+			this.getUniformFromNode(
+				attribute.pboNode,
+				'texture',
+				this.shaderStage,
+				this.context.label
+			)
 		}
-
 	}
 
 	/**
@@ -259,16 +280,16 @@ ${ flowData.code }
 	 * @param {String} [shaderStage=this.shaderStage] - The shader stage this code snippet is generated for.
 	 * @return {String} The property name.
 	 */
-	getPropertyName( node, shaderStage = this.shaderStage ) {
-
-		if ( node.isNodeUniform && node.node.isTextureNode !== true && node.node.isBufferNode !== true ) {
-
-			return shaderStage.charAt( 0 ) + '_' + node.name;
-
+	getPropertyName(node, shaderStage = this.shaderStage) {
+		if (
+			node.isNodeUniform &&
+			node.node.isTextureNode !== true &&
+			node.node.isBufferNode !== true
+		) {
+			return shaderStage.charAt(0) + '_' + node.name
 		}
 
-		return super.getPropertyName( node, shaderStage );
-
+		return super.getPropertyName(node, shaderStage)
 	}
 
 	/**
@@ -278,86 +299,90 @@ ${ flowData.code }
 	 * @param {StorageArrayElementNode} storageArrayElementNode - The storage array element node.
 	 * @return {String} The property name.
 	 */
-	generatePBO( storageArrayElementNode ) {
+	generatePBO(storageArrayElementNode) {
+		const { node, indexNode } = storageArrayElementNode
+		const attribute = node.value
 
-		const { node, indexNode } = storageArrayElementNode;
-		const attribute = node.value;
-
-		if ( this.renderer.backend.has( attribute ) ) {
-
-			const attributeData = this.renderer.backend.get( attribute );
-			attributeData.pbo = attribute.pbo;
-
+		if (this.renderer.backend.has(attribute)) {
+			const attributeData = this.renderer.backend.get(attribute)
+			attributeData.pbo = attribute.pbo
 		}
 
-		const nodeUniform = this.getUniformFromNode( attribute.pboNode, 'texture', this.shaderStage, this.context.label );
-		const textureName = this.getPropertyName( nodeUniform );
+		const nodeUniform = this.getUniformFromNode(
+			attribute.pboNode,
+			'texture',
+			this.shaderStage,
+			this.context.label
+		)
+		const textureName = this.getPropertyName(nodeUniform)
 
-		this.increaseUsage( indexNode ); // force cache generate to be used as index in x,y
-		const indexSnippet = indexNode.build( this, 'uint' );
+		this.increaseUsage(indexNode) // force cache generate to be used as index in x,y
+		const indexSnippet = indexNode.build(this, 'uint')
 
-		const elementNodeData = this.getDataFromNode( storageArrayElementNode );
+		const elementNodeData = this.getDataFromNode(storageArrayElementNode)
 
-		let propertyName = elementNodeData.propertyName;
+		let propertyName = elementNodeData.propertyName
 
-		if ( propertyName === undefined ) {
-
+		if (propertyName === undefined) {
 			// property element
 
-			const nodeVar = this.getVarFromNode( storageArrayElementNode );
+			const nodeVar = this.getVarFromNode(storageArrayElementNode)
 
-			propertyName = this.getPropertyName( nodeVar );
+			propertyName = this.getPropertyName(nodeVar)
 
 			// property size
 
-			const bufferNodeData = this.getDataFromNode( node );
+			const bufferNodeData = this.getDataFromNode(node)
 
-			let propertySizeName = bufferNodeData.propertySizeName;
+			let propertySizeName = bufferNodeData.propertySizeName
 
-			if ( propertySizeName === undefined ) {
+			if (propertySizeName === undefined) {
+				propertySizeName = propertyName + 'Size'
 
-				propertySizeName = propertyName + 'Size';
+				this.getVarFromNode(node, propertySizeName, 'uint')
 
-				this.getVarFromNode( node, propertySizeName, 'uint' );
+				this.addLineFlowCode(
+					`${propertySizeName} = uint( textureSize( ${textureName}, 0 ).x )`,
+					storageArrayElementNode
+				)
 
-				this.addLineFlowCode( `${ propertySizeName } = uint( textureSize( ${ textureName }, 0 ).x )`, storageArrayElementNode );
-
-				bufferNodeData.propertySizeName = propertySizeName;
-
+				bufferNodeData.propertySizeName = propertySizeName
 			}
 
 			//
 
-			const { itemSize } = attribute;
+			const { itemSize } = attribute
 
-			const channel = '.' + vectorComponents.join( '' ).slice( 0, itemSize );
-			const uvSnippet = `ivec2(${indexSnippet} % ${ propertySizeName }, ${indexSnippet} / ${ propertySizeName })`;
+			const channel = '.' + vectorComponents.join('').slice(0, itemSize)
+			const uvSnippet = `ivec2(${indexSnippet} % ${propertySizeName}, ${indexSnippet} / ${propertySizeName})`
 
-			const snippet = this.generateTextureLoad( null, textureName, uvSnippet, null, '0' );
+			const snippet = this.generateTextureLoad(
+				null,
+				textureName,
+				uvSnippet,
+				null,
+				'0'
+			)
 
 			//
 
+			let prefix = 'vec4'
 
-			let prefix = 'vec4';
-
-			if ( attribute.pbo.type === UnsignedIntType ) {
-
-				prefix = 'uvec4';
-
-			} else if ( attribute.pbo.type === IntType ) {
-
-				prefix = 'ivec4';
-
+			if (attribute.pbo.type === UnsignedIntType) {
+				prefix = 'uvec4'
+			} else if (attribute.pbo.type === IntType) {
+				prefix = 'ivec4'
 			}
 
-			this.addLineFlowCode( `${ propertyName } = ${prefix}(${ snippet })${channel}`, storageArrayElementNode );
+			this.addLineFlowCode(
+				`${propertyName} = ${prefix}(${snippet})${channel}`,
+				storageArrayElementNode
+			)
 
-			elementNodeData.propertyName = propertyName;
-
+			elementNodeData.propertyName = propertyName
 		}
 
-		return propertyName;
-
+		return propertyName
 	}
 
 	/**
@@ -370,18 +395,18 @@ ${ flowData.code }
 	 * @param {String} [levelSnippet='0u'] - A GLSL snippet that represents the mip level, with level 0 containing a full size version of the texture.
 	 * @return {String} The GLSL snippet.
 	 */
-	generateTextureLoad( texture, textureProperty, uvIndexSnippet, depthSnippet, levelSnippet = '0' ) {
-
-		if ( depthSnippet ) {
-
-			return `texelFetch( ${ textureProperty }, ivec3( ${ uvIndexSnippet }, ${ depthSnippet } ), ${ levelSnippet } )`;
-
+	generateTextureLoad(
+		texture,
+		textureProperty,
+		uvIndexSnippet,
+		depthSnippet,
+		levelSnippet = '0'
+	) {
+		if (depthSnippet) {
+			return `texelFetch( ${textureProperty}, ivec3( ${uvIndexSnippet}, ${depthSnippet} ), ${levelSnippet} )`
 		} else {
-
-			return `texelFetch( ${ textureProperty }, ${ uvIndexSnippet }, ${ levelSnippet } )`;
-
+			return `texelFetch( ${textureProperty}, ${uvIndexSnippet}, ${levelSnippet} )`
 		}
-
 	}
 
 	/**
@@ -393,20 +418,14 @@ ${ flowData.code }
 	 * @param {String?} depthSnippet -  A GLSL snippet that represents the 0-based texture array index to sample.
 	 * @return {String} The GLSL snippet.
 	 */
-	generateTexture( texture, textureProperty, uvSnippet, depthSnippet ) {
-
-		if ( texture.isDepthTexture ) {
-
-			return `texture( ${ textureProperty }, ${ uvSnippet } ).x`;
-
+	generateTexture(texture, textureProperty, uvSnippet, depthSnippet) {
+		if (texture.isDepthTexture) {
+			return `texture( ${textureProperty}, ${uvSnippet} ).x`
 		} else {
+			if (depthSnippet) uvSnippet = `vec3( ${uvSnippet}, ${depthSnippet} )`
 
-			if ( depthSnippet ) uvSnippet = `vec3( ${ uvSnippet }, ${ depthSnippet } )`;
-
-			return `texture( ${ textureProperty }, ${ uvSnippet } )`;
-
+			return `texture( ${textureProperty}, ${uvSnippet} )`
 		}
-
 	}
 
 	/**
@@ -418,10 +437,8 @@ ${ flowData.code }
 	 * @param {String} levelSnippet - A GLSL snippet that represents the mip level, with level 0 containing a full size version of the texture.
 	 * @return {String} The GLSL snippet.
 	 */
-	generateTextureLevel( texture, textureProperty, uvSnippet, levelSnippet ) {
-
-		return `textureLod( ${ textureProperty }, ${ uvSnippet }, ${ levelSnippet } )`;
-
+	generateTextureLevel(texture, textureProperty, uvSnippet, levelSnippet) {
+		return `textureLod( ${textureProperty}, ${uvSnippet}, ${levelSnippet} )`
 	}
 
 	/**
@@ -433,10 +450,8 @@ ${ flowData.code }
 	 * @param {String} biasSnippet - A GLSL snippet that represents the bias to apply to the mip level before sampling.
 	 * @return {String} The GLSL snippet.
 	 */
-	generateTextureBias( texture, textureProperty, uvSnippet, biasSnippet ) {
-
-		return `texture( ${ textureProperty }, ${ uvSnippet }, ${ biasSnippet } )`;
-
+	generateTextureBias(texture, textureProperty, uvSnippet, biasSnippet) {
+		return `texture( ${textureProperty}, ${uvSnippet}, ${biasSnippet} )`
 	}
 
 	/**
@@ -448,10 +463,8 @@ ${ flowData.code }
 	 * @param {Array<String>} gradSnippet - An array holding both gradient GLSL snippets.
 	 * @return {String} The GLSL snippet.
 	 */
-	generateTextureGrad( texture, textureProperty, uvSnippet, gradSnippet ) {
-
-		return `textureGrad( ${ textureProperty }, ${ uvSnippet }, ${ gradSnippet[ 0 ] }, ${ gradSnippet[ 1 ] } )`;
-
+	generateTextureGrad(texture, textureProperty, uvSnippet, gradSnippet) {
+		return `textureGrad( ${textureProperty}, ${uvSnippet}, ${gradSnippet[0]}, ${gradSnippet[1]} )`
 	}
 
 	/**
@@ -466,18 +479,21 @@ ${ flowData.code }
 	 * @param {String} [shaderStage=this.shaderStage] - The shader stage this code snippet is generated for.
 	 * @return {String} The GLSL snippet.
 	 */
-	generateTextureCompare( texture, textureProperty, uvSnippet, compareSnippet, depthSnippet, shaderStage = this.shaderStage ) {
-
-		if ( shaderStage === 'fragment' ) {
-
-			return `texture( ${ textureProperty }, vec3( ${ uvSnippet }, ${ compareSnippet } ) )`;
-
+	generateTextureCompare(
+		texture,
+		textureProperty,
+		uvSnippet,
+		compareSnippet,
+		depthSnippet,
+		shaderStage = this.shaderStage
+	) {
+		if (shaderStage === 'fragment') {
+			return `texture( ${textureProperty}, vec3( ${uvSnippet}, ${compareSnippet} ) )`
 		} else {
-
-			console.error( `WebGPURenderer: THREE.DepthTexture.compareFunction() does not support ${ shaderStage } shader.` );
-
+			console.error(
+				`WebGPURenderer: THREE.DepthTexture.compareFunction() does not support ${shaderStage} shader.`
+			)
 		}
-
 	}
 
 	/**
@@ -486,24 +502,20 @@ ${ flowData.code }
 	 * @param {String} shaderStage - The shader stage.
 	 * @return {String} The GLSL snippet that defines the variables.
 	 */
-	getVars( shaderStage ) {
+	getVars(shaderStage) {
+		const snippets = []
 
-		const snippets = [];
+		const vars = this.vars[shaderStage]
 
-		const vars = this.vars[ shaderStage ];
-
-		if ( vars !== undefined ) {
-
-			for ( const variable of vars ) {
-
-				snippets.push( `${ this.getVar( variable.type, variable.name, variable.count ) };` );
-
+		if (vars !== undefined) {
+			for (const variable of vars) {
+				snippets.push(
+					`${this.getVar(variable.type, variable.name, variable.count)};`
+				)
 			}
-
 		}
 
-		return snippets.join( '\n\t' );
-
+		return snippets.join('\n\t')
 	}
 
 	/**
@@ -512,121 +524,94 @@ ${ flowData.code }
 	 * @param {String} shaderStage - The shader stage.
 	 * @return {String} The GLSL snippet that defines the uniforms.
 	 */
-	getUniforms( shaderStage ) {
+	getUniforms(shaderStage) {
+		const uniforms = this.uniforms[shaderStage]
 
-		const uniforms = this.uniforms[ shaderStage ];
+		const bindingSnippets = []
+		const uniformGroups = {}
 
-		const bindingSnippets = [];
-		const uniformGroups = {};
+		for (const uniform of uniforms) {
+			let snippet = null
+			let group = false
 
-		for ( const uniform of uniforms ) {
+			if (uniform.type === 'texture') {
+				const texture = uniform.node.value
 
-			let snippet = null;
-			let group = false;
+				let typePrefix = ''
 
-			if ( uniform.type === 'texture' ) {
-
-				const texture = uniform.node.value;
-
-				let typePrefix = '';
-
-				if ( texture.isDataTexture === true ) {
-
-
-					if ( texture.type === UnsignedIntType ) {
-
-						typePrefix = 'u';
-
-					} else if ( texture.type === IntType ) {
-
-						typePrefix = 'i';
-
+				if (texture.isDataTexture === true) {
+					if (texture.type === UnsignedIntType) {
+						typePrefix = 'u'
+					} else if (texture.type === IntType) {
+						typePrefix = 'i'
 					}
-
 				}
 
-				if ( texture.compareFunction ) {
-
-					snippet = `sampler2DShadow ${ uniform.name };`;
-
-				} else if ( texture.isDataArrayTexture === true || texture.isCompressedArrayTexture === true ) {
-
-					snippet = `${typePrefix}sampler2DArray ${ uniform.name };`;
-
+				if (texture.compareFunction) {
+					snippet = `sampler2DShadow ${uniform.name};`
+				} else if (
+					texture.isDataArrayTexture === true ||
+					texture.isCompressedArrayTexture === true
+				) {
+					snippet = `${typePrefix}sampler2DArray ${uniform.name};`
 				} else {
-
-					snippet = `${typePrefix}sampler2D ${ uniform.name };`;
-
+					snippet = `${typePrefix}sampler2D ${uniform.name};`
 				}
+			} else if (uniform.type === 'cubeTexture') {
+				snippet = `samplerCube ${uniform.name};`
+			} else if (uniform.type === 'texture3D') {
+				snippet = `sampler3D ${uniform.name};`
+			} else if (uniform.type === 'buffer') {
+				const bufferNode = uniform.node
+				const bufferType = this.getType(bufferNode.bufferType)
+				const bufferCount = bufferNode.bufferCount
 
-			} else if ( uniform.type === 'cubeTexture' ) {
-
-				snippet = `samplerCube ${ uniform.name };`;
-
-			} else if ( uniform.type === 'texture3D' ) {
-
-				snippet = `sampler3D ${ uniform.name };`;
-
-			} else if ( uniform.type === 'buffer' ) {
-
-				const bufferNode = uniform.node;
-				const bufferType = this.getType( bufferNode.bufferType );
-				const bufferCount = bufferNode.bufferCount;
-
-				const bufferCountSnippet = bufferCount > 0 ? bufferCount : '';
-				snippet = `${bufferNode.name} {\n\t${ bufferType } ${ uniform.name }[${ bufferCountSnippet }];\n};\n`;
-
+				const bufferCountSnippet = bufferCount > 0 ? bufferCount : ''
+				snippet = `${bufferNode.name} {\n\t${bufferType} ${uniform.name}[${bufferCountSnippet}];\n};\n`
 			} else {
+				const vectorType = this.getVectorType(uniform.type)
 
-				const vectorType = this.getVectorType( uniform.type );
+				snippet = `${vectorType} ${this.getPropertyName(uniform, shaderStage)};`
 
-				snippet = `${ vectorType } ${ this.getPropertyName( uniform, shaderStage ) };`;
-
-				group = true;
-
+				group = true
 			}
 
-			const precision = uniform.node.precision;
+			const precision = uniform.node.precision
 
-			if ( precision !== null ) {
-
-				snippet = precisionLib[ precision ] + ' ' + snippet;
-
+			if (precision !== null) {
+				snippet = precisionLib[precision] + ' ' + snippet
 			}
 
-			if ( group ) {
+			if (group) {
+				snippet = '\t' + snippet
 
-				snippet = '\t' + snippet;
+				const groupName = uniform.groupNode.name
+				const groupSnippets =
+					uniformGroups[groupName] || (uniformGroups[groupName] = [])
 
-				const groupName = uniform.groupNode.name;
-				const groupSnippets = uniformGroups[ groupName ] || ( uniformGroups[ groupName ] = [] );
-
-				groupSnippets.push( snippet );
-
+				groupSnippets.push(snippet)
 			} else {
+				snippet = 'uniform ' + snippet
 
-				snippet = 'uniform ' + snippet;
-
-				bindingSnippets.push( snippet );
-
+				bindingSnippets.push(snippet)
 			}
-
 		}
 
-		let output = '';
+		let output = ''
 
-		for ( const name in uniformGroups ) {
+		for (const name in uniformGroups) {
+			const groupSnippets = uniformGroups[name]
 
-			const groupSnippets = uniformGroups[ name ];
-
-			output += this._getGLSLUniformStruct( shaderStage + '_' + name, groupSnippets.join( '\n' ) ) + '\n';
-
+			output +=
+				this._getGLSLUniformStruct(
+					shaderStage + '_' + name,
+					groupSnippets.join('\n')
+				) + '\n'
 		}
 
-		output += bindingSnippets.join( '\n' );
+		output += bindingSnippets.join('\n')
 
-		return output;
-
+		return output
 	}
 
 	/**
@@ -635,28 +620,24 @@ ${ flowData.code }
 	 * @param {BufferAttribute} attribute - The buffer attribute.
 	 * @return {String} The type.
 	 */
-	getTypeFromAttribute( attribute ) {
+	getTypeFromAttribute(attribute) {
+		let nodeType = super.getTypeFromAttribute(attribute)
 
-		let nodeType = super.getTypeFromAttribute( attribute );
+		if (/^[iu]/.test(nodeType) && attribute.gpuType !== IntType) {
+			let dataAttribute = attribute
 
-		if ( /^[iu]/.test( nodeType ) && attribute.gpuType !== IntType ) {
+			if (attribute.isInterleavedBufferAttribute) dataAttribute = attribute.data
 
-			let dataAttribute = attribute;
+			const array = dataAttribute.array
 
-			if ( attribute.isInterleavedBufferAttribute ) dataAttribute = attribute.data;
-
-			const array = dataAttribute.array;
-
-			if ( ( array instanceof Uint32Array || array instanceof Int32Array ) === false ) {
-
-				nodeType = nodeType.slice( 1 );
-
+			if (
+				(array instanceof Uint32Array || array instanceof Int32Array) === false
+			) {
+				nodeType = nodeType.slice(1)
 			}
-
 		}
 
-		return nodeType;
-
+		return nodeType
 	}
 
 	/**
@@ -665,26 +646,20 @@ ${ flowData.code }
 	 * @param {String} shaderStage - The shader stage.
 	 * @return {String} The GLSL snippet that defines the shader attributes.
 	 */
-	getAttributes( shaderStage ) {
+	getAttributes(shaderStage) {
+		let snippet = ''
 
-		let snippet = '';
+		if (shaderStage === 'vertex' || shaderStage === 'compute') {
+			const attributes = this.getAttributesArray()
 
-		if ( shaderStage === 'vertex' || shaderStage === 'compute' ) {
+			let location = 0
 
-			const attributes = this.getAttributesArray();
-
-			let location = 0;
-
-			for ( const attribute of attributes ) {
-
-				snippet += `layout( location = ${ location ++ } ) in ${ attribute.type } ${ attribute.name };\n`;
-
+			for (const attribute of attributes) {
+				snippet += `layout( location = ${location++} ) in ${attribute.type} ${attribute.name};\n`
 			}
-
 		}
 
-		return snippet;
-
+		return snippet
 	}
 
 	/**
@@ -693,18 +668,14 @@ ${ flowData.code }
 	 * @param {StructTypeNode} struct - The struct type node.
 	 * @return {String} The GLSL snippet that defines the struct members.
 	 */
-	getStructMembers( struct ) {
+	getStructMembers(struct) {
+		const snippets = []
 
-		const snippets = [];
-
-		for ( const member of struct.members ) {
-
-			snippets.push( `\t${ member.type } ${ member.name };` );
-
+		for (const member of struct.members) {
+			snippets.push(`\t${member.type} ${member.name};`)
 		}
 
-		return snippets.join( '\n' );
-
+		return snippets.join('\n')
 	}
 
 	/**
@@ -713,43 +684,33 @@ ${ flowData.code }
 	 * @param {String} shaderStage - The shader stage.
 	 * @return {String} The GLSL snippet that defines the structs.
 	 */
-	getStructs( shaderStage ) {
+	getStructs(shaderStage) {
+		const snippets = []
+		const structs = this.structs[shaderStage]
 
-		const snippets = [];
-		const structs = this.structs[ shaderStage ];
+		const outputSnippet = []
 
-		const outputSnippet = [];
-
-		for ( const struct of structs ) {
-
-			if ( struct.output ) {
-
-				for ( const member of struct.members ) {
-
-					outputSnippet.push( `layout( location = ${ member.index } ) out ${ member.type } ${ member.name };` );
-
+		for (const struct of structs) {
+			if (struct.output) {
+				for (const member of struct.members) {
+					outputSnippet.push(
+						`layout( location = ${member.index} ) out ${member.type} ${member.name};`
+					)
 				}
-
 			} else {
+				let snippet = 'struct ' + struct.name + ' {\n'
+				snippet += this.getStructMembers(struct)
+				snippet += '\n};\n'
 
-				let snippet = 'struct ' + struct.name + ' {\n';
-				snippet += this.getStructMembers( struct );
-				snippet += '\n};\n';
-
-				snippets.push( snippet );
-
+				snippets.push(snippet)
 			}
-
 		}
 
-		if ( outputSnippet.length === 0 ) {
-
-			outputSnippet.push( 'layout( location = 0 ) out vec4 fragColor;' );
-
+		if (outputSnippet.length === 0) {
+			outputSnippet.push('layout( location = 0 ) out vec4 fragColor;')
 		}
 
-		return '\n' + outputSnippet.join( '\n' ) + '\n\n' + snippets.join( '\n' );
-
+		return '\n' + outputSnippet.join('\n') + '\n\n' + snippets.join('\n')
 	}
 
 	/**
@@ -758,59 +719,47 @@ ${ flowData.code }
 	 * @param {String} shaderStage - The shader stage.
 	 * @return {String} The GLSL snippet that defines the varyings.
 	 */
-	getVaryings( shaderStage ) {
+	getVaryings(shaderStage) {
+		let snippet = ''
 
-		let snippet = '';
+		const varyings = this.varyings
 
-		const varyings = this.varyings;
+		if (shaderStage === 'vertex' || shaderStage === 'compute') {
+			for (const varying of varyings) {
+				if (shaderStage === 'compute') varying.needsInterpolation = true
 
-		if ( shaderStage === 'vertex' || shaderStage === 'compute' ) {
+				const type = this.getType(varying.type)
 
-			for ( const varying of varyings ) {
+				if (varying.needsInterpolation) {
+					const flat =
+						type.includes('int') || type.includes('uv') || type.includes('iv')
+							? 'flat '
+							: ''
 
-				if ( shaderStage === 'compute' ) varying.needsInterpolation = true;
-
-				const type = this.getType( varying.type );
-
-				if ( varying.needsInterpolation ) {
-
-					const flat = type.includes( 'int' ) || type.includes( 'uv' ) || type.includes( 'iv' ) ? 'flat ' : '';
-
-					snippet += `${flat} out ${type} ${varying.name};\n`;
-
+					snippet += `${flat} out ${type} ${varying.name};\n`
 				} else {
-
-					snippet += `${type} ${varying.name};\n`; // generate variable (no varying required)
-
+					snippet += `${type} ${varying.name};\n` // generate variable (no varying required)
 				}
-
 			}
+		} else if (shaderStage === 'fragment') {
+			for (const varying of varyings) {
+				if (varying.needsInterpolation) {
+					const type = this.getType(varying.type)
+					const flat =
+						type.includes('int') || type.includes('uv') || type.includes('iv')
+							? 'flat '
+							: ''
 
-		} else if ( shaderStage === 'fragment' ) {
-
-			for ( const varying of varyings ) {
-
-				if ( varying.needsInterpolation ) {
-
-					const type = this.getType( varying.type );
-					const flat = type.includes( 'int' ) || type.includes( 'uv' ) || type.includes( 'iv' ) ? 'flat ' : '';
-
-					snippet += `${flat}in ${type} ${varying.name};\n`;
-
+					snippet += `${flat}in ${type} ${varying.name};\n`
 				}
-
 			}
-
 		}
 
-		for ( const builtin of this.builtins[ shaderStage ] ) {
-
-			snippet += `${builtin};\n`;
-
+		for (const builtin of this.builtins[shaderStage]) {
+			snippet += `${builtin};\n`
 		}
 
-		return snippet;
-
+		return snippet
 	}
 
 	/**
@@ -819,9 +768,7 @@ ${ flowData.code }
 	 * @return {String} The vertex index.
 	 */
 	getVertexIndex() {
-
-		return 'uint( gl_VertexID )';
-
+		return 'uint( gl_VertexID )'
 	}
 
 	/**
@@ -830,9 +777,7 @@ ${ flowData.code }
 	 * @return {String} The instance index.
 	 */
 	getInstanceIndex() {
-
-		return 'uint( gl_InstanceID )';
-
+		return 'uint( gl_InstanceID )'
 	}
 
 	/**
@@ -841,13 +786,11 @@ ${ flowData.code }
 	 * @return {String} The invocation local index.
 	 */
 	getInvocationLocalIndex() {
+		const workgroupSize = this.object.workgroupSize
 
-		const workgroupSize = this.object.workgroupSize;
+		const size = workgroupSize.reduce((acc, curr) => acc * curr, 1)
 
-		const size = workgroupSize.reduce( ( acc, curr ) => acc * curr, 1 );
-
-		return `uint( gl_InstanceID ) % ${size}u`;
-
+		return `uint( gl_InstanceID ) % ${size}u`
 	}
 
 	/**
@@ -856,17 +799,13 @@ ${ flowData.code }
 	 * @return {String?} The drawIndex shader string. Returns `null` if `WEBGL_multi_draw` isn't supported by the device.
 	 */
 	getDrawIndex() {
+		const extensions = this.renderer.backend.extensions
 
-		const extensions = this.renderer.backend.extensions;
-
-		if ( extensions.has( 'WEBGL_multi_draw' ) ) {
-
-			return 'uint( gl_DrawID )';
-
+		if (extensions.has('WEBGL_multi_draw')) {
+			return 'uint( gl_DrawID )'
 		}
 
-		return null;
-
+		return null
 	}
 
 	/**
@@ -875,9 +814,7 @@ ${ flowData.code }
 	 * @return {String} The front facing builtin.
 	 */
 	getFrontFacing() {
-
-		return 'gl_FrontFacing';
-
+		return 'gl_FrontFacing'
 	}
 
 	/**
@@ -886,9 +823,7 @@ ${ flowData.code }
 	 * @return {String} The frag coord builtin.
 	 */
 	getFragCoord() {
-
-		return 'gl_FragCoord.xy';
-
+		return 'gl_FragCoord.xy'
 	}
 
 	/**
@@ -897,9 +832,7 @@ ${ flowData.code }
 	 * @return {String} The frag depth builtin.
 	 */
 	getFragDepth() {
-
-		return 'gl_FragDepth';
-
+		return 'gl_FragDepth'
 	}
 
 	/**
@@ -909,19 +842,16 @@ ${ flowData.code }
 	 * @param {String} behavior - The extension behavior.
 	 * @param {String} [shaderStage=this.shaderStage] - The shader stage.
 	 */
-	enableExtension( name, behavior, shaderStage = this.shaderStage ) {
+	enableExtension(name, behavior, shaderStage = this.shaderStage) {
+		const map =
+			this.extensions[shaderStage] || (this.extensions[shaderStage] = new Map())
 
-		const map = this.extensions[ shaderStage ] || ( this.extensions[ shaderStage ] = new Map() );
-
-		if ( map.has( name ) === false ) {
-
-			map.set( name, {
+		if (map.has(name) === false) {
+			map.set(name, {
 				name,
 				behavior
-			} );
-
+			})
 		}
-
 	}
 
 	/**
@@ -930,37 +860,27 @@ ${ flowData.code }
 	 * @param {String} shaderStage - The shader stage.
 	 * @return {String} The GLSL snippet that defines the enabled extensions.
 	 */
-	getExtensions( shaderStage ) {
+	getExtensions(shaderStage) {
+		const snippets = []
 
-		const snippets = [];
+		if (shaderStage === 'vertex') {
+			const ext = this.renderer.backend.extensions
+			const isBatchedMesh = this.object.isBatchedMesh
 
-		if ( shaderStage === 'vertex' ) {
-
-			const ext = this.renderer.backend.extensions;
-			const isBatchedMesh = this.object.isBatchedMesh;
-
-			if ( isBatchedMesh && ext.has( 'WEBGL_multi_draw' ) ) {
-
-				this.enableExtension( 'GL_ANGLE_multi_draw', 'require', shaderStage );
-
+			if (isBatchedMesh && ext.has('WEBGL_multi_draw')) {
+				this.enableExtension('GL_ANGLE_multi_draw', 'require', shaderStage)
 			}
-
 		}
 
-		const extensions = this.extensions[ shaderStage ];
+		const extensions = this.extensions[shaderStage]
 
-		if ( extensions !== undefined ) {
-
-			for ( const { name, behavior } of extensions.values() ) {
-
-				snippets.push( `#extension ${name} : ${behavior}` );
-
+		if (extensions !== undefined) {
+			for (const { name, behavior } of extensions.values()) {
+				snippets.push(`#extension ${name} : ${behavior}`)
 			}
-
 		}
 
-		return snippets.join( '\n' );
-
+		return snippets.join('\n')
 	}
 
 	/**
@@ -969,9 +889,7 @@ ${ flowData.code }
 	 * @return {String} The clip distances builtin.
 	 */
 	getClipDistance() {
-
-		return 'gl_ClipDistance';
-
+		return 'gl_ClipDistance'
 	}
 
 	/**
@@ -980,47 +898,37 @@ ${ flowData.code }
 	 * @param {String} name - The requested feature.
 	 * @return {Boolean} Whether the requested feature is supported or not.
 	 */
-	isAvailable( name ) {
+	isAvailable(name) {
+		let result = supports[name]
 
-		let result = supports[ name ];
+		if (result === undefined) {
+			let extensionName
 
-		if ( result === undefined ) {
+			result = false
 
-			let extensionName;
-
-			result = false;
-
-			switch ( name ) {
-
+			switch (name) {
 				case 'float32Filterable':
-					extensionName = 'OES_texture_float_linear';
-					break;
+					extensionName = 'OES_texture_float_linear'
+					break
 
 				case 'clipDistance':
-					extensionName = 'WEBGL_clip_cull_distance';
-					break;
-
+					extensionName = 'WEBGL_clip_cull_distance'
+					break
 			}
 
-			if ( extensionName !== undefined ) {
+			if (extensionName !== undefined) {
+				const extensions = this.renderer.backend.extensions
 
-				const extensions = this.renderer.backend.extensions;
-
-				if ( extensions.has( extensionName ) ) {
-
-					extensions.get( extensionName );
-					result = true;
-
+				if (extensions.has(extensionName)) {
+					extensions.get(extensionName)
+					result = true
 				}
-
 			}
 
-			supports[ name ] = result;
-
+			supports[name] = result
 		}
 
-		return result;
-
+		return result
 	}
 
 	/**
@@ -1029,9 +937,7 @@ ${ flowData.code }
 	 * @return {Boolean} Returns always `true` in context of GLSL.
 	 */
 	isFlipY() {
-
-		return true;
-
+		return true
 	}
 
 	/**
@@ -1039,12 +945,10 @@ ${ flowData.code }
 	 *
 	 * @param {String} planeCount - The clipping plane count.
 	 */
-	enableHardwareClipping( planeCount ) {
+	enableHardwareClipping(planeCount) {
+		this.enableExtension('GL_ANGLE_clip_cull_distance', 'require')
 
-		this.enableExtension( 'GL_ANGLE_clip_cull_distance', 'require' );
-
-		this.builtins[ 'vertex' ].push( `out float gl_ClipDistance[ ${ planeCount } ]` );
-
+		this.builtins['vertex'].push(`out float gl_ClipDistance[ ${planeCount} ]`)
 	}
 
 	/**
@@ -1053,10 +957,8 @@ ${ flowData.code }
 	 * @param {String} varyingName - The varying name.
 	 * @param {AttributeNode} attributeNode - The attribute node.
 	 */
-	registerTransform( varyingName, attributeNode ) {
-
-		this.transforms.push( { varyingName, attributeNode } );
-
+	registerTransform(varyingName, attributeNode) {
+		this.transforms.push({ varyingName, attributeNode })
 	}
 
 	/**
@@ -1065,24 +967,20 @@ ${ flowData.code }
 	 * @param {String} shaderStage - The shader stage.
 	 * @return {String} The GLSL snippet that defines the transforms.
 	 */
-	getTransforms( /* shaderStage  */ ) {
+	getTransforms(/* shaderStage  */) {
+		const transforms = this.transforms
 
-		const transforms = this.transforms;
+		let snippet = ''
 
-		let snippet = '';
+		for (let i = 0; i < transforms.length; i++) {
+			const transform = transforms[i]
 
-		for ( let i = 0; i < transforms.length; i ++ ) {
+			const attributeName = this.getPropertyName(transform.attributeNode)
 
-			const transform = transforms[ i ];
-
-			const attributeName = this.getPropertyName( transform.attributeNode );
-
-			snippet += `${ transform.varyingName } = ${ attributeName };\n\t`;
-
+			snippet += `${transform.varyingName} = ${attributeName};\n\t`
 		}
 
-		return snippet;
-
+		return snippet
 	}
 
 	/**
@@ -1093,13 +991,11 @@ ${ flowData.code }
 	 * @param {String} vars - The struct variables.
 	 * @return {String} The GLSL snippet representing a struct.
 	 */
-	_getGLSLUniformStruct( name, vars ) {
-
+	_getGLSLUniformStruct(name, vars) {
 		return `
 layout( std140 ) uniform ${name} {
 ${vars}
-};`;
-
+};`
 	}
 
 	/**
@@ -1109,17 +1005,16 @@ ${vars}
 	 * @param {Object} shaderData - The shader data.
 	 * @return {String} The vertex shader.
 	 */
-	_getGLSLVertexCode( shaderData ) {
-
+	_getGLSLVertexCode(shaderData) {
 		return `#version 300 es
 
-${ this.getSignature() }
+${this.getSignature()}
 
 // extensions 
 ${shaderData.extensions}
 
 // precision
-${ defaultPrecisions }
+${defaultPrecisions}
 
 // uniforms
 ${shaderData.uniforms}
@@ -1147,8 +1042,7 @@ void main() {
 	gl_PointSize = 1.0;
 
 }
-`;
-
+`
 	}
 
 	/**
@@ -1158,14 +1052,13 @@ void main() {
 	 * @param {Object} shaderData - The shader data.
 	 * @return {String} The vertex shader.
 	 */
-	_getGLSLFragmentCode( shaderData ) {
-
+	_getGLSLFragmentCode(shaderData) {
 		return `#version 300 es
 
-${ this.getSignature() }
+${this.getSignature()}
 
 // precision
-${ defaultPrecisions }
+${defaultPrecisions}
 
 // uniforms
 ${shaderData.uniforms}
@@ -1188,91 +1081,71 @@ void main() {
 	${shaderData.flow}
 
 }
-`;
-
+`
 	}
 
 	/**
 	 * Controls the code build of the shader stages.
 	 */
 	buildCode() {
+		const shadersData =
+			this.material !== null ? { fragment: {}, vertex: {} } : { compute: {} }
 
-		const shadersData = this.material !== null ? { fragment: {}, vertex: {} } : { compute: {} };
+		this.sortBindingGroups()
 
-		this.sortBindingGroups();
+		for (const shaderStage in shadersData) {
+			let flow = '// code\n\n'
+			flow += this.flowCode[shaderStage]
 
-		for ( const shaderStage in shadersData ) {
+			const flowNodes = this.flowNodes[shaderStage]
+			const mainNode = flowNodes[flowNodes.length - 1]
 
-			let flow = '// code\n\n';
-			flow += this.flowCode[ shaderStage ];
+			for (const node of flowNodes) {
+				const flowSlotData = this.getFlowData(node /*, shaderStage*/)
+				const slotName = node.name
 
-			const flowNodes = this.flowNodes[ shaderStage ];
-			const mainNode = flowNodes[ flowNodes.length - 1 ];
+				if (slotName) {
+					if (flow.length > 0) flow += '\n'
 
-			for ( const node of flowNodes ) {
-
-				const flowSlotData = this.getFlowData( node/*, shaderStage*/ );
-				const slotName = node.name;
-
-				if ( slotName ) {
-
-					if ( flow.length > 0 ) flow += '\n';
-
-					flow += `\t// flow -> ${ slotName }\n\t`;
-
+					flow += `\t// flow -> ${slotName}\n\t`
 				}
 
-				flow += `${ flowSlotData.code }\n\t`;
+				flow += `${flowSlotData.code}\n\t`
 
-				if ( node === mainNode && shaderStage !== 'compute' ) {
+				if (node === mainNode && shaderStage !== 'compute') {
+					flow += '// result\n\t'
 
-					flow += '// result\n\t';
-
-					if ( shaderStage === 'vertex' ) {
-
-						flow += 'gl_Position = ';
-						flow += `${ flowSlotData.result };`;
-
-					} else if ( shaderStage === 'fragment' ) {
-
-						if ( ! node.outputNode.isOutputStructNode ) {
-
-							flow += 'fragColor = ';
-							flow += `${ flowSlotData.result };`;
-
+					if (shaderStage === 'vertex') {
+						flow += 'gl_Position = '
+						flow += `${flowSlotData.result};`
+					} else if (shaderStage === 'fragment') {
+						if (!node.outputNode.isOutputStructNode) {
+							flow += 'fragColor = '
+							flow += `${flowSlotData.result};`
 						}
-
 					}
-
 				}
-
 			}
 
-			const stageData = shadersData[ shaderStage ];
+			const stageData = shadersData[shaderStage]
 
-			stageData.extensions = this.getExtensions( shaderStage );
-			stageData.uniforms = this.getUniforms( shaderStage );
-			stageData.attributes = this.getAttributes( shaderStage );
-			stageData.varyings = this.getVaryings( shaderStage );
-			stageData.vars = this.getVars( shaderStage );
-			stageData.structs = this.getStructs( shaderStage );
-			stageData.codes = this.getCodes( shaderStage );
-			stageData.transforms = this.getTransforms( shaderStage );
-			stageData.flow = flow;
-
+			stageData.extensions = this.getExtensions(shaderStage)
+			stageData.uniforms = this.getUniforms(shaderStage)
+			stageData.attributes = this.getAttributes(shaderStage)
+			stageData.varyings = this.getVaryings(shaderStage)
+			stageData.vars = this.getVars(shaderStage)
+			stageData.structs = this.getStructs(shaderStage)
+			stageData.codes = this.getCodes(shaderStage)
+			stageData.transforms = this.getTransforms(shaderStage)
+			stageData.flow = flow
 		}
 
-		if ( this.material !== null ) {
-
-			this.vertexShader = this._getGLSLVertexCode( shadersData.vertex );
-			this.fragmentShader = this._getGLSLFragmentCode( shadersData.fragment );
-
+		if (this.material !== null) {
+			this.vertexShader = this._getGLSLVertexCode(shadersData.vertex)
+			this.fragmentShader = this._getGLSLFragmentCode(shadersData.fragment)
 		} else {
-
-			this.computeShader = this._getGLSLVertexCode( shadersData.compute );
-
+			this.computeShader = this._getGLSLVertexCode(shadersData.compute)
 		}
-
 	}
 
 	/**
@@ -1288,78 +1161,78 @@ void main() {
 	 * @param {String?} [name=null] - An optional uniform name.
 	 * @return {NodeUniform} The node uniform object.
 	 */
-	getUniformFromNode( node, type, shaderStage, name = null ) {
+	getUniformFromNode(node, type, shaderStage, name = null) {
+		const uniformNode = super.getUniformFromNode(node, type, shaderStage, name)
+		const nodeData = this.getDataFromNode(node, shaderStage, this.globalCache)
 
-		const uniformNode = super.getUniformFromNode( node, type, shaderStage, name );
-		const nodeData = this.getDataFromNode( node, shaderStage, this.globalCache );
+		let uniformGPU = nodeData.uniformGPU
 
-		let uniformGPU = nodeData.uniformGPU;
+		if (uniformGPU === undefined) {
+			const group = node.groupNode
+			const groupName = group.name
 
-		if ( uniformGPU === undefined ) {
+			const bindings = this.getBindGroupArray(groupName, shaderStage)
 
-			const group = node.groupNode;
-			const groupName = group.name;
+			if (type === 'texture') {
+				uniformGPU = new NodeSampledTexture(
+					uniformNode.name,
+					uniformNode.node,
+					group
+				)
+				bindings.push(uniformGPU)
+			} else if (type === 'cubeTexture') {
+				uniformGPU = new NodeSampledCubeTexture(
+					uniformNode.name,
+					uniformNode.node,
+					group
+				)
+				bindings.push(uniformGPU)
+			} else if (type === 'texture3D') {
+				uniformGPU = new NodeSampledTexture3D(
+					uniformNode.name,
+					uniformNode.node,
+					group
+				)
+				bindings.push(uniformGPU)
+			} else if (type === 'buffer') {
+				node.name = `NodeBuffer_${node.id}`
+				uniformNode.name = `buffer${node.id}`
 
-			const bindings = this.getBindGroupArray( groupName, shaderStage );
+				const buffer = new NodeUniformBuffer(node, group)
+				buffer.name = node.name
 
-			if ( type === 'texture' ) {
+				bindings.push(buffer)
 
-				uniformGPU = new NodeSampledTexture( uniformNode.name, uniformNode.node, group );
-				bindings.push( uniformGPU );
-
-			} else if ( type === 'cubeTexture' ) {
-
-				uniformGPU = new NodeSampledCubeTexture( uniformNode.name, uniformNode.node, group );
-				bindings.push( uniformGPU );
-
-			} else if ( type === 'texture3D' ) {
-
-				uniformGPU = new NodeSampledTexture3D( uniformNode.name, uniformNode.node, group );
-				bindings.push( uniformGPU );
-
-			} else if ( type === 'buffer' ) {
-
-				node.name = `NodeBuffer_${ node.id }`;
-				uniformNode.name = `buffer${ node.id }`;
-
-				const buffer = new NodeUniformBuffer( node, group );
-				buffer.name = node.name;
-
-				bindings.push( buffer );
-
-				uniformGPU = buffer;
-
+				uniformGPU = buffer
 			} else {
+				const uniformsStage =
+					this.uniformGroups[shaderStage] ||
+					(this.uniformGroups[shaderStage] = {})
 
-				const uniformsStage = this.uniformGroups[ shaderStage ] || ( this.uniformGroups[ shaderStage ] = {} );
+				let uniformsGroup = uniformsStage[groupName]
 
-				let uniformsGroup = uniformsStage[ groupName ];
-
-				if ( uniformsGroup === undefined ) {
-
-					uniformsGroup = new NodeUniformsGroup( shaderStage + '_' + groupName, group );
+				if (uniformsGroup === undefined) {
+					uniformsGroup = new NodeUniformsGroup(
+						shaderStage + '_' + groupName,
+						group
+					)
 					//uniformsGroup.setVisibility( gpuShaderStageLib[ shaderStage ] );
 
-					uniformsStage[ groupName ] = uniformsGroup;
+					uniformsStage[groupName] = uniformsGroup
 
-					bindings.push( uniformsGroup );
-
+					bindings.push(uniformsGroup)
 				}
 
-				uniformGPU = this.getNodeUniform( uniformNode, type );
+				uniformGPU = this.getNodeUniform(uniformNode, type)
 
-				uniformsGroup.addUniform( uniformGPU );
-
+				uniformsGroup.addUniform(uniformGPU)
 			}
 
-			nodeData.uniformGPU = uniformGPU;
-
+			nodeData.uniformGPU = uniformGPU
 		}
 
-		return uniformNode;
-
+		return uniformNode
 	}
-
 }
 
-export default GLSLNodeBuilder;
+export default GLSLNodeBuilder

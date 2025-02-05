@@ -1,4 +1,4 @@
-export const vertex = /* glsl */`
+export const vertex = /* glsl */ `
 uniform float scale;
 attribute float lineDistance;
 
@@ -28,9 +28,9 @@ void main() {
 	#include <fog_vertex>
 
 }
-`;
+`
 
-export const fragment = /* glsl */`
+export const fragment = /* glsl */ `
 uniform vec3 diffuse;
 uniform float opacity;
 
@@ -73,4 +73,4 @@ void main() {
 	#include <premultiplied_alpha_fragment>
 
 }
-`;
+`

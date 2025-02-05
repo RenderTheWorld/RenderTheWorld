@@ -1,4 +1,4 @@
-import LightingNode from './LightingNode.js';
+import LightingNode from './LightingNode.js'
 
 /**
  * A generic class that can be used by nodes which contribute
@@ -8,11 +8,8 @@ import LightingNode from './LightingNode.js';
  * @augments LightingNode
  */
 class IrradianceNode extends LightingNode {
-
 	static get type() {
-
-		return 'IrradianceNode';
-
+		return 'IrradianceNode'
 	}
 
 	/**
@@ -20,25 +17,20 @@ class IrradianceNode extends LightingNode {
 	 *
 	 * @param {Node<vec3>} node - A node contributing irradiance.
 	 */
-	constructor( node ) {
-
-		super();
+	constructor(node) {
+		super()
 
 		/**
 		 * A node contributing irradiance.
 		 *
 		 * @type {Node<vec3>}
 		 */
-		this.node = node;
-
+		this.node = node
 	}
 
-	setup( builder ) {
-
-		builder.context.irradiance.addAssign( this.node );
-
+	setup(builder) {
+		builder.context.irradiance.addAssign(this.node)
 	}
-
 }
 
-export default IrradianceNode;
+export default IrradianceNode

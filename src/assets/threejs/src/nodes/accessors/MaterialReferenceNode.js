@@ -1,5 +1,5 @@
-import ReferenceNode from './ReferenceNode.js';
-import { nodeObject } from '../tsl/TSLBase.js';
+import ReferenceNode from './ReferenceNode.js'
+import { nodeObject } from '../tsl/TSLBase.js'
 
 /**
  * This node is a special type of reference node which is intended
@@ -13,11 +13,8 @@ import { nodeObject } from '../tsl/TSLBase.js';
  * @augments ReferenceNode
  */
 class MaterialReferenceNode extends ReferenceNode {
-
 	static get type() {
-
-		return 'MaterialReferenceNode';
-
+		return 'MaterialReferenceNode'
 	}
 
 	/**
@@ -28,9 +25,8 @@ class MaterialReferenceNode extends ReferenceNode {
 	 * @param {Material?} [material=null] - The material the property belongs to. When no material is set,
 	 * the node refers to the material of the current rendered object.
 	 */
-	constructor( property, inputType, material = null ) {
-
-		super( property, inputType, material );
+	constructor(property, inputType, material = null) {
+		super(property, inputType, material)
 
 		/**
 		 * The material the property belongs to. When no material is set,
@@ -39,7 +35,7 @@ class MaterialReferenceNode extends ReferenceNode {
 		 * @type {Material?}
 		 * @default null
 		 */
-		this.material = material;
+		this.material = material
 
 		/**
 		 * This flag can be used for type testing.
@@ -48,8 +44,7 @@ class MaterialReferenceNode extends ReferenceNode {
 		 * @readonly
 		 * @default true
 		 */
-		this.isMaterialReferenceNode = true;
-
+		this.isMaterialReferenceNode = true
 	}
 
 	/**
@@ -59,17 +54,14 @@ class MaterialReferenceNode extends ReferenceNode {
 	 * @param {(NodeFrame|NodeBuilder)} state - The current state.
 	 * @return {Object} The updated reference.
 	 */
-	updateReference( state ) {
+	updateReference(state) {
+		this.reference = this.material !== null ? this.material : state.material
 
-		this.reference = this.material !== null ? this.material : state.material;
-
-		return this.reference;
-
+		return this.reference
 	}
-
 }
 
-export default MaterialReferenceNode;
+export default MaterialReferenceNode
 
 /**
  * TSL function for creating a material reference node.
@@ -81,4 +73,5 @@ export default MaterialReferenceNode;
  * When no material is set, the node refers to the material of the current rendered object.
  * @returns {MaterialReferenceNode}
  */
-export const materialReference = ( name, type, material = null ) => nodeObject( new MaterialReferenceNode( name, type, material ) );
+export const materialReference = (name, type, material = null) =>
+	nodeObject(new MaterialReferenceNode(name, type, material))

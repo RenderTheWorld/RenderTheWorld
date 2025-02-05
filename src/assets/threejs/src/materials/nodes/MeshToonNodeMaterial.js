@@ -1,9 +1,9 @@
-import NodeMaterial from './NodeMaterial.js';
-import ToonLightingModel from '../../nodes/functions/ToonLightingModel.js';
+import NodeMaterial from './NodeMaterial.js'
+import ToonLightingModel from '../../nodes/functions/ToonLightingModel.js'
 
-import { MeshToonMaterial } from '../MeshToonMaterial.js';
+import { MeshToonMaterial } from '../MeshToonMaterial.js'
 
-const _defaultValues = /*@__PURE__*/ new MeshToonMaterial();
+const _defaultValues = /*@__PURE__*/ new MeshToonMaterial()
 
 /**
  * Node material version of `MeshToonMaterial`.
@@ -11,11 +11,8 @@ const _defaultValues = /*@__PURE__*/ new MeshToonMaterial();
  * @augments NodeMaterial
  */
 class MeshToonNodeMaterial extends NodeMaterial {
-
 	static get type() {
-
-		return 'MeshToonNodeMaterial';
-
+		return 'MeshToonNodeMaterial'
 	}
 
 	/**
@@ -23,9 +20,8 @@ class MeshToonNodeMaterial extends NodeMaterial {
 	 *
 	 * @param {Object?} parameters - The configuration parameter.
 	 */
-	constructor( parameters ) {
-
-		super();
+	constructor(parameters) {
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -34,7 +30,7 @@ class MeshToonNodeMaterial extends NodeMaterial {
 		 * @readonly
 		 * @default true
 		 */
-		this.isMeshToonNodeMaterial = true;
+		this.isMeshToonNodeMaterial = true
 
 		/**
 		 * Set to `true` because toon materials react on lights.
@@ -42,12 +38,11 @@ class MeshToonNodeMaterial extends NodeMaterial {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.lights = true;
+		this.lights = true
 
-		this.setDefaultValues( _defaultValues );
+		this.setDefaultValues(_defaultValues)
 
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
 	/**
@@ -55,12 +50,9 @@ class MeshToonNodeMaterial extends NodeMaterial {
 	 *
 	 * @return {ToonLightingModel} The lighting model.
 	 */
-	setupLightingModel( /*builder*/ ) {
-
-		return new ToonLightingModel();
-
+	setupLightingModel(/*builder*/) {
+		return new ToonLightingModel()
 	}
-
 }
 
-export default MeshToonNodeMaterial;
+export default MeshToonNodeMaterial

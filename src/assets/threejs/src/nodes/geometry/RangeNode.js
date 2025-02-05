@@ -1,16 +1,16 @@
-import Node from '../core/Node.js';
-import { getValueType } from '../core/NodeUtils.js';
-import { buffer } from '../accessors/BufferNode.js';
-import { instancedBufferAttribute } from '../accessors/BufferAttributeNode.js';
-import { instanceIndex } from '../core/IndexNode.js';
-import { nodeProxy, float } from '../tsl/TSLBase.js';
+import Node from '../core/Node.js'
+import { getValueType } from '../core/NodeUtils.js'
+import { buffer } from '../accessors/BufferNode.js'
+import { instancedBufferAttribute } from '../accessors/BufferAttributeNode.js'
+import { instanceIndex } from '../core/IndexNode.js'
+import { nodeProxy, float } from '../tsl/TSLBase.js'
 
-import { Vector4 } from '../../math/Vector4.js';
-import { MathUtils } from '../../math/MathUtils.js';
-import { InstancedBufferAttribute } from '../../core/InstancedBufferAttribute.js';
+import { Vector4 } from '../../math/Vector4.js'
+import { MathUtils } from '../../math/MathUtils.js'
+import { InstancedBufferAttribute } from '../../core/InstancedBufferAttribute.js'
 
-let min = null;
-let max = null;
+let min = null
+let max = null
 
 /**
  * `RangeNode` generates random instanced attribute data in a defined range.
@@ -24,11 +24,8 @@ let max = null;
  * @augments Node
  */
 class RangeNode extends Node {
-
 	static get type() {
-
-		return 'RangeNode';
-
+		return 'RangeNode'
 	}
 
 	/**
@@ -37,9 +34,8 @@ class RangeNode extends Node {
 	 * @param {Node<any>} [minNode=float()] - A node defining the lower bound of the range.
 	 * @param {Node<any>} [maxNode=float()] - A node defining the upper bound of the range.
 	 */
-	constructor( minNode = float(), maxNode = float() ) {
-
-		super();
+	constructor(minNode = float(), maxNode = float()) {
+		super()
 
 		/**
 		 *  A node defining the lower bound of the range.
@@ -47,7 +43,7 @@ class RangeNode extends Node {
 		 * @type {Node<any>}
 		 * @default float()
 		 */
-		this.minNode = minNode;
+		this.minNode = minNode
 
 		/**
 		 *  A node defining the upper bound of the range.
@@ -55,8 +51,7 @@ class RangeNode extends Node {
 		 * @type {Node<any>}
 		 * @default float()
 		 */
-		this.maxNode = maxNode;
-
+		this.maxNode = maxNode
 	}
 
 	/**
@@ -65,13 +60,11 @@ class RangeNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Number} The vector length.
 	 */
-	getVectorLength( builder ) {
+	getVectorLength(builder) {
+		const minLength = builder.getTypeLength(getValueType(this.minNode.value))
+		const maxLength = builder.getTypeLength(getValueType(this.maxNode.value))
 
-		const minLength = builder.getTypeLength( getValueType( this.minNode.value ) );
-		const maxLength = builder.getTypeLength( getValueType( this.maxNode.value ) );
-
-		return minLength > maxLength ? minLength : maxLength;
-
+		return minLength > maxLength ? minLength : maxLength
 	}
 
 	/**
@@ -80,85 +73,78 @@ class RangeNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The node type.
 	 */
-	getNodeType( builder ) {
-
-		return builder.object.count > 1 ? builder.getTypeFromLength( this.getVectorLength( builder ) ) : 'float';
-
+	getNodeType(builder) {
+		return builder.object.count > 1
+			? builder.getTypeFromLength(this.getVectorLength(builder))
+			: 'float'
 	}
 
-	setup( builder ) {
+	setup(builder) {
+		const object = builder.object
 
-		const object = builder.object;
+		let output = null
 
-		let output = null;
+		if (object.count > 1) {
+			const minValue = this.minNode.value
+			const maxValue = this.maxNode.value
 
-		if ( object.count > 1 ) {
+			const minLength = builder.getTypeLength(getValueType(minValue))
+			const maxLength = builder.getTypeLength(getValueType(maxValue))
 
-			const minValue = this.minNode.value;
-			const maxValue = this.maxNode.value;
+			min = min || new Vector4()
+			max = max || new Vector4()
 
-			const minLength = builder.getTypeLength( getValueType( minValue ) );
-			const maxLength = builder.getTypeLength( getValueType( maxValue ) );
+			min.setScalar(0)
+			max.setScalar(0)
 
-			min = min || new Vector4();
-			max = max || new Vector4();
+			if (minLength === 1) min.setScalar(minValue)
+			else if (minValue.isColor) min.set(minValue.r, minValue.g, minValue.b, 1)
+			else min.set(minValue.x, minValue.y, minValue.z || 0, minValue.w || 0)
 
-			min.setScalar( 0 );
-			max.setScalar( 0 );
+			if (maxLength === 1) max.setScalar(maxValue)
+			else if (maxValue.isColor) max.set(maxValue.r, maxValue.g, maxValue.b, 1)
+			else max.set(maxValue.x, maxValue.y, maxValue.z || 0, maxValue.w || 0)
 
-			if ( minLength === 1 ) min.setScalar( minValue );
-			else if ( minValue.isColor ) min.set( minValue.r, minValue.g, minValue.b, 1 );
-			else min.set( minValue.x, minValue.y, minValue.z || 0, minValue.w || 0 );
+			const stride = 4
 
-			if ( maxLength === 1 ) max.setScalar( maxValue );
-			else if ( maxValue.isColor ) max.set( maxValue.r, maxValue.g, maxValue.b, 1 );
-			else max.set( maxValue.x, maxValue.y, maxValue.z || 0, maxValue.w || 0 );
+			const length = stride * object.count
+			const array = new Float32Array(length)
 
-			const stride = 4;
+			for (let i = 0; i < length; i++) {
+				const index = i % stride
 
-			const length = stride * object.count;
-			const array = new Float32Array( length );
+				const minElementValue = min.getComponent(index)
+				const maxElementValue = max.getComponent(index)
 
-			for ( let i = 0; i < length; i ++ ) {
-
-				const index = i % stride;
-
-				const minElementValue = min.getComponent( index );
-				const maxElementValue = max.getComponent( index );
-
-				array[ i ] = MathUtils.lerp( minElementValue, maxElementValue, Math.random() );
-
+				array[i] = MathUtils.lerp(
+					minElementValue,
+					maxElementValue,
+					Math.random()
+				)
 			}
 
-			const nodeType = this.getNodeType( builder );
+			const nodeType = this.getNodeType(builder)
 
-			if ( object.count <= 4096 ) {
-
-				output = buffer( array, 'vec4', object.count ).element( instanceIndex ).convert( nodeType );
-
+			if (object.count <= 4096) {
+				output = buffer(array, 'vec4', object.count)
+					.element(instanceIndex)
+					.convert(nodeType)
 			} else {
-
 				// TODO: Improve anonymous buffer attribute creation removing this part
-				const bufferAttribute = new InstancedBufferAttribute( array, 4 );
-				builder.geometry.setAttribute( '__range' + this.id, bufferAttribute );
+				const bufferAttribute = new InstancedBufferAttribute(array, 4)
+				builder.geometry.setAttribute('__range' + this.id, bufferAttribute)
 
-				output = instancedBufferAttribute( bufferAttribute ).convert( nodeType );
-
+				output = instancedBufferAttribute(bufferAttribute).convert(nodeType)
 			}
-
 		} else {
-
-			output = float( 0 );
-
+			output = float(0)
 		}
 
-		return output;
-
+		return output
 	}
-
 }
 
-export default RangeNode;
+export default RangeNode
 
 /**
  * TSL function for creating a range node.
@@ -168,4 +154,4 @@ export default RangeNode;
  * @param {Node<any>} [maxNode=float()] - A node defining the upper bound of the range.
  * @returns {RangeNode}
  */
-export const range = /*@__PURE__*/ nodeProxy( RangeNode );
+export const range = /*@__PURE__*/ nodeProxy(RangeNode)

@@ -1,54 +1,48 @@
-import { Material } from './Material.js';
-import { Color } from '../math/Color.js';
+import { Material } from './Material.js'
+import { Color } from '../math/Color.js'
 
 class SpriteMaterial extends Material {
+	constructor(parameters) {
+		super()
 
-	constructor( parameters ) {
+		this.isSpriteMaterial = true
 
-		super();
+		this.type = 'SpriteMaterial'
 
-		this.isSpriteMaterial = true;
+		this.color = new Color(0xffffff)
 
-		this.type = 'SpriteMaterial';
+		this.map = null
 
-		this.color = new Color( 0xffffff );
+		this.alphaMap = null
 
-		this.map = null;
+		this.rotation = 0
 
-		this.alphaMap = null;
+		this.sizeAttenuation = true
 
-		this.rotation = 0;
+		this.transparent = true
 
-		this.sizeAttenuation = true;
+		this.fog = true
 
-		this.transparent = true;
-
-		this.fog = true;
-
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
-	copy( source ) {
+	copy(source) {
+		super.copy(source)
 
-		super.copy( source );
+		this.color.copy(source.color)
 
-		this.color.copy( source.color );
+		this.map = source.map
 
-		this.map = source.map;
+		this.alphaMap = source.alphaMap
 
-		this.alphaMap = source.alphaMap;
+		this.rotation = source.rotation
 
-		this.rotation = source.rotation;
+		this.sizeAttenuation = source.sizeAttenuation
 
-		this.sizeAttenuation = source.sizeAttenuation;
+		this.fog = source.fog
 
-		this.fog = source.fog;
-
-		return this;
-
+		return this
 	}
-
 }
 
-export { SpriteMaterial };
+export { SpriteMaterial }

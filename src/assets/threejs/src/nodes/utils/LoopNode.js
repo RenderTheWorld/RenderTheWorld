@@ -1,6 +1,6 @@
-import Node from '../core/Node.js';
-import { expression } from '../code/ExpressionNode.js';
-import { nodeObject, nodeArray } from '../tsl/TSLBase.js';
+import Node from '../core/Node.js'
+import { expression } from '../code/ExpressionNode.js'
+import { nodeObject, nodeArray } from '../tsl/TSLBase.js'
 
 /**
  * This module offers a variety of ways to implement loops in TSL. In it's basic form it's:
@@ -29,11 +29,8 @@ import { nodeObject, nodeArray } from '../tsl/TSLBase.js';
  * @augments Node
  */
 class LoopNode extends Node {
-
 	static get type() {
-
-		return 'LoopNode';
-
+		return 'LoopNode'
 	}
 
 	/**
@@ -41,12 +38,10 @@ class LoopNode extends Node {
 	 *
 	 * @param {Array<Any>} params - Depending on the loop type, array holds different parameterization values for the loop.
 	 */
-	constructor( params = [] ) {
+	constructor(params = []) {
+		super()
 
-		super();
-
-		this.params = params;
-
+		this.params = params
 	}
 
 	/**
@@ -56,10 +51,8 @@ class LoopNode extends Node {
 	 * @param {Number} index - The index.
 	 * @return {String} The loop variable name.
 	 */
-	getVarName( index ) {
-
-		return String.fromCharCode( 'i'.charCodeAt( 0 ) + index );
-
+	getVarName(index) {
+		return String.fromCharCode('i'.charCodeAt(0) + index)
 	}
 
 	/**
@@ -68,36 +61,36 @@ class LoopNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Object} The node properties.
 	 */
-	getProperties( builder ) {
+	getProperties(builder) {
+		const properties = builder.getNodeProperties(this)
 
-		const properties = builder.getNodeProperties( this );
-
-		if ( properties.stackNode !== undefined ) return properties;
+		if (properties.stackNode !== undefined) return properties
 
 		//
 
-		const inputs = {};
+		const inputs = {}
 
-		for ( let i = 0, l = this.params.length - 1; i < l; i ++ ) {
+		for (let i = 0, l = this.params.length - 1; i < l; i++) {
+			const param = this.params[i]
 
-			const param = this.params[ i ];
+			const name = (param.isNode !== true && param.name) || this.getVarName(i)
+			const type = (param.isNode !== true && param.type) || 'int'
 
-			const name = ( param.isNode !== true && param.name ) || this.getVarName( i );
-			const type = ( param.isNode !== true && param.type ) || 'int';
-
-			inputs[ name ] = expression( name, type );
-
+			inputs[name] = expression(name, type)
 		}
 
-		const stack = builder.addStack(); // TODO: cache() it
+		const stack = builder.addStack() // TODO: cache() it
 
-		properties.returnsNode = this.params[ this.params.length - 1 ]( inputs, stack, builder );
-		properties.stackNode = stack;
+		properties.returnsNode = this.params[this.params.length - 1](
+			inputs,
+			stack,
+			builder
+		)
+		properties.stackNode = stack
 
-		builder.removeStack();
+		builder.removeStack()
 
-		return properties;
-
+		return properties
 	}
 
 	/**
@@ -106,146 +99,129 @@ class LoopNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The node type.
 	 */
-	getNodeType( builder ) {
+	getNodeType(builder) {
+		const { returnsNode } = this.getProperties(builder)
 
-		const { returnsNode } = this.getProperties( builder );
-
-		return returnsNode ? returnsNode.getNodeType( builder ) : 'void';
-
+		return returnsNode ? returnsNode.getNodeType(builder) : 'void'
 	}
 
-	setup( builder ) {
-
+	setup(builder) {
 		// setup properties
 
-		this.getProperties( builder );
-
+		this.getProperties(builder)
 	}
 
-	generate( builder ) {
+	generate(builder) {
+		const properties = this.getProperties(builder)
 
-		const properties = this.getProperties( builder );
+		const params = this.params
+		const stackNode = properties.stackNode
 
-		const params = this.params;
-		const stackNode = properties.stackNode;
+		for (let i = 0, l = params.length - 1; i < l; i++) {
+			const param = params[i]
 
-		for ( let i = 0, l = params.length - 1; i < l; i ++ ) {
+			let start = null,
+				end = null,
+				name = null,
+				type = null,
+				condition = null,
+				update = null
 
-			const param = params[ i ];
-
-			let start = null, end = null, name = null, type = null, condition = null, update = null;
-
-			if ( param.isNode ) {
-
-				type = 'int';
-				name = this.getVarName( i );
-				start = '0';
-				end = param.build( builder, type );
-				condition = '<';
-
+			if (param.isNode) {
+				type = 'int'
+				name = this.getVarName(i)
+				start = '0'
+				end = param.build(builder, type)
+				condition = '<'
 			} else {
+				type = param.type || 'int'
+				name = param.name || this.getVarName(i)
+				start = param.start
+				end = param.end
+				condition = param.condition
+				update = param.update
 
-				type = param.type || 'int';
-				name = param.name || this.getVarName( i );
-				start = param.start;
-				end = param.end;
-				condition = param.condition;
-				update = param.update;
+				if (typeof start === 'number')
+					start = builder.generateConst(type, start)
+				else if (start && start.isNode) start = start.build(builder, type)
 
-				if ( typeof start === 'number' ) start = builder.generateConst( type, start );
-				else if ( start && start.isNode ) start = start.build( builder, type );
+				if (typeof end === 'number') end = builder.generateConst(type, end)
+				else if (end && end.isNode) end = end.build(builder, type)
 
-				if ( typeof end === 'number' ) end = builder.generateConst( type, end );
-				else if ( end && end.isNode ) end = end.build( builder, type );
-
-				if ( start !== undefined && end === undefined ) {
-
-					start = start + ' - 1';
-					end = '0';
-					condition = '>=';
-
-				} else if ( end !== undefined && start === undefined ) {
-
-					start = '0';
-					condition = '<';
-
+				if (start !== undefined && end === undefined) {
+					start = start + ' - 1'
+					end = '0'
+					condition = '>='
+				} else if (end !== undefined && start === undefined) {
+					start = '0'
+					condition = '<'
 				}
 
-				if ( condition === undefined ) {
-
-					if ( Number( start ) > Number( end ) ) {
-
-						condition = '>=';
-
+				if (condition === undefined) {
+					if (Number(start) > Number(end)) {
+						condition = '>='
 					} else {
-
-						condition = '<';
-
+						condition = '<'
 					}
-
 				}
-
 			}
 
-			const internalParam = { start, end, condition };
+			const internalParam = { start, end, condition }
 
 			//
 
-			const startSnippet = internalParam.start;
-			const endSnippet = internalParam.end;
+			const startSnippet = internalParam.start
+			const endSnippet = internalParam.end
 
-			let declarationSnippet = '';
-			let conditionalSnippet = '';
-			let updateSnippet = '';
+			let declarationSnippet = ''
+			let conditionalSnippet = ''
+			let updateSnippet = ''
 
-			if ( ! update ) {
-
-				if ( type === 'int' || type === 'uint' ) {
-
-					if ( condition.includes( '<' ) ) update = '++';
-					else update = '--';
-
+			if (!update) {
+				if (type === 'int' || type === 'uint') {
+					if (condition.includes('<')) update = '++'
+					else update = '--'
 				} else {
-
-					if ( condition.includes( '<' ) ) update = '+= 1.';
-					else update = '-= 1.';
-
+					if (condition.includes('<')) update = '+= 1.'
+					else update = '-= 1.'
 				}
-
 			}
 
-			declarationSnippet += builder.getVar( type, name ) + ' = ' + startSnippet;
+			declarationSnippet += builder.getVar(type, name) + ' = ' + startSnippet
 
-			conditionalSnippet += name + ' ' + condition + ' ' + endSnippet;
-			updateSnippet += name + ' ' + update;
+			conditionalSnippet += name + ' ' + condition + ' ' + endSnippet
+			updateSnippet += name + ' ' + update
 
-			const forSnippet = `for ( ${ declarationSnippet }; ${ conditionalSnippet }; ${ updateSnippet } )`;
+			const forSnippet = `for ( ${declarationSnippet}; ${conditionalSnippet}; ${updateSnippet} )`
 
-			builder.addFlowCode( ( i === 0 ? '\n' : '' ) + builder.tab + forSnippet + ' {\n\n' ).addFlowTab();
-
+			builder
+				.addFlowCode(
+					(i === 0 ? '\n' : '') + builder.tab + forSnippet + ' {\n\n'
+				)
+				.addFlowTab()
 		}
 
-		const stackSnippet = stackNode.build( builder, 'void' );
+		const stackSnippet = stackNode.build(builder, 'void')
 
-		const returnsSnippet = properties.returnsNode ? properties.returnsNode.build( builder ) : '';
+		const returnsSnippet = properties.returnsNode
+			? properties.returnsNode.build(builder)
+			: ''
 
-		builder.removeFlowTab().addFlowCode( '\n' + builder.tab + stackSnippet );
+		builder.removeFlowTab().addFlowCode('\n' + builder.tab + stackSnippet)
 
-		for ( let i = 0, l = this.params.length - 1; i < l; i ++ ) {
-
-			builder.addFlowCode( ( i === 0 ? '' : builder.tab ) + '}\n\n' ).removeFlowTab();
-
+		for (let i = 0, l = this.params.length - 1; i < l; i++) {
+			builder
+				.addFlowCode((i === 0 ? '' : builder.tab) + '}\n\n')
+				.removeFlowTab()
 		}
 
-		builder.addFlowTab();
+		builder.addFlowTab()
 
-		return returnsSnippet;
-
+		return returnsSnippet
 	}
-
 }
 
-export default LoopNode;
+export default LoopNode
 
 /**
  * TSL function for creating a loop node.
@@ -254,7 +230,8 @@ export default LoopNode;
  * @param {...Any} params - A list of parameters.
  * @returns {LoopNode}
  */
-export const Loop = ( ...params ) => nodeObject( new LoopNode( nodeArray( params, 'int' ) ) ).append();
+export const Loop = (...params) =>
+	nodeObject(new LoopNode(nodeArray(params, 'int'))).append()
 
 /**
  * TSL function for creating a `Continue()` expression.
@@ -262,7 +239,7 @@ export const Loop = ( ...params ) => nodeObject( new LoopNode( nodeArray( params
  * @function
  * @returns {ExpressionNode}
  */
-export const Continue = () => expression( 'continue' ).append();
+export const Continue = () => expression('continue').append()
 
 /**
  * TSL function for creating a `Break()` expression.
@@ -270,7 +247,7 @@ export const Continue = () => expression( 'continue' ).append();
  * @function
  * @returns {ExpressionNode}
  */
-export const Break = () => expression( 'break' ).append();
+export const Break = () => expression('break').append()
 
 // Deprecated
 
@@ -281,9 +258,9 @@ export const Break = () => expression( 'break' ).append();
  * @param  {...any} params
  * @returns {LoopNode}
  */
-export const loop = ( ...params ) => { // @deprecated, r168
+export const loop = (...params) => {
+	// @deprecated, r168
 
-	console.warn( 'TSL.LoopNode: loop() has been renamed to Loop().' );
-	return Loop( ...params );
-
-};
+	console.warn('TSL.LoopNode: loop() has been renamed to Loop().')
+	return Loop(...params)
+}

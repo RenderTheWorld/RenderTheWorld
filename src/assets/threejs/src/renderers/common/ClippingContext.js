@@ -1,8 +1,8 @@
-import { Matrix3 } from '../../math/Matrix3.js';
-import { Plane } from '../../math/Plane.js';
-import { Vector4 } from '../../math/Vector4.js';
+import { Matrix3 } from '../../math/Matrix3.js'
+import { Plane } from '../../math/Plane.js'
+import { Vector4 } from '../../math/Vector4.js'
 
-const _plane = /*@__PURE__*/ new Plane();
+const _plane = /*@__PURE__*/ new Plane()
 
 /**
  * Represents the state that is used to perform clipping via clipping planes.
@@ -13,21 +13,19 @@ const _plane = /*@__PURE__*/ new Plane();
  * @private
  */
 class ClippingContext {
-
 	/**
 	 * Constructs a new clipping context.
 	 *
 	 * @param {ClippingContext?} [parentContext=null] - A reference to the parent clipping context.
 	 */
-	constructor( parentContext = null ) {
-
+	constructor(parentContext = null) {
 		/**
 		 * The clipping context's version.
 		 *
 		 * @type {Number}
 		 * @readonly
 		 */
-		this.version = 0;
+		this.version = 0
 
 		/**
 		 * Whether the intersection of the clipping planes is used to clip objects, rather than their union.
@@ -35,14 +33,14 @@ class ClippingContext {
 		 * @type {Boolean?}
 		 * @default null
 		 */
-		this.clipIntersection = null;
+		this.clipIntersection = null
 
 		/**
 		 * The clipping context's cache key.
 		 *
 		 * @type {String}
 		 */
-		this.cacheKey = '';
+		this.cacheKey = ''
 
 		/**
 		 * Whether the shadow pass is active or not.
@@ -50,35 +48,35 @@ class ClippingContext {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.shadowPass = false;
+		this.shadowPass = false
 
 		/**
 		 * The view normal matrix.
 		 *
 		 * @type {Matrix3}
 		 */
-		this.viewNormalMatrix = new Matrix3();
+		this.viewNormalMatrix = new Matrix3()
 
 		/**
 		 * Internal cache for maintaining clipping contexts.
 		 *
 		 * @type {WeakMap<ClippingGroup,ClippingContext>}
 		 */
-		this.clippingGroupContexts = new WeakMap();
+		this.clippingGroupContexts = new WeakMap()
 
 		/**
 		 * The intersection planes.
 		 *
 		 * @type {Array<Vector4>}
 		 */
-		this.intersectionPlanes = [];
+		this.intersectionPlanes = []
 
 		/**
 		 * The intersection planes.
 		 *
 		 * @type {Array<Vector4>}
 		 */
-		this.unionPlanes = [];
+		this.unionPlanes = []
 
 		/**
 		 * The version of the clipping context's parent context.
@@ -86,18 +84,15 @@ class ClippingContext {
 		 * @type {Number?}
 		 * @readonly
 		 */
-		this.parentVersion = null;
+		this.parentVersion = null
 
-		if ( parentContext !== null ) {
+		if (parentContext !== null) {
+			this.viewNormalMatrix = parentContext.viewNormalMatrix
+			this.clippingGroupContexts = parentContext.clippingGroupContexts
 
-			this.viewNormalMatrix = parentContext.viewNormalMatrix;
-			this.clippingGroupContexts = parentContext.clippingGroupContexts;
-
-			this.shadowPass = parentContext.shadowPass;
-			this.viewMatrix = parentContext.viewMatrix;
-
+			this.shadowPass = parentContext.shadowPass
+			this.viewMatrix = parentContext.viewMatrix
 		}
-
 	}
 
 	/**
@@ -108,24 +103,22 @@ class ClippingContext {
 	 * @param {Array<Vector4>} destination - The destination.
 	 * @param {Number} offset - The offset.
 	 */
-	projectPlanes( source, destination, offset ) {
+	projectPlanes(source, destination, offset) {
+		const l = source.length
 
-		const l = source.length;
+		for (let i = 0; i < l; i++) {
+			_plane
+				.copy(source[i])
+				.applyMatrix4(this.viewMatrix, this.viewNormalMatrix)
 
-		for ( let i = 0; i < l; i ++ ) {
+			const v = destination[offset + i]
+			const normal = _plane.normal
 
-			_plane.copy( source[ i ] ).applyMatrix4( this.viewMatrix, this.viewNormalMatrix );
-
-			const v = destination[ offset + i ];
-			const normal = _plane.normal;
-
-			v.x = - normal.x;
-			v.y = - normal.y;
-			v.z = - normal.z;
-			v.w = _plane.constant;
-
+			v.x = -normal.x
+			v.y = -normal.y
+			v.z = -normal.z
+			v.w = _plane.constant
 		}
-
 	}
 
 	/**
@@ -134,13 +127,13 @@ class ClippingContext {
 	 * @param {Scene} scene - The scene.
 	 * @param {Camera} camera - The camera that is used to render the scene.
 	 */
-	updateGlobal( scene, camera ) {
+	updateGlobal(scene, camera) {
+		this.shadowPass =
+			scene.overrideMaterial !== null &&
+			scene.overrideMaterial.isShadowPassMaterial
+		this.viewMatrix = camera.matrixWorldInverse
 
-		this.shadowPass = ( scene.overrideMaterial !== null && scene.overrideMaterial.isShadowPassMaterial );
-		this.viewMatrix = camera.matrixWorldInverse;
-
-		this.viewNormalMatrix.getNormalMatrix( this.viewMatrix );
-
+		this.viewNormalMatrix.getNormalMatrix(this.viewMatrix)
 	}
 
 	/**
@@ -149,75 +142,55 @@ class ClippingContext {
 	 * @param {ClippingContext} parentContext - The parent context.
 	 * @param {ClippingGroup} clippingGroup - The clipping group this context belongs to.
 	 */
-	update( parentContext, clippingGroup ) {
+	update(parentContext, clippingGroup) {
+		let update = false
 
-		let update = false;
-
-		if ( parentContext.version !== this.parentVersion ) {
-
-			this.intersectionPlanes = Array.from( parentContext.intersectionPlanes );
-			this.unionPlanes = Array.from( parentContext.unionPlanes );
-			this.parentVersion = parentContext.version;
-
+		if (parentContext.version !== this.parentVersion) {
+			this.intersectionPlanes = Array.from(parentContext.intersectionPlanes)
+			this.unionPlanes = Array.from(parentContext.unionPlanes)
+			this.parentVersion = parentContext.version
 		}
 
-		if ( this.clipIntersection !== clippingGroup.clipIntersection ) {
+		if (this.clipIntersection !== clippingGroup.clipIntersection) {
+			this.clipIntersection = clippingGroup.clipIntersection
 
-			this.clipIntersection = clippingGroup.clipIntersection;
-
-			if ( this.clipIntersection ) {
-
-				this.unionPlanes.length = parentContext.unionPlanes.length;
-
+			if (this.clipIntersection) {
+				this.unionPlanes.length = parentContext.unionPlanes.length
 			} else {
-
-				this.intersectionPlanes.length = parentContext.intersectionPlanes.length;
-
+				this.intersectionPlanes.length = parentContext.intersectionPlanes.length
 			}
-
 		}
 
-		const srcClippingPlanes = clippingGroup.clippingPlanes;
-		const l = srcClippingPlanes.length;
+		const srcClippingPlanes = clippingGroup.clippingPlanes
+		const l = srcClippingPlanes.length
 
-		let dstClippingPlanes;
-		let offset;
+		let dstClippingPlanes
+		let offset
 
-		if ( this.clipIntersection ) {
-
-			dstClippingPlanes = this.intersectionPlanes;
-			offset = parentContext.intersectionPlanes.length;
-
+		if (this.clipIntersection) {
+			dstClippingPlanes = this.intersectionPlanes
+			offset = parentContext.intersectionPlanes.length
 		} else {
-
-			dstClippingPlanes = this.unionPlanes;
-			offset = parentContext.unionPlanes.length;
-
+			dstClippingPlanes = this.unionPlanes
+			offset = parentContext.unionPlanes.length
 		}
 
-		if ( dstClippingPlanes.length !== offset + l ) {
+		if (dstClippingPlanes.length !== offset + l) {
+			dstClippingPlanes.length = offset + l
 
-			dstClippingPlanes.length = offset + l;
-
-			for ( let i = 0; i < l; i ++ ) {
-
-				dstClippingPlanes[ offset + i ] = new Vector4();
-
+			for (let i = 0; i < l; i++) {
+				dstClippingPlanes[offset + i] = new Vector4()
 			}
 
-			update = true;
-
+			update = true
 		}
 
-		this.projectPlanes( srcClippingPlanes, dstClippingPlanes, offset );
+		this.projectPlanes(srcClippingPlanes, dstClippingPlanes, offset)
 
-		if ( update ) {
-
-			this.version ++;
-			this.cacheKey = `${ this.intersectionPlanes.length }:${ this.unionPlanes.length }`;
-
+		if (update) {
+			this.version++
+			this.cacheKey = `${this.intersectionPlanes.length}:${this.unionPlanes.length}`
 		}
-
 	}
 
 	/**
@@ -226,23 +199,19 @@ class ClippingContext {
 	 * @param {ClippingGroup} clippingGroup - The clipping group.
 	 * @return {ClippingContext} The clipping context.
 	 */
-	getGroupContext( clippingGroup ) {
+	getGroupContext(clippingGroup) {
+		if (this.shadowPass && !clippingGroup.clipShadows) return this
 
-		if ( this.shadowPass && ! clippingGroup.clipShadows ) return this;
+		let context = this.clippingGroupContexts.get(clippingGroup)
 
-		let context = this.clippingGroupContexts.get( clippingGroup );
-
-		if ( context === undefined ) {
-
-			context = new ClippingContext( this );
-			this.clippingGroupContexts.set( clippingGroup, context );
-
+		if (context === undefined) {
+			context = new ClippingContext(this)
+			this.clippingGroupContexts.set(clippingGroup, context)
 		}
 
-		context.update( this, clippingGroup );
+		context.update(this, clippingGroup)
 
-		return context;
-
+		return context
 	}
 
 	/**
@@ -252,11 +221,8 @@ class ClippingContext {
 	 * @readonly
 	 */
 	get unionClippingCount() {
-
-		return this.unionPlanes.length;
-
+		return this.unionPlanes.length
 	}
-
 }
 
-export default ClippingContext;
+export default ClippingContext

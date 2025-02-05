@@ -1,6 +1,6 @@
-import { positionView } from '../accessors/Position.js';
-import { smoothstep } from '../math/MathNode.js';
-import { Fn, output, vec4 } from '../tsl/TSLBase.js';
+import { positionView } from '../accessors/Position.js'
+import { smoothstep } from '../math/MathNode.js'
+import { Fn, output, vec4 } from '../tsl/TSLBase.js'
 
 /**
  * Returns a node that represents the `z` coordinate in view space
@@ -13,20 +13,16 @@ import { Fn, output, vec4 } from '../tsl/TSLBase.js';
  * @param {NodeBuilder} builder - The current node builder.
  * @return {Node} The viewZ node.
  */
-function getViewZNode( builder ) {
+function getViewZNode(builder) {
+	let viewZ
 
-	let viewZ;
+	const getViewZ = builder.context.getViewZ
 
-	const getViewZ = builder.context.getViewZ;
-
-	if ( getViewZ !== undefined ) {
-
-		viewZ = getViewZ( this );
-
+	if (getViewZ !== undefined) {
+		viewZ = getViewZ(this)
 	}
 
-	return ( viewZ || positionView.z ).negate();
-
+	return (viewZ || positionView.z).negate()
 }
 
 /**
@@ -36,13 +32,11 @@ function getViewZNode( builder ) {
  * @param {Node} near - Defines the near value.
  * @param {Node} far - Defines the far value.
  */
-export const rangeFogFactor = Fn( ( [ near, far ], builder ) => {
+export const rangeFogFactor = Fn(([near, far], builder) => {
+	const viewZ = getViewZNode(builder)
 
-	const viewZ = getViewZNode( builder );
-
-	return smoothstep( near, far, viewZ );
-
-} );
+	return smoothstep(near, far, viewZ)
+})
 
 /**
  * Represents an exponential squared fog. This type of fog gives
@@ -52,13 +46,11 @@ export const rangeFogFactor = Fn( ( [ near, far ], builder ) => {
  * @function
  * @param {Node} density - Defines the fog density.
  */
-export const densityFogFactor = Fn( ( [ density ], builder ) => {
+export const densityFogFactor = Fn(([density], builder) => {
+	const viewZ = getViewZNode(builder)
 
-	const viewZ = getViewZNode( builder );
-
-	return density.mul( density, viewZ, viewZ ).negate().exp().oneMinus();
-
-} );
+	return density.mul(density, viewZ, viewZ).negate().exp().oneMinus()
+})
 
 /**
  * This class can be used to configure a fog for the scene.
@@ -68,11 +60,9 @@ export const densityFogFactor = Fn( ( [ density ], builder ) => {
  * @param {Node} color - Defines the color of the fog.
  * @param {Node} factor - Defines how the fog is factored in the scene.
  */
-export const fog = Fn( ( [ color, factor ] ) => {
-
-	return vec4( factor.toFloat().mix( output.rgb, color.toVec3() ), output.a );
-
-} );
+export const fog = Fn(([color, factor]) => {
+	return vec4(factor.toFloat().mix(output.rgb, color.toVec3()), output.a)
+})
 
 // Deprecated
 
@@ -85,11 +75,13 @@ export const fog = Fn( ( [ color, factor ] ) => {
  * @param {Node} far
  * @returns {Function}
  */
-export function rangeFog( color, near, far ) { // @deprecated, r171
+export function rangeFog(color, near, far) {
+	// @deprecated, r171
 
-	console.warn( 'THREE.TSL: "rangeFog( color, near, far )" is deprecated. Use "fog( color, rangeFogFactor( near, far ) )" instead.' );
-	return fog( color, rangeFogFactor( near, far ) );
-
+	console.warn(
+		'THREE.TSL: "rangeFog( color, near, far )" is deprecated. Use "fog( color, rangeFogFactor( near, far ) )" instead.'
+	)
+	return fog(color, rangeFogFactor(near, far))
 }
 
 /**
@@ -100,9 +92,11 @@ export function rangeFog( color, near, far ) { // @deprecated, r171
  * @param {Node} density
  * @returns {Function}
  */
-export function densityFog( color, density ) { // @deprecated, r171
+export function densityFog(color, density) {
+	// @deprecated, r171
 
-	console.warn( 'THREE.TSL: "densityFog( color, density )" is deprecated. Use "fog( color, densityFogFactor( density ) )" instead.' );
-	return fog( color, densityFogFactor( density ) );
-
+	console.warn(
+		'THREE.TSL: "densityFog( color, density )" is deprecated. Use "fog( color, densityFogFactor( density ) )" instead.'
+	)
+	return fog(color, densityFogFactor(density))
 }

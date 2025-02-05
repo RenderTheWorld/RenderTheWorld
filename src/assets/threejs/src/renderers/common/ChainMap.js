@@ -7,19 +7,16 @@
  * @private
  */
 class ChainMap {
-
 	/**
 	 * Constructs a new Chain Map.
 	 */
 	constructor() {
-
 		/**
 		 * The root Weak Map.
 		 *
 		 * @type {WeakMap}
 		 */
-		this.weakMap = new WeakMap();
-
+		this.weakMap = new WeakMap()
 	}
 
 	/**
@@ -28,20 +25,16 @@ class ChainMap {
 	 * @param {Array<Object>} keys - List of keys.
 	 * @return {Any} The value. Returns `undefined` if no value was found.
 	 */
-	get( keys ) {
+	get(keys) {
+		let map = this.weakMap
 
-		let map = this.weakMap;
+		for (let i = 0; i < keys.length - 1; i++) {
+			map = map.get(keys[i])
 
-		for ( let i = 0; i < keys.length - 1; i ++ ) {
-
-			map = map.get( keys[ i ] );
-
-			if ( map === undefined ) return undefined;
-
+			if (map === undefined) return undefined
 		}
 
-		return map.get( keys[ keys.length - 1 ] );
-
+		return map.get(keys[keys.length - 1])
 	}
 
 	/**
@@ -51,24 +44,20 @@ class ChainMap {
 	 * @param {Any} value - The value to set.
 	 * @return {ChainMap} A reference to this Chain Map.
 	 */
-	set( keys, value ) {
+	set(keys, value) {
+		let map = this.weakMap
 
-		let map = this.weakMap;
+		for (let i = 0; i < keys.length - 1; i++) {
+			const key = keys[i]
 
-		for ( let i = 0; i < keys.length - 1; i ++ ) {
+			if (map.has(key) === false) map.set(key, new WeakMap())
 
-			const key = keys[ i ];
-
-			if ( map.has( key ) === false ) map.set( key, new WeakMap() );
-
-			map = map.get( key );
-
+			map = map.get(key)
 		}
 
-		map.set( keys[ keys.length - 1 ], value );
+		map.set(keys[keys.length - 1], value)
 
-		return this;
-
+		return this
 	}
 
 	/**
@@ -77,22 +66,17 @@ class ChainMap {
 	 * @param {Array<Object>} keys - The keys.
 	 * @return {Boolean} Returns `true` if the value has been removed successfully and `false` if the value has not be found.
 	 */
-	delete( keys ) {
+	delete(keys) {
+		let map = this.weakMap
 
-		let map = this.weakMap;
+		for (let i = 0; i < keys.length - 1; i++) {
+			map = map.get(keys[i])
 
-		for ( let i = 0; i < keys.length - 1; i ++ ) {
-
-			map = map.get( keys[ i ] );
-
-			if ( map === undefined ) return false;
-
+			if (map === undefined) return false
 		}
 
-		return map.delete( keys[ keys.length - 1 ] );
-
+		return map.delete(keys[keys.length - 1])
 	}
-
 }
 
-export default ChainMap;
+export default ChainMap

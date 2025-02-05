@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 
 float G_BlinnPhong_Implicit( /* const in float dotNL, const in float dotNV */ ) {
 
@@ -30,4 +30,4 @@ vec3 BRDF_BlinnPhong( const in vec3 lightDir, const in vec3 viewDir, const in ve
 
 } // validated
 
-`;
+`

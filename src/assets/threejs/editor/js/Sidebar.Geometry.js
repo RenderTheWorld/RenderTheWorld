@@ -1,26 +1,33 @@
-import * as THREE from 'three';
+import * as THREE from 'three'
 
-import { UIPanel, UIRow, UIText, UIInput, UIButton, UISpan, UITextArea } from './libs/ui.js';
+import {
+	UIPanel,
+	UIRow,
+	UIText,
+	UIInput,
+	UIButton,
+	UISpan,
+	UITextArea
+} from './libs/ui.js'
 
-import { SetGeometryValueCommand } from './commands/SetGeometryValueCommand.js';
+import { SetGeometryValueCommand } from './commands/SetGeometryValueCommand.js'
 
-import { SidebarGeometryBufferGeometry } from './Sidebar.Geometry.BufferGeometry.js';
-import { SidebarGeometryModifiers } from './Sidebar.Geometry.Modifiers.js';
+import { SidebarGeometryBufferGeometry } from './Sidebar.Geometry.BufferGeometry.js'
+import { SidebarGeometryModifiers } from './Sidebar.Geometry.Modifiers.js'
 
-import { VertexNormalsHelper } from 'three/addons/helpers/VertexNormalsHelper.js';
+import { VertexNormalsHelper } from 'three/addons/helpers/VertexNormalsHelper.js'
 
-function SidebarGeometry( editor ) {
+function SidebarGeometry(editor) {
+	const strings = editor.strings
 
-	const strings = editor.strings;
+	const signals = editor.signals
 
-	const signals = editor.signals;
+	const container = new UIPanel()
+	container.setBorderTop('0')
+	container.setDisplay('none')
+	container.setPaddingTop('20px')
 
-	const container = new UIPanel();
-	container.setBorderTop( '0' );
-	container.setDisplay( 'none' );
-	container.setPaddingTop( '20px' );
-
-	let currentGeometryType = null;
+	let currentGeometryType = null
 
 	// Actions
 
@@ -87,246 +94,256 @@ function SidebarGeometry( editor ) {
 
 	// type
 
-	const geometryTypeRow = new UIRow();
-	const geometryType = new UIText();
+	const geometryTypeRow = new UIRow()
+	const geometryType = new UIText()
 
-	geometryTypeRow.add( new UIText( strings.getKey( 'sidebar/geometry/type' ) ).setClass( 'Label' ) );
-	geometryTypeRow.add( geometryType );
+	geometryTypeRow.add(
+		new UIText(strings.getKey('sidebar/geometry/type')).setClass('Label')
+	)
+	geometryTypeRow.add(geometryType)
 
-	container.add( geometryTypeRow );
+	container.add(geometryTypeRow)
 
 	// uuid
 
-	const geometryUUIDRow = new UIRow();
-	const geometryUUID = new UIInput().setWidth( '102px' ).setFontSize( '12px' ).setDisabled( true );
-	const geometryUUIDRenew = new UIButton( strings.getKey( 'sidebar/geometry/new' ) ).setMarginLeft( '7px' ).onClick( function () {
+	const geometryUUIDRow = new UIRow()
+	const geometryUUID = new UIInput()
+		.setWidth('102px')
+		.setFontSize('12px')
+		.setDisabled(true)
+	const geometryUUIDRenew = new UIButton(strings.getKey('sidebar/geometry/new'))
+		.setMarginLeft('7px')
+		.onClick(function () {
+			geometryUUID.setValue(THREE.MathUtils.generateUUID())
 
-		geometryUUID.setValue( THREE.MathUtils.generateUUID() );
+			editor.execute(
+				new SetGeometryValueCommand(
+					editor,
+					editor.selected,
+					'uuid',
+					geometryUUID.getValue()
+				)
+			)
+		})
 
-		editor.execute( new SetGeometryValueCommand( editor, editor.selected, 'uuid', geometryUUID.getValue() ) );
+	geometryUUIDRow.add(
+		new UIText(strings.getKey('sidebar/geometry/uuid')).setClass('Label')
+	)
+	geometryUUIDRow.add(geometryUUID)
+	geometryUUIDRow.add(geometryUUIDRenew)
 
-	} );
-
-	geometryUUIDRow.add( new UIText( strings.getKey( 'sidebar/geometry/uuid' ) ).setClass( 'Label' ) );
-	geometryUUIDRow.add( geometryUUID );
-	geometryUUIDRow.add( geometryUUIDRenew );
-
-	container.add( geometryUUIDRow );
+	container.add(geometryUUIDRow)
 
 	// name
 
-	const geometryNameRow = new UIRow();
-	const geometryName = new UIInput().setWidth( '150px' ).setFontSize( '12px' ).onChange( function () {
+	const geometryNameRow = new UIRow()
+	const geometryName = new UIInput()
+		.setWidth('150px')
+		.setFontSize('12px')
+		.onChange(function () {
+			editor.execute(
+				new SetGeometryValueCommand(
+					editor,
+					editor.selected,
+					'name',
+					geometryName.getValue()
+				)
+			)
+		})
 
-		editor.execute( new SetGeometryValueCommand( editor, editor.selected, 'name', geometryName.getValue() ) );
+	geometryNameRow.add(
+		new UIText(strings.getKey('sidebar/geometry/name')).setClass('Label')
+	)
+	geometryNameRow.add(geometryName)
 
-	} );
-
-	geometryNameRow.add( new UIText( strings.getKey( 'sidebar/geometry/name' ) ).setClass( 'Label' ) );
-	geometryNameRow.add( geometryName );
-
-	container.add( geometryNameRow );
+	container.add(geometryNameRow)
 
 	// parameters
 
-	const parameters = new UISpan();
-	container.add( parameters );
+	const parameters = new UISpan()
+	container.add(parameters)
 
 	// buffergeometry
 
-	container.add( new SidebarGeometryBufferGeometry( editor ) );
+	container.add(new SidebarGeometryBufferGeometry(editor))
 
 	// Size
 
-	const geometryBoundingBox = new UIText().setFontSize( '12px' );
+	const geometryBoundingBox = new UIText().setFontSize('12px')
 
-	const geometryBoundingBoxRow = new UIRow();
-	geometryBoundingBoxRow.add( new UIText( strings.getKey( 'sidebar/geometry/bounds' ) ).setClass( 'Label' ) );
-	geometryBoundingBoxRow.add( geometryBoundingBox );
-	container.add( geometryBoundingBoxRow );
+	const geometryBoundingBoxRow = new UIRow()
+	geometryBoundingBoxRow.add(
+		new UIText(strings.getKey('sidebar/geometry/bounds')).setClass('Label')
+	)
+	geometryBoundingBoxRow.add(geometryBoundingBox)
+	container.add(geometryBoundingBoxRow)
 
 	// userData
 
-	const geometryUserDataRow = new UIRow();
-	const geometryUserData = new UITextArea().setValue( '{}' ).setWidth( '150px' ).setHeight( '40px' ).setFontSize( '12px' ).onChange( function () {
+	const geometryUserDataRow = new UIRow()
+	const geometryUserData = new UITextArea()
+		.setValue('{}')
+		.setWidth('150px')
+		.setHeight('40px')
+		.setFontSize('12px')
+		.onChange(function () {
+			try {
+				const userData = JSON.parse(geometryUserData.getValue())
 
-		try {
+				if (
+					JSON.stringify(editor.selected.geometry.userData) !=
+					JSON.stringify(userData)
+				) {
+					editor.execute(
+						new SetGeometryValueCommand(
+							editor,
+							editor.selected,
+							'userData',
+							userData
+						)
+					)
 
-			const userData = JSON.parse( geometryUserData.getValue() );
-
-			if ( JSON.stringify( editor.selected.geometry.userData ) != JSON.stringify( userData ) ) {
-
-				editor.execute( new SetGeometryValueCommand( editor, editor.selected, 'userData', userData ) );
-
-				build();
-
+					build()
+				}
+			} catch (exception) {
+				console.warn(exception)
 			}
-
-		} catch ( exception ) {
-
-			console.warn( exception );
-
-		}
-
-	} );
-	geometryUserData.onKeyUp( function () {
-
+		})
+	geometryUserData.onKeyUp(function () {
 		try {
+			JSON.parse(geometryUserData.getValue())
 
-			JSON.parse( geometryUserData.getValue() );
-
-			geometryUserData.dom.classList.add( 'success' );
-			geometryUserData.dom.classList.remove( 'fail' );
-
-		} catch ( error ) {
-
-			geometryUserData.dom.classList.remove( 'success' );
-			geometryUserData.dom.classList.add( 'fail' );
-
+			geometryUserData.dom.classList.add('success')
+			geometryUserData.dom.classList.remove('fail')
+		} catch (error) {
+			geometryUserData.dom.classList.remove('success')
+			geometryUserData.dom.classList.add('fail')
 		}
+	})
 
-	} );
+	geometryUserDataRow.add(
+		new UIText(strings.getKey('sidebar/geometry/userdata')).setClass('Label')
+	)
+	geometryUserDataRow.add(geometryUserData)
 
-	geometryUserDataRow.add( new UIText( strings.getKey( 'sidebar/geometry/userdata' ) ).setClass( 'Label' ) );
-	geometryUserDataRow.add( geometryUserData );
-
-	container.add( geometryUserDataRow );
+	container.add(geometryUserDataRow)
 
 	// Helpers
 
-	const helpersRow = new UIRow().setMarginLeft( '120px' );
-	container.add( helpersRow );
+	const helpersRow = new UIRow().setMarginLeft('120px')
+	container.add(helpersRow)
 
-	const vertexNormalsButton = new UIButton( strings.getKey( 'sidebar/geometry/show_vertex_normals' ) );
-	vertexNormalsButton.onClick( function () {
+	const vertexNormalsButton = new UIButton(
+		strings.getKey('sidebar/geometry/show_vertex_normals')
+	)
+	vertexNormalsButton.onClick(function () {
+		const object = editor.selected
 
-		const object = editor.selected;
-
-		if ( editor.helpers[ object.id ] === undefined ) {
-
-			editor.addHelper( object, new VertexNormalsHelper( object ) );
-
+		if (editor.helpers[object.id] === undefined) {
+			editor.addHelper(object, new VertexNormalsHelper(object))
 		} else {
-
-			editor.removeHelper( object );
-
+			editor.removeHelper(object)
 		}
 
-		signals.sceneGraphChanged.dispatch();
-
-	} );
-	helpersRow.add( vertexNormalsButton );
+		signals.sceneGraphChanged.dispatch()
+	})
+	helpersRow.add(vertexNormalsButton)
 
 	// Export JSON
 
-	const exportJson = new UIButton( strings.getKey( 'sidebar/geometry/export' ) );
-	exportJson.setMarginLeft( '120px' );
-	exportJson.onClick( function () {
+	const exportJson = new UIButton(strings.getKey('sidebar/geometry/export'))
+	exportJson.setMarginLeft('120px')
+	exportJson.onClick(function () {
+		const object = editor.selected
+		const geometry = object.geometry
 
-		const object = editor.selected;
-		const geometry = object.geometry;
-
-		let output = geometry.toJSON();
+		let output = geometry.toJSON()
 
 		try {
-
-			output = JSON.stringify( output, null, '\t' );
-			output = output.replace( /[\n\t]+([\d\.e\-\[\]]+)/g, '$1' );
-
-		} catch ( e ) {
-
-			output = JSON.stringify( output );
-
+			output = JSON.stringify(output, null, '\t')
+			output = output.replace(/[\n\t]+([\d\.e\-\[\]]+)/g, '$1')
+		} catch (e) {
+			output = JSON.stringify(output)
 		}
 
-		editor.utils.save( new Blob( [ output ] ), `${ geometryName.getValue() || 'geometry' }.json` );
-
-	} );
-	container.add( exportJson );
+		editor.utils.save(
+			new Blob([output]),
+			`${geometryName.getValue() || 'geometry'}.json`
+		)
+	})
+	container.add(exportJson)
 
 	//
 
 	async function build() {
+		const object = editor.selected
 
-		const object = editor.selected;
+		if (object && object.geometry) {
+			const geometry = object.geometry
 
-		if ( object && object.geometry ) {
+			container.setDisplay('block')
 
-			const geometry = object.geometry;
+			geometryType.setValue(geometry.type)
 
-			container.setDisplay( 'block' );
-
-			geometryType.setValue( geometry.type );
-
-			geometryUUID.setValue( geometry.uuid );
-			geometryName.setValue( geometry.name );
+			geometryUUID.setValue(geometry.uuid)
+			geometryName.setValue(geometry.name)
 
 			//
 
-			if ( currentGeometryType !== geometry.type ) {
+			if (currentGeometryType !== geometry.type) {
+				parameters.clear()
 
-				parameters.clear();
-
-				if ( geometry.type === 'BufferGeometry' ) {
-
-					parameters.add( new SidebarGeometryModifiers( editor, object ) );
-
+				if (geometry.type === 'BufferGeometry') {
+					parameters.add(new SidebarGeometryModifiers(editor, object))
 				} else {
+					const { GeometryParametersPanel } = await import(
+						`./Sidebar.Geometry.${geometry.type}.js`
+					)
 
-					const { GeometryParametersPanel } = await import( `./Sidebar.Geometry.${ geometry.type }.js` );
-
-					parameters.add( new GeometryParametersPanel( editor, object ) );
-
+					parameters.add(new GeometryParametersPanel(editor, object))
 				}
 
-				currentGeometryType = geometry.type;
-
+				currentGeometryType = geometry.type
 			}
 
-			if ( geometry.boundingBox === null ) geometry.computeBoundingBox();
+			if (geometry.boundingBox === null) geometry.computeBoundingBox()
 
-			const boundingBox = geometry.boundingBox;
-			const x = Math.floor( ( boundingBox.max.x - boundingBox.min.x ) * 1000 ) / 1000;
-			const y = Math.floor( ( boundingBox.max.y - boundingBox.min.y ) * 1000 ) / 1000;
-			const z = Math.floor( ( boundingBox.max.z - boundingBox.min.z ) * 1000 ) / 1000;
+			const boundingBox = geometry.boundingBox
+			const x =
+				Math.floor((boundingBox.max.x - boundingBox.min.x) * 1000) / 1000
+			const y =
+				Math.floor((boundingBox.max.y - boundingBox.min.y) * 1000) / 1000
+			const z =
+				Math.floor((boundingBox.max.z - boundingBox.min.z) * 1000) / 1000
 
-			geometryBoundingBox.setInnerHTML( `${x}<br/>${y}<br/>${z}` );
+			geometryBoundingBox.setInnerHTML(`${x}<br/>${y}<br/>${z}`)
 
-			helpersRow.setDisplay( geometry.hasAttribute( 'normal' ) ? '' : 'none' );
+			helpersRow.setDisplay(geometry.hasAttribute('normal') ? '' : 'none')
 
-			geometryUserData.setValue( JSON.stringify( geometry.userData, null, '  ' ) );
+			geometryUserData.setValue(JSON.stringify(geometry.userData, null, '  '))
 
 			//
 
-			const helper = editor.helpers[ object.id ];
+			const helper = editor.helpers[object.id]
 
-			if ( helper !== undefined && helper.isVertexNormalsHelper === true ) {
-
-				editor.removeHelper( object );
-				editor.addHelper( object, new VertexNormalsHelper( object ) );
-
+			if (helper !== undefined && helper.isVertexNormalsHelper === true) {
+				editor.removeHelper(object)
+				editor.addHelper(object, new VertexNormalsHelper(object))
 			}
-
 		} else {
-
-			container.setDisplay( 'none' );
-
+			container.setDisplay('none')
 		}
-
 	}
 
-	signals.objectSelected.add( function () {
+	signals.objectSelected.add(function () {
+		currentGeometryType = null
 
-		currentGeometryType = null;
+		build()
+	})
 
-		build();
+	signals.geometryChanged.add(build)
 
-	} );
-
-	signals.geometryChanged.add( build );
-
-	return container;
-
+	return container
 }
 
-export { SidebarGeometry };
+export { SidebarGeometry }

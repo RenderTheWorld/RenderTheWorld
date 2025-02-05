@@ -1,4 +1,4 @@
-import AnalyticLightNode from './AnalyticLightNode.js';
+import AnalyticLightNode from './AnalyticLightNode.js'
 
 /**
  * Module for representing ambient lights as nodes.
@@ -6,11 +6,8 @@ import AnalyticLightNode from './AnalyticLightNode.js';
  * @augments AnalyticLightNode
  */
 class AmbientLightNode extends AnalyticLightNode {
-
 	static get type() {
-
-		return 'AmbientLightNode';
-
+		return 'AmbientLightNode'
 	}
 
 	/**
@@ -18,18 +15,13 @@ class AmbientLightNode extends AnalyticLightNode {
 	 *
 	 * @param {AmbientLight?} [light=null] - The ambient light source.
 	 */
-	constructor( light = null ) {
-
-		super( light );
-
+	constructor(light = null) {
+		super(light)
 	}
 
-	setup( { context } ) {
-
-		context.irradiance.addAssign( this.colorNode );
-
+	setup({ context }) {
+		context.irradiance.addAssign(this.colorNode)
 	}
-
 }
 
-export default AmbientLightNode;
+export default AmbientLightNode

@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 
 #ifdef USE_IRIDESCENCE
 
@@ -117,4 +117,4 @@ export default /* glsl */`
 
 #endif
 
-`;
+`

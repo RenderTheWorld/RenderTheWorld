@@ -1,8 +1,8 @@
-import { EventDispatcher } from './EventDispatcher.js';
-import { Texture } from '../textures/Texture.js';
-import { LinearFilter } from '../constants.js';
-import { Vector4 } from '../math/Vector4.js';
-import { Source } from '../textures/Source.js';
+import { EventDispatcher } from './EventDispatcher.js'
+import { Texture } from '../textures/Texture.js'
+import { LinearFilter } from '../constants.js'
+import { Vector4 } from '../math/Vector4.js'
+import { Source } from '../textures/Source.js'
 
 /*
  In options, we can specify:
@@ -10,171 +10,162 @@ import { Source } from '../textures/Source.js';
  * depthBuffer/stencilBuffer: Booleans to indicate if we should generate these buffers
 */
 class RenderTarget extends EventDispatcher {
+	constructor(width = 1, height = 1, options = {}) {
+		super()
 
-	constructor( width = 1, height = 1, options = {} ) {
+		this.isRenderTarget = true
 
-		super();
+		this.width = width
+		this.height = height
+		this.depth = 1
 
-		this.isRenderTarget = true;
+		this.scissor = new Vector4(0, 0, width, height)
+		this.scissorTest = false
 
-		this.width = width;
-		this.height = height;
-		this.depth = 1;
+		this.viewport = new Vector4(0, 0, width, height)
 
-		this.scissor = new Vector4( 0, 0, width, height );
-		this.scissorTest = false;
+		const image = { width: width, height: height, depth: 1 }
 
-		this.viewport = new Vector4( 0, 0, width, height );
+		options = Object.assign(
+			{
+				generateMipmaps: false,
+				internalFormat: null,
+				minFilter: LinearFilter,
+				depthBuffer: true,
+				stencilBuffer: false,
+				resolveDepthBuffer: true,
+				resolveStencilBuffer: true,
+				depthTexture: null,
+				samples: 0,
+				count: 1
+			},
+			options
+		)
 
-		const image = { width: width, height: height, depth: 1 };
+		const texture = new Texture(
+			image,
+			options.mapping,
+			options.wrapS,
+			options.wrapT,
+			options.magFilter,
+			options.minFilter,
+			options.format,
+			options.type,
+			options.anisotropy,
+			options.colorSpace
+		)
 
-		options = Object.assign( {
-			generateMipmaps: false,
-			internalFormat: null,
-			minFilter: LinearFilter,
-			depthBuffer: true,
-			stencilBuffer: false,
-			resolveDepthBuffer: true,
-			resolveStencilBuffer: true,
-			depthTexture: null,
-			samples: 0,
-			count: 1
-		}, options );
+		texture.flipY = false
+		texture.generateMipmaps = options.generateMipmaps
+		texture.internalFormat = options.internalFormat
 
-		const texture = new Texture( image, options.mapping, options.wrapS, options.wrapT, options.magFilter, options.minFilter, options.format, options.type, options.anisotropy, options.colorSpace );
+		this.textures = []
 
-		texture.flipY = false;
-		texture.generateMipmaps = options.generateMipmaps;
-		texture.internalFormat = options.internalFormat;
-
-		this.textures = [];
-
-		const count = options.count;
-		for ( let i = 0; i < count; i ++ ) {
-
-			this.textures[ i ] = texture.clone();
-			this.textures[ i ].isRenderTargetTexture = true;
-			this.textures[ i ].renderTarget = this;
-
+		const count = options.count
+		for (let i = 0; i < count; i++) {
+			this.textures[i] = texture.clone()
+			this.textures[i].isRenderTargetTexture = true
+			this.textures[i].renderTarget = this
 		}
 
-		this.depthBuffer = options.depthBuffer;
-		this.stencilBuffer = options.stencilBuffer;
+		this.depthBuffer = options.depthBuffer
+		this.stencilBuffer = options.stencilBuffer
 
-		this.resolveDepthBuffer = options.resolveDepthBuffer;
-		this.resolveStencilBuffer = options.resolveStencilBuffer;
+		this.resolveDepthBuffer = options.resolveDepthBuffer
+		this.resolveStencilBuffer = options.resolveStencilBuffer
 
-		this._depthTexture = null;
-		this.depthTexture = options.depthTexture;
+		this._depthTexture = null
+		this.depthTexture = options.depthTexture
 
-		this.samples = options.samples;
-
+		this.samples = options.samples
 	}
 
 	get texture() {
-
-		return this.textures[ 0 ];
-
+		return this.textures[0]
 	}
 
-	set texture( value ) {
-
-		this.textures[ 0 ] = value;
-
+	set texture(value) {
+		this.textures[0] = value
 	}
 
-	set depthTexture( current ) {
+	set depthTexture(current) {
+		if (this._depthTexture !== null) this._depthTexture.renderTarget = null
+		if (current !== null) current.renderTarget = this
 
-		if ( this._depthTexture !== null ) this._depthTexture.renderTarget = null;
-		if ( current !== null ) current.renderTarget = this;
-
-		this._depthTexture = current;
-
+		this._depthTexture = current
 	}
 
 	get depthTexture() {
-
-		return this._depthTexture;
-
+		return this._depthTexture
 	}
 
-	setSize( width, height, depth = 1 ) {
+	setSize(width, height, depth = 1) {
+		if (
+			this.width !== width ||
+			this.height !== height ||
+			this.depth !== depth
+		) {
+			this.width = width
+			this.height = height
+			this.depth = depth
 
-		if ( this.width !== width || this.height !== height || this.depth !== depth ) {
-
-			this.width = width;
-			this.height = height;
-			this.depth = depth;
-
-			for ( let i = 0, il = this.textures.length; i < il; i ++ ) {
-
-				this.textures[ i ].image.width = width;
-				this.textures[ i ].image.height = height;
-				this.textures[ i ].image.depth = depth;
-
+			for (let i = 0, il = this.textures.length; i < il; i++) {
+				this.textures[i].image.width = width
+				this.textures[i].image.height = height
+				this.textures[i].image.depth = depth
 			}
 
-			this.dispose();
-
+			this.dispose()
 		}
 
-		this.viewport.set( 0, 0, width, height );
-		this.scissor.set( 0, 0, width, height );
-
+		this.viewport.set(0, 0, width, height)
+		this.scissor.set(0, 0, width, height)
 	}
 
 	clone() {
-
-		return new this.constructor().copy( this );
-
+		return new this.constructor().copy(this)
 	}
 
-	copy( source ) {
+	copy(source) {
+		this.width = source.width
+		this.height = source.height
+		this.depth = source.depth
 
-		this.width = source.width;
-		this.height = source.height;
-		this.depth = source.depth;
+		this.scissor.copy(source.scissor)
+		this.scissorTest = source.scissorTest
 
-		this.scissor.copy( source.scissor );
-		this.scissorTest = source.scissorTest;
+		this.viewport.copy(source.viewport)
 
-		this.viewport.copy( source.viewport );
+		this.textures.length = 0
 
-		this.textures.length = 0;
-
-		for ( let i = 0, il = source.textures.length; i < il; i ++ ) {
-
-			this.textures[ i ] = source.textures[ i ].clone();
-			this.textures[ i ].isRenderTargetTexture = true;
-			this.textures[ i ].renderTarget = this;
-
+		for (let i = 0, il = source.textures.length; i < il; i++) {
+			this.textures[i] = source.textures[i].clone()
+			this.textures[i].isRenderTargetTexture = true
+			this.textures[i].renderTarget = this
 		}
 
 		// ensure image object is not shared, see #20328
 
-		const image = Object.assign( {}, source.texture.image );
-		this.texture.source = new Source( image );
+		const image = Object.assign({}, source.texture.image)
+		this.texture.source = new Source(image)
 
-		this.depthBuffer = source.depthBuffer;
-		this.stencilBuffer = source.stencilBuffer;
+		this.depthBuffer = source.depthBuffer
+		this.stencilBuffer = source.stencilBuffer
 
-		this.resolveDepthBuffer = source.resolveDepthBuffer;
-		this.resolveStencilBuffer = source.resolveStencilBuffer;
+		this.resolveDepthBuffer = source.resolveDepthBuffer
+		this.resolveStencilBuffer = source.resolveStencilBuffer
 
-		if ( source.depthTexture !== null ) this.depthTexture = source.depthTexture.clone();
+		if (source.depthTexture !== null)
+			this.depthTexture = source.depthTexture.clone()
 
-		this.samples = source.samples;
+		this.samples = source.samples
 
-		return this;
-
+		return this
 	}
 
 	dispose() {
-
-		this.dispatchEvent( { type: 'dispose' } );
-
+		this.dispatchEvent({ type: 'dispose' })
 	}
-
 }
 
-export { RenderTarget };
+export { RenderTarget }

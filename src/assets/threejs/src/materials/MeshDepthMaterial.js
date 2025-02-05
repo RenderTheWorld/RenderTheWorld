@@ -1,54 +1,48 @@
-import { Material } from './Material.js';
-import { BasicDepthPacking } from '../constants.js';
+import { Material } from './Material.js'
+import { BasicDepthPacking } from '../constants.js'
 
 class MeshDepthMaterial extends Material {
+	constructor(parameters) {
+		super()
 
-	constructor( parameters ) {
+		this.isMeshDepthMaterial = true
 
-		super();
+		this.type = 'MeshDepthMaterial'
 
-		this.isMeshDepthMaterial = true;
+		this.depthPacking = BasicDepthPacking
 
-		this.type = 'MeshDepthMaterial';
+		this.map = null
 
-		this.depthPacking = BasicDepthPacking;
+		this.alphaMap = null
 
-		this.map = null;
+		this.displacementMap = null
+		this.displacementScale = 1
+		this.displacementBias = 0
 
-		this.alphaMap = null;
+		this.wireframe = false
+		this.wireframeLinewidth = 1
 
-		this.displacementMap = null;
-		this.displacementScale = 1;
-		this.displacementBias = 0;
-
-		this.wireframe = false;
-		this.wireframeLinewidth = 1;
-
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
-	copy( source ) {
+	copy(source) {
+		super.copy(source)
 
-		super.copy( source );
+		this.depthPacking = source.depthPacking
 
-		this.depthPacking = source.depthPacking;
+		this.map = source.map
 
-		this.map = source.map;
+		this.alphaMap = source.alphaMap
 
-		this.alphaMap = source.alphaMap;
+		this.displacementMap = source.displacementMap
+		this.displacementScale = source.displacementScale
+		this.displacementBias = source.displacementBias
 
-		this.displacementMap = source.displacementMap;
-		this.displacementScale = source.displacementScale;
-		this.displacementBias = source.displacementBias;
+		this.wireframe = source.wireframe
+		this.wireframeLinewidth = source.wireframeLinewidth
 
-		this.wireframe = source.wireframe;
-		this.wireframeLinewidth = source.wireframeLinewidth;
-
-		return this;
-
+		return this
 	}
-
 }
 
-export { MeshDepthMaterial };
+export { MeshDepthMaterial }

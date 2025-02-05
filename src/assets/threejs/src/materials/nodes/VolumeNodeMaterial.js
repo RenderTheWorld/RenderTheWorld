@@ -1,14 +1,21 @@
-import NodeMaterial from './NodeMaterial.js';
-import { property } from '../../nodes/core/PropertyNode.js';
-import { materialReference } from '../../nodes/accessors/MaterialReferenceNode.js';
-import { modelWorldMatrixInverse } from '../../nodes/accessors/ModelNode.js';
-import { cameraPosition } from '../../nodes/accessors/Camera.js';
-import { positionGeometry } from '../../nodes/accessors/Position.js';
-import { Fn, varying, float, vec2, vec3, vec4 } from '../../nodes/tsl/TSLBase.js';
-import { min, max } from '../../nodes/math/MathNode.js';
-import { Loop, Break } from '../../nodes/utils/LoopNode.js';
-import { texture3D } from '../../nodes/accessors/Texture3DNode.js';
-import { Color } from '../../math/Color.js';
+import NodeMaterial from './NodeMaterial.js'
+import { property } from '../../nodes/core/PropertyNode.js'
+import { materialReference } from '../../nodes/accessors/MaterialReferenceNode.js'
+import { modelWorldMatrixInverse } from '../../nodes/accessors/ModelNode.js'
+import { cameraPosition } from '../../nodes/accessors/Camera.js'
+import { positionGeometry } from '../../nodes/accessors/Position.js'
+import {
+	Fn,
+	varying,
+	float,
+	vec2,
+	vec3,
+	vec4
+} from '../../nodes/tsl/TSLBase.js'
+import { min, max } from '../../nodes/math/MathNode.js'
+import { Loop, Break } from '../../nodes/utils/LoopNode.js'
+import { texture3D } from '../../nodes/accessors/Texture3DNode.js'
+import { Color } from '../../math/Color.js'
 
 /**
  * Node material intended for volume rendering. The volumetric data are
@@ -17,11 +24,8 @@ import { Color } from '../../math/Color.js';
  * @augments NodeMaterial
  */
 class VolumeNodeMaterial extends NodeMaterial {
-
 	static get type() {
-
-		return 'VolumeNodeMaterial';
-
+		return 'VolumeNodeMaterial'
 	}
 
 	/**
@@ -29,9 +33,8 @@ class VolumeNodeMaterial extends NodeMaterial {
 	 *
 	 * @param {Object?} parameters - The configuration parameter.
 	 */
-	constructor( parameters ) {
-
-		super();
+	constructor(parameters) {
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -40,7 +43,7 @@ class VolumeNodeMaterial extends NodeMaterial {
 		 * @readonly
 		 * @default true
 		 */
-		this.isVolumeNodeMaterial = true;
+		this.isVolumeNodeMaterial = true
 
 		/**
 		 * The base color of the volume.
@@ -48,7 +51,7 @@ class VolumeNodeMaterial extends NodeMaterial {
 		 * @type {Color}
 		 * @default 100
 		 */
-		this.base = new Color( 0xffffff );
+		this.base = new Color(0xffffff)
 
 		/**
 		 * A 3D data texture holding the volumetric data.
@@ -56,7 +59,7 @@ class VolumeNodeMaterial extends NodeMaterial {
 		 * @type {Data3DTexture?}
 		 * @default null
 		 */
-		this.map = null;
+		this.map = null
 
 		/**
 		 * This number of samples for each ray that hits the mesh's surface
@@ -65,7 +68,7 @@ class VolumeNodeMaterial extends NodeMaterial {
 		 * @type {Number}
 		 * @default 100
 		 */
-		this.steps = 100;
+		this.steps = 100
 
 		/**
 		 * Callback for {@link VolumeNodeMaterial#testNode}.
@@ -92,10 +95,9 @@ class VolumeNodeMaterial extends NodeMaterial {
 		 * @type {testNodeCallback?}
 		 * @default null
 		 */
-		this.testNode = null;
+		this.testNode = null
 
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
 	/**
@@ -103,80 +105,77 @@ class VolumeNodeMaterial extends NodeMaterial {
 	 *
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	setup( builder ) {
+	setup(builder) {
+		const map = texture3D(this.map, null, 0)
 
-		const map = texture3D( this.map, null, 0 );
+		const hitBox = Fn(({ orig, dir }) => {
+			const box_min = vec3(-0.5)
+			const box_max = vec3(0.5)
 
-		const hitBox = Fn( ( { orig, dir } ) => {
+			const inv_dir = dir.reciprocal()
 
-			const box_min = vec3( - 0.5 );
-			const box_max = vec3( 0.5 );
+			const tmin_tmp = box_min.sub(orig).mul(inv_dir)
+			const tmax_tmp = box_max.sub(orig).mul(inv_dir)
 
-			const inv_dir = dir.reciprocal();
+			const tmin = min(tmin_tmp, tmax_tmp)
+			const tmax = max(tmin_tmp, tmax_tmp)
 
-			const tmin_tmp = box_min.sub( orig ).mul( inv_dir );
-			const tmax_tmp = box_max.sub( orig ).mul( inv_dir );
+			const t0 = max(tmin.x, max(tmin.y, tmin.z))
+			const t1 = min(tmax.x, min(tmax.y, tmax.z))
 
-			const tmin = min( tmin_tmp, tmax_tmp );
-			const tmax = max( tmin_tmp, tmax_tmp );
+			return vec2(t0, t1)
+		})
 
-			const t0 = max( tmin.x, max( tmin.y, tmin.z ) );
-			const t1 = min( tmax.x, min( tmax.y, tmax.z ) );
+		this.fragmentNode = Fn(() => {
+			const vOrigin = varying(
+				vec3(modelWorldMatrixInverse.mul(vec4(cameraPosition, 1.0)))
+			)
+			const vDirection = varying(positionGeometry.sub(vOrigin))
 
-			return vec2( t0, t1 );
+			const rayDir = vDirection.normalize()
+			const bounds = vec2(hitBox({ orig: vOrigin, dir: rayDir })).toVar()
 
-		} );
+			bounds.x.greaterThan(bounds.y).discard()
 
-		this.fragmentNode = Fn( () => {
+			bounds.assign(vec2(max(bounds.x, 0.0), bounds.y))
 
-			const vOrigin = varying( vec3( modelWorldMatrixInverse.mul( vec4( cameraPosition, 1.0 ) ) ) );
-			const vDirection = varying( positionGeometry.sub( vOrigin ) );
+			const p = vec3(vOrigin.add(bounds.x.mul(rayDir))).toVar()
+			const inc = vec3(rayDir.abs().reciprocal()).toVar()
+			const delta = float(min(inc.x, min(inc.y, inc.z))).toVar('delta') // used 'delta' name in loop
 
-			const rayDir = vDirection.normalize();
-			const bounds = vec2( hitBox( { orig: vOrigin, dir: rayDir } ) ).toVar();
+			delta.divAssign(materialReference('steps', 'float'))
 
-			bounds.x.greaterThan( bounds.y ).discard();
+			const ac = vec4(materialReference('base', 'color'), 0.0).toVar()
 
-			bounds.assign( vec2( max( bounds.x, 0.0 ), bounds.y ) );
+			Loop(
+				{ type: 'float', start: bounds.x, end: bounds.y, update: '+= delta' },
+				() => {
+					const d = property('float', 'd').assign(map.sample(p.add(0.5)).r)
 
-			const p = vec3( vOrigin.add( bounds.x.mul( rayDir ) ) ).toVar();
-			const inc = vec3( rayDir.abs().reciprocal() ).toVar();
-			const delta = float( min( inc.x, min( inc.y, inc.z ) ) ).toVar( 'delta' ); // used 'delta' name in loop
+					if (this.testNode !== null) {
+						this.testNode({
+							map: map,
+							mapValue: d,
+							probe: p,
+							finalColor: ac
+						}).append()
+					} else {
+						// default to show surface of mesh
+						ac.a.assign(1)
+						Break()
+					}
 
-			delta.divAssign( materialReference( 'steps', 'float' ) );
-
-			const ac = vec4( materialReference( 'base', 'color' ), 0.0 ).toVar();
-
-			Loop( { type: 'float', start: bounds.x, end: bounds.y, update: '+= delta' }, () => {
-
-				const d = property( 'float', 'd' ).assign( map.sample( p.add( 0.5 ) ).r );
-
-				if ( this.testNode !== null ) {
-
-					this.testNode( { map: map, mapValue: d, probe: p, finalColor: ac } ).append();
-
-				} else {
-
-					// default to show surface of mesh
-					ac.a.assign( 1 );
-					Break();
-
+					p.addAssign(rayDir.mul(delta))
 				}
+			)
 
-				p.addAssign( rayDir.mul( delta ) );
+			ac.a.equal(0).discard()
 
-			} );
+			return vec4(ac)
+		})()
 
-			ac.a.equal( 0 ).discard();
-
-			return vec4( ac );
-
-		} )();
-
-		super.setup( builder );
-
+		super.setup(builder)
 	}
-
 }
 
-export default VolumeNodeMaterial;
+export default VolumeNodeMaterial

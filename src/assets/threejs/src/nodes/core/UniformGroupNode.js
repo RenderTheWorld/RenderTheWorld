@@ -1,4 +1,4 @@
-import Node from './Node.js';
+import Node from './Node.js'
 
 /**
  * This node can be used to group single instances of {@link UniformNode}
@@ -14,11 +14,8 @@ import Node from './Node.js';
  * @augments Node
  */
 class UniformGroupNode extends Node {
-
 	static get type() {
-
-		return 'UniformGroupNode';
-
+		return 'UniformGroupNode'
 	}
 
 	/**
@@ -28,16 +25,15 @@ class UniformGroupNode extends Node {
 	 * @param {Boolean} [shared=false] - Whether this uniform group node is shared or not.
 	 * @param {Number} [order=1] - Influences the internal sorting.
 	 */
-	constructor( name, shared = false, order = 1 ) {
-
-		super( 'string' );
+	constructor(name, shared = false, order = 1) {
+		super('string')
 
 		/**
 		 * The name of the uniform group node.
 		 *
 		 * @type {String}
 		 */
-		this.name = name;
+		this.name = name
 
 		/**
 		 * Whether this uniform group node is shared or not.
@@ -45,7 +41,7 @@ class UniformGroupNode extends Node {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.shared = shared;
+		this.shared = shared
 
 		/**
 		 * Influences the internal sorting.
@@ -54,7 +50,7 @@ class UniformGroupNode extends Node {
 		 * @type {Number}
 		 * @default 1
 		 */
-		this.order = order;
+		this.order = order
 
 		/**
 		 * This flag can be used for type testing.
@@ -63,33 +59,27 @@ class UniformGroupNode extends Node {
 		 * @readonly
 		 * @default true
 		 */
-		this.isUniformGroup = true;
-
+		this.isUniformGroup = true
 	}
 
-	serialize( data ) {
+	serialize(data) {
+		super.serialize(data)
 
-		super.serialize( data );
-
-		data.name = this.name;
-		data.version = this.version;
-		data.shared = this.shared;
-
+		data.name = this.name
+		data.version = this.version
+		data.shared = this.shared
 	}
 
-	deserialize( data ) {
+	deserialize(data) {
+		super.deserialize(data)
 
-		super.deserialize( data );
-
-		this.name = data.name;
-		this.version = data.version;
-		this.shared = data.shared;
-
+		this.name = data.name
+		this.version = data.version
+		this.shared = data.shared
 	}
-
 }
 
-export default UniformGroupNode;
+export default UniformGroupNode
 
 /**
  * TSL function for creating a uniform group node with the given name.
@@ -98,7 +88,7 @@ export default UniformGroupNode;
  * @param {String} name - The name of the uniform group node.
  * @returns {UniformGroupNode}
  */
-export const uniformGroup = ( name ) => new UniformGroupNode( name );
+export const uniformGroup = name => new UniformGroupNode(name)
 
 /**
  * TSL function for creating a shared uniform group node with the given name and order.
@@ -108,25 +98,26 @@ export const uniformGroup = ( name ) => new UniformGroupNode( name );
  * @param {Number} [order=0] - Influences the internal sorting.
  * @returns {UniformGroupNode}
  */
-export const sharedUniformGroup = ( name, order = 0 ) => new UniformGroupNode( name, true, order );
+export const sharedUniformGroup = (name, order = 0) =>
+	new UniformGroupNode(name, true, order)
 
 /**
  * TSL object that represents a shared uniform group node which is updated once per frame.
  *
  * @type {UniformGroupNode}
  */
-export const frameGroup = /*@__PURE__*/ sharedUniformGroup( 'frame' );
+export const frameGroup = /*@__PURE__*/ sharedUniformGroup('frame')
 
 /**
  * TSL object that represents a shared uniform group node which is updated once per render.
  *
  * @type {UniformGroupNode}
  */
-export const renderGroup = /*@__PURE__*/ sharedUniformGroup( 'render' );
+export const renderGroup = /*@__PURE__*/ sharedUniformGroup('render')
 
 /**
  * TSL object that represents a uniform group node which is updated once per object.
  *
  * @type {UniformGroupNode}
  */
-export const objectGroup = /*@__PURE__*/ uniformGroup( 'object' );
+export const objectGroup = /*@__PURE__*/ uniformGroup('object')

@@ -1,4 +1,4 @@
-import Node from '../core/Node.js';
+import Node from '../core/Node.js'
 
 /**
  * This module is part of the TSL core and usually not used in app level code.
@@ -8,11 +8,8 @@ import Node from '../core/Node.js';
  * @augments Node
  */
 class ConvertNode extends Node {
-
 	static get type() {
-
-		return 'ConvertNode';
-
+		return 'ConvertNode'
 	}
 
 	/**
@@ -21,24 +18,22 @@ class ConvertNode extends Node {
 	 * @param {Node} node - The node which type should be converted.
 	 * @param {String} convertTo - The target node type. Multiple types can be defined by separating them with a `|` sign.
 	 */
-	constructor( node, convertTo ) {
-
-		super();
+	constructor(node, convertTo) {
+		super()
 
 		/**
 		 * The node which type should be converted.
 		 *
 		 * @type {Node}
 		 */
-		this.node = node;
+		this.node = node
 
 		/**
 		 * The target node type. Multiple types can be defined by separating them with a `|` sign.
 		 *
 		 * @type {String}
 		 */
-		this.convertTo = convertTo;
-
+		this.convertTo = convertTo
 	}
 
 	/**
@@ -48,53 +43,44 @@ class ConvertNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The node type.
 	 */
-	getNodeType( builder ) {
+	getNodeType(builder) {
+		const requestType = this.node.getNodeType(builder)
 
-		const requestType = this.node.getNodeType( builder );
+		let convertTo = null
 
-		let convertTo = null;
-
-		for ( const overloadingType of this.convertTo.split( '|' ) ) {
-
-			if ( convertTo === null || builder.getTypeLength( requestType ) === builder.getTypeLength( overloadingType ) ) {
-
-				convertTo = overloadingType;
-
+		for (const overloadingType of this.convertTo.split('|')) {
+			if (
+				convertTo === null ||
+				builder.getTypeLength(requestType) ===
+					builder.getTypeLength(overloadingType)
+			) {
+				convertTo = overloadingType
 			}
-
 		}
 
-		return convertTo;
-
+		return convertTo
 	}
 
-	serialize( data ) {
+	serialize(data) {
+		super.serialize(data)
 
-		super.serialize( data );
-
-		data.convertTo = this.convertTo;
-
+		data.convertTo = this.convertTo
 	}
 
-	deserialize( data ) {
+	deserialize(data) {
+		super.deserialize(data)
 
-		super.deserialize( data );
-
-		this.convertTo = data.convertTo;
-
+		this.convertTo = data.convertTo
 	}
 
-	generate( builder, output ) {
+	generate(builder, output) {
+		const node = this.node
+		const type = this.getNodeType(builder)
 
-		const node = this.node;
-		const type = this.getNodeType( builder );
+		const snippet = node.build(builder, type)
 
-		const snippet = node.build( builder, type );
-
-		return builder.format( snippet, type, output );
-
+		return builder.format(snippet, type, output)
 	}
-
 }
 
-export default ConvertNode;
+export default ConvertNode

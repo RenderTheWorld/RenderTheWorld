@@ -1,6 +1,6 @@
-import InputNode from './InputNode.js';
-import { objectGroup } from './UniformGroupNode.js';
-import { nodeObject, getConstNodeType } from '../tsl/TSLCore.js';
+import InputNode from './InputNode.js'
+import { objectGroup } from './UniformGroupNode.js'
+import { nodeObject, getConstNodeType } from '../tsl/TSLCore.js'
 
 /**
  * Class for representing a uniform.
@@ -8,11 +8,8 @@ import { nodeObject, getConstNodeType } from '../tsl/TSLCore.js';
  * @augments InputNode
  */
 class UniformNode extends InputNode {
-
 	static get type() {
-
-		return 'UniformNode';
-
+		return 'UniformNode'
 	}
 
 	/**
@@ -21,9 +18,8 @@ class UniformNode extends InputNode {
 	 * @param {Any} value - The value of this node. Usually a JS primitive or three.js object (vector, matrix, color, texture).
 	 * @param {String?} nodeType - The node type. If no explicit type is defined, the node tries to derive the type from its value.
 	 */
-	constructor( value, nodeType = null ) {
-
-		super( value, nodeType );
+	constructor(value, nodeType = null) {
+		super(value, nodeType)
 
 		/**
 		 * This flag can be used for type testing.
@@ -32,7 +28,7 @@ class UniformNode extends InputNode {
 		 * @readonly
 		 * @default true
 		 */
-		this.isUniformNode = true;
+		this.isUniformNode = true
 
 		/**
 		 * The name or label of the uniform.
@@ -40,7 +36,7 @@ class UniformNode extends InputNode {
 		 * @type {String}
 		 * @default ''
 		 */
-		this.name = '';
+		this.name = ''
 
 		/**
 		 * The uniform group of this uniform. By default, uniforms are
@@ -49,8 +45,7 @@ class UniformNode extends InputNode {
 		 *
 		 * @type {UniformGroupNode}
 		 */
-		this.groupNode = objectGroup;
-
+		this.groupNode = objectGroup
 	}
 
 	/**
@@ -59,12 +54,10 @@ class UniformNode extends InputNode {
 	 * @param {String} name - The name of the uniform.
 	 * @return {UniformNode} A reference to this node.
 	 */
-	label( name ) {
+	label(name) {
+		this.name = name
 
-		this.name = name;
-
-		return this;
-
+		return this
 	}
 
 	/**
@@ -73,12 +66,10 @@ class UniformNode extends InputNode {
 	 * @param {UniformGroupNode} group - The uniform group.
 	 * @return {UniformNode} A reference to this node.
 	 */
-	setGroup( group ) {
+	setGroup(group) {
+		this.groupNode = group
 
-		this.groupNode = group;
-
-		return this;
-
+		return this
 	}
 
 	/**
@@ -87,9 +78,7 @@ class UniformNode extends InputNode {
 	 * @return {UniformGroupNode} The uniform group.
 	 */
 	getGroup() {
-
-		return this.groupNode;
-
+		return this.groupNode
 	}
 
 	/**
@@ -99,62 +88,54 @@ class UniformNode extends InputNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The uniform hash.
 	 */
-	getUniformHash( builder ) {
-
-		return this.getHash( builder );
-
+	getUniformHash(builder) {
+		return this.getHash(builder)
 	}
 
-	onUpdate( callback, updateType ) {
+	onUpdate(callback, updateType) {
+		const self = this.getSelf()
 
-		const self = this.getSelf();
+		callback = callback.bind(self)
 
-		callback = callback.bind( self );
+		return super.onUpdate(frame => {
+			const value = callback(frame, self)
 
-		return super.onUpdate( ( frame ) => {
-
-			const value = callback( frame, self );
-
-			if ( value !== undefined ) {
-
-				this.value = value;
-
+			if (value !== undefined) {
+				this.value = value
 			}
-
-	 	}, updateType );
-
+		}, updateType)
 	}
 
-	generate( builder, output ) {
+	generate(builder, output) {
+		const type = this.getNodeType(builder)
 
-		const type = this.getNodeType( builder );
+		const hash = this.getUniformHash(builder)
 
-		const hash = this.getUniformHash( builder );
+		let sharedNode = builder.getNodeFromHash(hash)
 
-		let sharedNode = builder.getNodeFromHash( hash );
+		if (sharedNode === undefined) {
+			builder.setHashNode(this, hash)
 
-		if ( sharedNode === undefined ) {
-
-			builder.setHashNode( this, hash );
-
-			sharedNode = this;
-
+			sharedNode = this
 		}
 
-		const sharedNodeType = sharedNode.getInputType( builder );
+		const sharedNodeType = sharedNode.getInputType(builder)
 
-		const nodeUniform = builder.getUniformFromNode( sharedNode, sharedNodeType, builder.shaderStage, this.name || builder.context.label );
-		const propertyName = builder.getPropertyName( nodeUniform );
+		const nodeUniform = builder.getUniformFromNode(
+			sharedNode,
+			sharedNodeType,
+			builder.shaderStage,
+			this.name || builder.context.label
+		)
+		const propertyName = builder.getPropertyName(nodeUniform)
 
-		if ( builder.context.label !== undefined ) delete builder.context.label;
+		if (builder.context.label !== undefined) delete builder.context.label
 
-		return builder.format( propertyName, type, output );
-
+		return builder.format(propertyName, type, output)
 	}
-
 }
 
-export default UniformNode;
+export default UniformNode
 
 /**
  * TSL function for creating a uniform node.
@@ -164,13 +145,14 @@ export default UniformNode;
  * @param {String?} arg2 - The node type. If no explicit type is defined, the node tries to derive the type from its value.
  * @returns {UniformNode}
  */
-export const uniform = ( arg1, arg2 ) => {
-
-	const nodeType = getConstNodeType( arg2 || arg1 );
+export const uniform = (arg1, arg2) => {
+	const nodeType = getConstNodeType(arg2 || arg1)
 
 	// @TODO: get ConstNode from .traverse() in the future
-	const value = ( arg1 && arg1.isNode === true ) ? ( arg1.node && arg1.node.value ) || arg1.value : arg1;
+	const value =
+		arg1 && arg1.isNode === true
+			? (arg1.node && arg1.node.value) || arg1.value
+			: arg1
 
-	return nodeObject( new UniformNode( value, nodeType ) );
-
-};
+	return nodeObject(new UniformNode(value, nodeType))
+}

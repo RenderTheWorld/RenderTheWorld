@@ -8,20 +8,18 @@
  * @private
  */
 class Binding {
-
 	/**
 	 * Constructs a new binding.
 	 *
 	 * @param {String} [name=''] - The binding's name.
 	 */
-	constructor( name = '' ) {
-
+	constructor(name = '') {
 		/**
 		 * The binding's name.
 		 *
 		 * @type {String}
 		 */
-		this.name = name;
+		this.name = name
 
 		/**
 		 * A bitmask that defines in what shader stages the
@@ -29,8 +27,7 @@ class Binding {
 		 *
 		 * @type {Number}
 		 */
-		this.visibility = 0;
-
+		this.visibility = 0
 	}
 
 	/**
@@ -38,10 +35,8 @@ class Binding {
 	 *
 	 * @param {Number} visibility - The shader stage.
 	 */
-	setVisibility( visibility ) {
-
-		this.visibility |= visibility;
-
+	setVisibility(visibility) {
+		this.visibility |= visibility
 	}
 
 	/**
@@ -50,11 +45,8 @@ class Binding {
 	 * @return {Binding} The cloned binding.
 	 */
 	clone() {
-
-		return Object.assign( new this.constructor(), this );
-
+		return Object.assign(new this.constructor(), this)
 	}
-
 }
 
-export default Binding;
+export default Binding

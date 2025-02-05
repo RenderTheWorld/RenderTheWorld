@@ -1,14 +1,19 @@
-import { equirectUV } from '../../nodes/utils/EquirectUVNode.js';
-import { texture as TSL_Texture } from '../../nodes/accessors/TextureNode.js';
-import { positionWorldDirection } from '../../nodes/accessors/Position.js';
-import NodeMaterial from '../../materials/nodes/NodeMaterial.js';
+import { equirectUV } from '../../nodes/utils/EquirectUVNode.js'
+import { texture as TSL_Texture } from '../../nodes/accessors/TextureNode.js'
+import { positionWorldDirection } from '../../nodes/accessors/Position.js'
+import NodeMaterial from '../../materials/nodes/NodeMaterial.js'
 
-import { WebGLCubeRenderTarget } from '../../renderers/WebGLCubeRenderTarget.js';
-import { Scene } from '../../scenes/Scene.js';
-import { CubeCamera } from '../../cameras/CubeCamera.js';
-import { BoxGeometry } from '../../geometries/BoxGeometry.js';
-import { Mesh } from '../../objects/Mesh.js';
-import { BackSide, NoBlending, LinearFilter, LinearMipmapLinearFilter } from '../../constants.js';
+import { WebGLCubeRenderTarget } from '../../renderers/WebGLCubeRenderTarget.js'
+import { Scene } from '../../scenes/Scene.js'
+import { CubeCamera } from '../../cameras/CubeCamera.js'
+import { BoxGeometry } from '../../geometries/BoxGeometry.js'
+import { Mesh } from '../../objects/Mesh.js'
+import {
+	BackSide,
+	NoBlending,
+	LinearFilter,
+	LinearMipmapLinearFilter
+} from '../../constants.js'
 
 // @TODO: Consider rename WebGLCubeRenderTarget to just CubeRenderTarget
 
@@ -19,13 +24,10 @@ import { BackSide, NoBlending, LinearFilter, LinearMipmapLinearFilter } from '..
  * @augments WebGLCubeRenderTarget
  */
 class CubeRenderTarget extends WebGLCubeRenderTarget {
+	constructor(size = 1, options = {}) {
+		super(size, options)
 
-	constructor( size = 1, options = {} ) {
-
-		super( size, options );
-
-		this.isCubeRenderTarget = true;
-
+		this.isCubeRenderTarget = true
 	}
 
 	/**
@@ -35,56 +37,54 @@ class CubeRenderTarget extends WebGLCubeRenderTarget {
 	 * @param {Texture} texture - The equirectangular texture.
 	 * @return {CubeRenderTarget} A reference to this cube render target.
 	 */
-	fromEquirectangularTexture( renderer, texture ) {
+	fromEquirectangularTexture(renderer, texture) {
+		const currentMinFilter = texture.minFilter
+		const currentGenerateMipmaps = texture.generateMipmaps
 
-		const currentMinFilter = texture.minFilter;
-		const currentGenerateMipmaps = texture.generateMipmaps;
+		texture.generateMipmaps = true
 
-		texture.generateMipmaps = true;
+		this.texture.type = texture.type
+		this.texture.colorSpace = texture.colorSpace
 
-		this.texture.type = texture.type;
-		this.texture.colorSpace = texture.colorSpace;
+		this.texture.generateMipmaps = texture.generateMipmaps
+		this.texture.minFilter = texture.minFilter
+		this.texture.magFilter = texture.magFilter
 
-		this.texture.generateMipmaps = texture.generateMipmaps;
-		this.texture.minFilter = texture.minFilter;
-		this.texture.magFilter = texture.magFilter;
+		const geometry = new BoxGeometry(5, 5, 5)
 
-		const geometry = new BoxGeometry( 5, 5, 5 );
+		const uvNode = equirectUV(positionWorldDirection)
 
-		const uvNode = equirectUV( positionWorldDirection );
+		const material = new NodeMaterial()
+		material.colorNode = TSL_Texture(texture, uvNode, 0)
+		material.side = BackSide
+		material.blending = NoBlending
 
-		const material = new NodeMaterial();
-		material.colorNode = TSL_Texture( texture, uvNode, 0 );
-		material.side = BackSide;
-		material.blending = NoBlending;
+		const mesh = new Mesh(geometry, material)
 
-		const mesh = new Mesh( geometry, material );
-
-		const scene = new Scene();
-		scene.add( mesh );
+		const scene = new Scene()
+		scene.add(mesh)
 
 		// Avoid blurred poles
-		if ( texture.minFilter === LinearMipmapLinearFilter ) texture.minFilter = LinearFilter;
+		if (texture.minFilter === LinearMipmapLinearFilter)
+			texture.minFilter = LinearFilter
 
-		const camera = new CubeCamera( 1, 10, this );
+		const camera = new CubeCamera(1, 10, this)
 
-		const currentMRT = renderer.getMRT();
-		renderer.setMRT( null );
+		const currentMRT = renderer.getMRT()
+		renderer.setMRT(null)
 
-		camera.update( renderer, scene );
+		camera.update(renderer, scene)
 
-		renderer.setMRT( currentMRT );
+		renderer.setMRT(currentMRT)
 
-		texture.minFilter = currentMinFilter;
-		texture.currentGenerateMipmaps = currentGenerateMipmaps;
+		texture.minFilter = currentMinFilter
+		texture.currentGenerateMipmaps = currentGenerateMipmaps
 
-		mesh.geometry.dispose();
-		mesh.material.dispose();
+		mesh.geometry.dispose()
+		mesh.material.dispose()
 
-		return this;
-
+		return this
 	}
-
 }
 
-export default CubeRenderTarget;
+export default CubeRenderTarget

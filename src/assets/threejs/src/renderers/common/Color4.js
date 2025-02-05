@@ -1,4 +1,4 @@
-import { Color } from '../../math/Color.js';
+import { Color } from '../../math/Color.js'
 
 /**
  * A four-component version of {@link Color} which is internally
@@ -9,7 +9,6 @@ import { Color } from '../../math/Color.js';
  * @augments Color
  */
 class Color4 extends Color {
-
 	/**
 	 * Constructs a new four-component color.
 	 * You can also pass a single THREE.Color, hex or
@@ -20,12 +19,10 @@ class Color4 extends Color {
 	 * @param {Number} [b=1] - The blue value.
 	 * @param {Number} [a=1] - The alpha value.
 	 */
-	constructor( r, g, b, a = 1 ) {
+	constructor(r, g, b, a = 1) {
+		super(r, g, b)
 
-		super( r, g, b );
-
-		this.a = a;
-
+		this.a = a
 	}
 
 	/**
@@ -39,12 +36,10 @@ class Color4 extends Color {
 	 * @param {Number} [a=1] - The alpha value.
 	 * @return {Color4} A reference to this object.
 	 */
-	set( r, g, b, a = 1 ) {
+	set(r, g, b, a = 1) {
+		this.a = a
 
-		this.a = a;
-
-		return super.set( r, g, b );
-
+		return super.set(r, g, b)
 	}
 
 	/**
@@ -53,12 +48,10 @@ class Color4 extends Color {
 	 * @param {Color4} color - The color to copy.
 	 * @return {Color4} A reference to this object.
 	 */
-	copy( color ) {
+	copy(color) {
+		if (color.a !== undefined) this.a = color.a
 
-		if ( color.a !== undefined ) this.a = color.a;
-
-		return super.copy( color );
-
+		return super.copy(color)
 	}
 
 	/**
@@ -67,11 +60,8 @@ class Color4 extends Color {
 	 * @return {Color4} The cloned color.
 	 */
 	clone() {
-
-		return new this.constructor( this.r, this.g, this.b, this.a );
-
+		return new this.constructor(this.r, this.g, this.b, this.a)
 	}
-
 }
 
-export default Color4;
+export default Color4

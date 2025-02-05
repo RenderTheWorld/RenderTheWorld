@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 vec3 packNormalToRGB( const in vec3 normal ) {
 	return normalize( normal ) * 0.5 + 0.5;
 }
@@ -97,4 +97,4 @@ float perspectiveDepthToViewZ( const in float depth, const in float near, const 
 	// maps perspective depth in [ 0, 1 ] to viewZ
 	return ( near * far ) / ( ( far - near ) * depth - far );
 }
-`;
+`

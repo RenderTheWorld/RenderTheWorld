@@ -1,10 +1,10 @@
-import { NodeUpdateType } from './constants.js';
-import { getNodeChildren, getCacheKey, hash } from './NodeUtils.js';
+import { NodeUpdateType } from './constants.js'
+import { getNodeChildren, getCacheKey, hash } from './NodeUtils.js'
 
-import { EventDispatcher } from '../../core/EventDispatcher.js';
-import { MathUtils } from '../../math/MathUtils.js';
+import { EventDispatcher } from '../../core/EventDispatcher.js'
+import { MathUtils } from '../../math/MathUtils.js'
 
-let _nodeId = 0;
+let _nodeId = 0
 
 /**
  * Base class for all nodes.
@@ -12,11 +12,8 @@ let _nodeId = 0;
  * @augments EventDispatcher
  */
 class Node extends EventDispatcher {
-
 	static get type() {
-
-		return 'Node';
-
+		return 'Node'
 	}
 
 	/**
@@ -24,9 +21,8 @@ class Node extends EventDispatcher {
 	 *
 	 * @param {String?} nodeType - The node type.
 	 */
-	constructor( nodeType = null ) {
-
-		super();
+	constructor(nodeType = null) {
+		super()
 
 		/**
 		 * The node type. This represents the result type of the node (e.g. `float` or `vec3`).
@@ -34,7 +30,7 @@ class Node extends EventDispatcher {
 		 * @type {String?}
 		 * @default null
 		 */
-		this.nodeType = nodeType;
+		this.nodeType = nodeType
 
 		/**
 		 * The update type of the node's {@link Node#update} method. Possible values are listed in {@link NodeUpdateType}.
@@ -42,7 +38,7 @@ class Node extends EventDispatcher {
 		 * @type {String}
 		 * @default 'none'
 		 */
-		this.updateType = NodeUpdateType.NONE;
+		this.updateType = NodeUpdateType.NONE
 
 		/**
 		 * The update type of the node's {@link Node#updateBefore} method. Possible values are listed in {@link NodeUpdateType}.
@@ -50,7 +46,7 @@ class Node extends EventDispatcher {
 		 * @type {String}
 		 * @default 'none'
 		 */
-		this.updateBeforeType = NodeUpdateType.NONE;
+		this.updateBeforeType = NodeUpdateType.NONE
 
 		/**
 		 * The update type of the node's {@link Node#updateAfter} method. Possible values are listed in {@link NodeUpdateType}.
@@ -58,7 +54,7 @@ class Node extends EventDispatcher {
 		 * @type {String}
 		 * @default 'none'
 		 */
-		this.updateAfterType = NodeUpdateType.NONE;
+		this.updateAfterType = NodeUpdateType.NONE
 
 		/**
 		 * The UUID of the node.
@@ -66,7 +62,7 @@ class Node extends EventDispatcher {
 		 * @type {String}
 		 * @readonly
 		 */
-		this.uuid = MathUtils.generateUUID();
+		this.uuid = MathUtils.generateUUID()
 
 		/**
 		 * The version of the node. The version automatically is increased when {@link Node#needsUpdate} is set to `true`.
@@ -75,7 +71,7 @@ class Node extends EventDispatcher {
 		 * @readonly
 		 * @default 0
 		 */
-		this.version = 0;
+		this.version = 0
 
 		/**
 		 * Whether this node is global or not. This property is relevant for the internal
@@ -85,7 +81,7 @@ class Node extends EventDispatcher {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.global = false;
+		this.global = false
 
 		/**
 		 * This flag can be used for type testing.
@@ -94,7 +90,7 @@ class Node extends EventDispatcher {
 		 * @readonly
 		 * @default true
 		 */
-		this.isNode = true;
+		this.isNode = true
 
 		// private
 
@@ -105,7 +101,7 @@ class Node extends EventDispatcher {
 		 * @type {Number?}
 		 * @default null
 		 */
-		this._cacheKey = null;
+		this._cacheKey = null
 
 		/**
 		 * The cache key 's version.
@@ -114,10 +110,9 @@ class Node extends EventDispatcher {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this._cacheKeyVersion = 0;
+		this._cacheKeyVersion = 0
 
-		Object.defineProperty( this, 'id', { value: _nodeId ++ } );
-
+		Object.defineProperty(this, 'id', { value: _nodeId++ })
 	}
 
 	/**
@@ -127,26 +122,20 @@ class Node extends EventDispatcher {
 	 * @default false
 	 * @param {boolean} value
 	 */
-	set needsUpdate( value ) {
-
-		if ( value === true ) {
-
-			this.version ++;
-
+	set needsUpdate(value) {
+		if (value === true) {
+			this.version++
 		}
-
 	}
 
 	/**
 	 * The type of the class. The value is usually the constructor name.
 	 *
 	 * @type {String}
- 	 * @readonly
+	 * @readonly
 	 */
 	get type() {
-
-		return this.constructor.type;
-
+		return this.constructor.type
 	}
 
 	/**
@@ -156,13 +145,11 @@ class Node extends EventDispatcher {
 	 * @param {String} updateType - The update type.
 	 * @return {Node} A reference to this node.
 	 */
-	onUpdate( callback, updateType ) {
+	onUpdate(callback, updateType) {
+		this.updateType = updateType
+		this.update = callback.bind(this.getSelf())
 
-		this.updateType = updateType;
-		this.update = callback.bind( this.getSelf() );
-
-		return this;
-
+		return this
 	}
 
 	/**
@@ -172,10 +159,8 @@ class Node extends EventDispatcher {
 	 * @param {Function} callback - The update method.
 	 * @return {Node} A reference to this node.
 	 */
-	onFrameUpdate( callback ) {
-
-		return this.onUpdate( callback, NodeUpdateType.FRAME );
-
+	onFrameUpdate(callback) {
+		return this.onUpdate(callback, NodeUpdateType.FRAME)
 	}
 
 	/**
@@ -185,10 +170,8 @@ class Node extends EventDispatcher {
 	 * @param {Function} callback - The update method.
 	 * @return {Node} A reference to this node.
 	 */
-	onRenderUpdate( callback ) {
-
-		return this.onUpdate( callback, NodeUpdateType.RENDER );
-
+	onRenderUpdate(callback) {
+		return this.onUpdate(callback, NodeUpdateType.RENDER)
 	}
 
 	/**
@@ -198,10 +181,8 @@ class Node extends EventDispatcher {
 	 * @param {Function} callback - The update method.
 	 * @return {Node} A reference to this node.
 	 */
-	onObjectUpdate( callback ) {
-
-		return this.onUpdate( callback, NodeUpdateType.OBJECT );
-
+	onObjectUpdate(callback) {
+		return this.onUpdate(callback, NodeUpdateType.OBJECT)
 	}
 
 	/**
@@ -210,12 +191,10 @@ class Node extends EventDispatcher {
 	 * @param {Function} callback - The update method.
 	 * @return {Node} A reference to this node.
 	 */
-	onReference( callback ) {
+	onReference(callback) {
+		this.updateReference = callback.bind(this.getSelf())
 
-		this.updateReference = callback.bind( this.getSelf() );
-
-		return this;
-
+		return this
 	}
 
 	/**
@@ -225,11 +204,9 @@ class Node extends EventDispatcher {
 	 * @return {Node} A reference to the node.
 	 */
 	getSelf() {
-
 		// Returns non-node object.
 
-		return this.self || this;
-
+		return this.self || this
 	}
 
 	/**
@@ -239,10 +216,8 @@ class Node extends EventDispatcher {
 	 * @param {Any} state - This method can be invocated in different contexts so `state` can refer to any object type.
 	 * @return {Any} The updated reference.
 	 */
-	updateReference( /*state*/ ) {
-
-		return this;
-
+	updateReference(/*state*/) {
+		return this
 	}
 
 	/**
@@ -253,10 +228,8 @@ class Node extends EventDispatcher {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Boolean} Whether this node is global or not.
 	 */
-	isGlobal( /*builder*/ ) {
-
-		return this.global;
-
+	isGlobal(/*builder*/) {
+		return this.global
 	}
 
 	/**
@@ -265,14 +238,10 @@ class Node extends EventDispatcher {
 	 * @generator
 	 * @yields {Node} A child node.
 	 */
-	* getChildren() {
-
-		for ( const { childNode } of getNodeChildren( this ) ) {
-
-			yield childNode;
-
+	*getChildren() {
+		for (const { childNode } of getNodeChildren(this)) {
+			yield childNode
 		}
-
 	}
 
 	/**
@@ -280,9 +249,7 @@ class Node extends EventDispatcher {
 	 * to register event listeners for clean up tasks.
 	 */
 	dispose() {
-
-		this.dispatchEvent( { type: 'dispose' } );
-
+		this.dispatchEvent({ type: 'dispose' })
 	}
 
 	/**
@@ -297,16 +264,12 @@ class Node extends EventDispatcher {
 	 *
 	 * @param {traverseCallback} callback - A callback that is executed per node.
 	 */
-	traverse( callback ) {
+	traverse(callback) {
+		callback(this)
 
-		callback( this );
-
-		for ( const childNode of this.getChildren() ) {
-
-			childNode.traverse( callback );
-
+		for (const childNode of this.getChildren()) {
+			childNode.traverse(callback)
 		}
-
 	}
 
 	/**
@@ -315,19 +278,15 @@ class Node extends EventDispatcher {
 	 * @param {Boolean} [force=false] - When set to `true`, a recomputation of the cache key is forced.
 	 * @return {Number} The cache key of the node.
 	 */
-	getCacheKey( force = false ) {
+	getCacheKey(force = false) {
+		force = force || this.version !== this._cacheKeyVersion
 
-		force = force || this.version !== this._cacheKeyVersion;
-
-		if ( force === true || this._cacheKey === null ) {
-
-			this._cacheKey = hash( getCacheKey( this, force ), this.customCacheKey() );
-			this._cacheKeyVersion = this.version;
-
+		if (force === true || this._cacheKey === null) {
+			this._cacheKey = hash(getCacheKey(this, force), this.customCacheKey())
+			this._cacheKeyVersion = this.version
 		}
 
-		return this._cacheKey;
-
+		return this._cacheKey
 	}
 
 	/**
@@ -336,9 +295,7 @@ class Node extends EventDispatcher {
 	 * @return {Number} The cache key of the node.
 	 */
 	customCacheKey() {
-
-		return 0;
-
+		return 0
 	}
 
 	/**
@@ -347,9 +304,7 @@ class Node extends EventDispatcher {
 	 * @return {Node} A reference to this node.
 	 */
 	getScope() {
-
-		return this;
-
+		return this
 	}
 
 	/**
@@ -360,10 +315,8 @@ class Node extends EventDispatcher {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The hash.
 	 */
-	getHash( /*builder*/ ) {
-
-		return this.uuid;
-
+	getHash(/*builder*/) {
+		return this.uuid
 	}
 
 	/**
@@ -372,9 +325,7 @@ class Node extends EventDispatcher {
 	 * @return {NodeUpdateType} The update type.
 	 */
 	getUpdateType() {
-
-		return this.updateType;
-
+		return this.updateType
 	}
 
 	/**
@@ -383,9 +334,7 @@ class Node extends EventDispatcher {
 	 * @return {NodeUpdateType} The update type.
 	 */
 	getUpdateBeforeType() {
-
-		return this.updateBeforeType;
-
+		return this.updateBeforeType
 	}
 
 	/**
@@ -394,9 +343,7 @@ class Node extends EventDispatcher {
 	 * @return {NodeUpdateType} The update type.
 	 */
 	getUpdateAfterType() {
-
-		return this.updateAfterType;
-
+		return this.updateAfterType
 	}
 
 	/**
@@ -407,13 +354,11 @@ class Node extends EventDispatcher {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The type of the node.
 	 */
-	getElementType( builder ) {
+	getElementType(builder) {
+		const type = this.getNodeType(builder)
+		const elementType = builder.getElementType(type)
 
-		const type = this.getNodeType( builder );
-		const elementType = builder.getElementType( type );
-
-		return elementType;
-
+		return elementType
 	}
 
 	/**
@@ -423,10 +368,8 @@ class Node extends EventDispatcher {
 	 * @param {String} name - The name of the member.
 	 * @return {String} The type of the node.
 	 */
-	getMemberType( /*uilder, name*/ ) {
-
-		return 'void';
-
+	getMemberType(/*uilder, name*/) {
+		return 'void'
 	}
 
 	/**
@@ -435,18 +378,14 @@ class Node extends EventDispatcher {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The type of the node.
 	 */
-	getNodeType( builder ) {
+	getNodeType(builder) {
+		const nodeProperties = builder.getNodeProperties(this)
 
-		const nodeProperties = builder.getNodeProperties( this );
-
-		if ( nodeProperties.outputNode ) {
-
-			return nodeProperties.outputNode.getNodeType( builder );
-
+		if (nodeProperties.outputNode) {
+			return nodeProperties.outputNode.getNodeType(builder)
 		}
 
-		return this.nodeType;
-
+		return this.nodeType
 	}
 
 	/**
@@ -458,13 +397,11 @@ class Node extends EventDispatcher {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Node} The shared node if possible. Otherwise `this` is returned.
 	 */
-	getShared( builder ) {
+	getShared(builder) {
+		const hash = this.getHash(builder)
+		const nodeFromHash = builder.getNodeFromHash(hash)
 
-		const hash = this.getHash( builder );
-		const nodeFromHash = builder.getNodeFromHash( hash );
-
-		return nodeFromHash || this;
-
+		return nodeFromHash || this
 	}
 
 	/**
@@ -475,22 +412,18 @@ class Node extends EventDispatcher {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Node?} The output node.
 	 */
-	setup( builder ) {
+	setup(builder) {
+		const nodeProperties = builder.getNodeProperties(this)
 
-		const nodeProperties = builder.getNodeProperties( this );
+		let index = 0
 
-		let index = 0;
-
-		for ( const childNode of this.getChildren() ) {
-
-			nodeProperties[ 'node' + index ++ ] = childNode;
-
+		for (const childNode of this.getChildren()) {
+			nodeProperties['node' + index++] = childNode
 		}
 
 		// return a outputNode if exists or null
 
-		return nodeProperties.outputNode || null;
-
+		return nodeProperties.outputNode || null
 	}
 
 	/**
@@ -499,28 +432,20 @@ class Node extends EventDispatcher {
 	 *
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	analyze( builder ) {
+	analyze(builder) {
+		const usageCount = builder.increaseUsage(this)
 
-		const usageCount = builder.increaseUsage( this );
-
-		if ( usageCount === 1 ) {
-
+		if (usageCount === 1) {
 			// node flow children
 
-			const nodeProperties = builder.getNodeProperties( this );
+			const nodeProperties = builder.getNodeProperties(this)
 
-			for ( const childNode of Object.values( nodeProperties ) ) {
-
-				if ( childNode && childNode.isNode === true ) {
-
-					childNode.build( builder );
-
+			for (const childNode of Object.values(nodeProperties)) {
+				if (childNode && childNode.isNode === true) {
+					childNode.build(builder)
 				}
-
 			}
-
 		}
-
 	}
 
 	/**
@@ -531,16 +456,12 @@ class Node extends EventDispatcher {
 	 * @param {String?} output - Can be used to define the output type.
 	 * @return {String?} The generated shader string.
 	 */
-	generate( builder, output ) {
+	generate(builder, output) {
+		const { outputNode } = builder.getNodeProperties(this)
 
-		const { outputNode } = builder.getNodeProperties( this );
-
-		if ( outputNode && outputNode.isNode === true ) {
-
-			return outputNode.build( builder, output );
-
+		if (outputNode && outputNode.isNode === true) {
+			return outputNode.build(builder, output)
 		}
-
 	}
 
 	/**
@@ -551,10 +472,8 @@ class Node extends EventDispatcher {
 	 * @param {NodeFrame} frame - A reference to the current node frame.
 	 * @return {Boolean?} An optional bool that indicates whether the implementation actually performed an update or not (e.g. due to caching).
 	 */
-	updateBefore( /*frame*/ ) {
-
-		console.warn( 'Abstract function.' );
-
+	updateBefore(/*frame*/) {
+		console.warn('Abstract function.')
 	}
 
 	/**
@@ -565,10 +484,8 @@ class Node extends EventDispatcher {
 	 * @param {NodeFrame} frame - A reference to the current node frame.
 	 * @return {Boolean?} An optional bool that indicates whether the implementation actually performed an update or not (e.g. due to caching).
 	 */
-	updateAfter( /*frame*/ ) {
-
-		console.warn( 'Abstract function.' );
-
+	updateAfter(/*frame*/) {
+		console.warn('Abstract function.')
 	}
 
 	/**
@@ -579,10 +496,8 @@ class Node extends EventDispatcher {
 	 * @param {NodeFrame} frame - A reference to the current node frame.
 	 * @return {Boolean?} An optional bool that indicates whether the implementation actually performed an update or not (e.g. due to caching).
 	 */
-	update( /*frame*/ ) {
-
-		console.warn( 'Abstract function.' );
-
+	update(/*frame*/) {
+		console.warn('Abstract function.')
 	}
 
 	/**
@@ -593,42 +508,37 @@ class Node extends EventDispatcher {
 	 * @param {String?} output - Can be used to define the output type.
 	 * @return {String?} When this method is executed in the setup or analyze stage, `null` is returned. In the generate stage, the generated shader string.
 	 */
-	build( builder, output = null ) {
+	build(builder, output = null) {
+		const refNode = this.getShared(builder)
 
-		const refNode = this.getShared( builder );
-
-		if ( this !== refNode ) {
-
-			return refNode.build( builder, output );
-
+		if (this !== refNode) {
+			return refNode.build(builder, output)
 		}
 
-		builder.addNode( this );
-		builder.addChain( this );
+		builder.addNode(this)
+		builder.addChain(this)
 
 		/* Build stages expected results:
 			- "setup"		-> Node
 			- "analyze"		-> null
 			- "generate"	-> String
 		*/
-		let result = null;
+		let result = null
 
-		const buildStage = builder.getBuildStage();
+		const buildStage = builder.getBuildStage()
 
-		if ( buildStage === 'setup' ) {
+		if (buildStage === 'setup') {
+			this.updateReference(builder)
 
-			this.updateReference( builder );
+			const properties = builder.getNodeProperties(this)
 
-			const properties = builder.getNodeProperties( this );
-
-			if ( properties.initialized !== true ) {
-
+			if (properties.initialized !== true) {
 				//const stackNodesBeforeSetup = builder.stack.nodes.length;
 
-				properties.initialized = true;
+				properties.initialized = true
 
-				const outputNode = this.setup( builder ); // return a node or null
-				const isNodeOutput = outputNode && outputNode.isNode === true;
+				const outputNode = this.setup(builder) // return a node or null
+				const isNodeOutput = outputNode && outputNode.isNode === true
 
 				/*if ( isNodeOutput && builder.stack.nodes.length !== stackNodesBeforeSetup ) {
 
@@ -637,68 +547,50 @@ class Node extends EventDispatcher {
 
 				}*/
 
-				for ( const childNode of Object.values( properties ) ) {
-
-					if ( childNode && childNode.isNode === true ) {
-
-						childNode.build( builder );
-
+				for (const childNode of Object.values(properties)) {
+					if (childNode && childNode.isNode === true) {
+						childNode.build(builder)
 					}
-
 				}
 
-				if ( isNodeOutput ) {
-
-					outputNode.build( builder );
-
+				if (isNodeOutput) {
+					outputNode.build(builder)
 				}
 
-				properties.outputNode = outputNode;
-
+				properties.outputNode = outputNode
 			}
+		} else if (buildStage === 'analyze') {
+			this.analyze(builder)
+		} else if (buildStage === 'generate') {
+			const isGenerateOnce = this.generate.length === 1
 
-		} else if ( buildStage === 'analyze' ) {
+			if (isGenerateOnce) {
+				const type = this.getNodeType(builder)
+				const nodeData = builder.getDataFromNode(this)
 
-			this.analyze( builder );
+				result = nodeData.snippet
 
-		} else if ( buildStage === 'generate' ) {
+				if (result === undefined) {
+					result = this.generate(builder) || ''
 
-			const isGenerateOnce = this.generate.length === 1;
-
-			if ( isGenerateOnce ) {
-
-				const type = this.getNodeType( builder );
-				const nodeData = builder.getDataFromNode( this );
-
-				result = nodeData.snippet;
-
-				if ( result === undefined ) {
-
-					result = this.generate( builder ) || '';
-
-					nodeData.snippet = result;
-
-				} else if ( nodeData.flowCodes !== undefined && builder.context.nodeBlock !== undefined ) {
-
-					builder.addFlowCodeHierarchy( this, builder.context.nodeBlock );
-
+					nodeData.snippet = result
+				} else if (
+					nodeData.flowCodes !== undefined &&
+					builder.context.nodeBlock !== undefined
+				) {
+					builder.addFlowCodeHierarchy(this, builder.context.nodeBlock)
 				}
 
-				result = builder.format( result, type, output );
-
+				result = builder.format(result, type, output)
 			} else {
-
-				result = this.generate( builder, output ) || '';
-
+				result = this.generate(builder, output) || ''
 			}
-
 		}
 
-		builder.removeChain( this );
-		builder.addSequentialNode( this );
+		builder.removeChain(this)
+		builder.addSequentialNode(this)
 
-		return result;
-
+		return result
 	}
 
 	/**
@@ -707,9 +599,7 @@ class Node extends EventDispatcher {
 	 * @return {Array<Object>} An iterable list of serialized child objects as JSON.
 	 */
 	getSerializeChildren() {
-
-		return getNodeChildren( this );
-
+		return getNodeChildren(this)
 	}
 
 	/**
@@ -717,38 +607,26 @@ class Node extends EventDispatcher {
 	 *
 	 * @param {Object} json - The output JSON object.
 	 */
-	serialize( json ) {
+	serialize(json) {
+		const nodeChildren = this.getSerializeChildren()
 
-		const nodeChildren = this.getSerializeChildren();
+		const inputNodes = {}
 
-		const inputNodes = {};
-
-		for ( const { property, index, childNode } of nodeChildren ) {
-
-			if ( index !== undefined ) {
-
-				if ( inputNodes[ property ] === undefined ) {
-
-					inputNodes[ property ] = Number.isInteger( index ) ? [] : {};
-
+		for (const { property, index, childNode } of nodeChildren) {
+			if (index !== undefined) {
+				if (inputNodes[property] === undefined) {
+					inputNodes[property] = Number.isInteger(index) ? [] : {}
 				}
 
-				inputNodes[ property ][ index ] = childNode.toJSON( json.meta ).uuid;
-
+				inputNodes[property][index] = childNode.toJSON(json.meta).uuid
 			} else {
-
-				inputNodes[ property ] = childNode.toJSON( json.meta ).uuid;
-
+				inputNodes[property] = childNode.toJSON(json.meta).uuid
 			}
-
 		}
 
-		if ( Object.keys( inputNodes ).length > 0 ) {
-
-			json.inputNodes = inputNodes;
-
+		if (Object.keys(inputNodes).length > 0) {
+			json.inputNodes = inputNodes
 		}
-
 	}
 
 	/**
@@ -756,52 +634,36 @@ class Node extends EventDispatcher {
 	 *
 	 * @param {Object} json - The JSON object.
 	 */
-	deserialize( json ) {
+	deserialize(json) {
+		if (json.inputNodes !== undefined) {
+			const nodes = json.meta.nodes
 
-		if ( json.inputNodes !== undefined ) {
+			for (const property in json.inputNodes) {
+				if (Array.isArray(json.inputNodes[property])) {
+					const inputArray = []
 
-			const nodes = json.meta.nodes;
-
-			for ( const property in json.inputNodes ) {
-
-				if ( Array.isArray( json.inputNodes[ property ] ) ) {
-
-					const inputArray = [];
-
-					for ( const uuid of json.inputNodes[ property ] ) {
-
-						inputArray.push( nodes[ uuid ] );
-
+					for (const uuid of json.inputNodes[property]) {
+						inputArray.push(nodes[uuid])
 					}
 
-					this[ property ] = inputArray;
+					this[property] = inputArray
+				} else if (typeof json.inputNodes[property] === 'object') {
+					const inputObject = {}
 
-				} else if ( typeof json.inputNodes[ property ] === 'object' ) {
+					for (const subProperty in json.inputNodes[property]) {
+						const uuid = json.inputNodes[property][subProperty]
 
-					const inputObject = {};
-
-					for ( const subProperty in json.inputNodes[ property ] ) {
-
-						const uuid = json.inputNodes[ property ][ subProperty ];
-
-						inputObject[ subProperty ] = nodes[ uuid ];
-
+						inputObject[subProperty] = nodes[uuid]
 					}
 
-					this[ property ] = inputObject;
-
+					this[property] = inputObject
 				} else {
+					const uuid = json.inputNodes[property]
 
-					const uuid = json.inputNodes[ property ];
-
-					this[ property ] = nodes[ uuid ];
-
+					this[property] = nodes[uuid]
 				}
-
 			}
-
 		}
-
 	}
 
 	/**
@@ -810,27 +672,23 @@ class Node extends EventDispatcher {
 	 * @param {Object?} meta - An optional JSON object that already holds serialized data from other scene objects.
 	 * @return {Object} The serialized node.
 	 */
-	toJSON( meta ) {
+	toJSON(meta) {
+		const { uuid, type } = this
+		const isRoot = meta === undefined || typeof meta === 'string'
 
-		const { uuid, type } = this;
-		const isRoot = ( meta === undefined || typeof meta === 'string' );
-
-		if ( isRoot ) {
-
+		if (isRoot) {
 			meta = {
 				textures: {},
 				images: {},
 				nodes: {}
-			};
-
+			}
 		}
 
 		// serialize
 
-		let data = meta.nodes[ uuid ];
+		let data = meta.nodes[uuid]
 
-		if ( data === undefined ) {
-
+		if (data === undefined) {
 			data = {
 				uuid,
 				type,
@@ -840,50 +698,41 @@ class Node extends EventDispatcher {
 					type: 'Node',
 					generator: 'Node.toJSON'
 				}
-			};
+			}
 
-			if ( isRoot !== true ) meta.nodes[ data.uuid ] = data;
+			if (isRoot !== true) meta.nodes[data.uuid] = data
 
-			this.serialize( data );
+			this.serialize(data)
 
-			delete data.meta;
-
+			delete data.meta
 		}
 
 		// TODO: Copied from Object3D.toJSON
 
-		function extractFromCache( cache ) {
+		function extractFromCache(cache) {
+			const values = []
 
-			const values = [];
-
-			for ( const key in cache ) {
-
-				const data = cache[ key ];
-				delete data.metadata;
-				values.push( data );
-
+			for (const key in cache) {
+				const data = cache[key]
+				delete data.metadata
+				values.push(data)
 			}
 
-			return values;
-
+			return values
 		}
 
-		if ( isRoot ) {
+		if (isRoot) {
+			const textures = extractFromCache(meta.textures)
+			const images = extractFromCache(meta.images)
+			const nodes = extractFromCache(meta.nodes)
 
-			const textures = extractFromCache( meta.textures );
-			const images = extractFromCache( meta.images );
-			const nodes = extractFromCache( meta.nodes );
-
-			if ( textures.length > 0 ) data.textures = textures;
-			if ( images.length > 0 ) data.images = images;
-			if ( nodes.length > 0 ) data.nodes = nodes;
-
+			if (textures.length > 0) data.textures = textures
+			if (images.length > 0) data.images = images
+			if (nodes.length > 0) data.nodes = nodes
 		}
 
-		return data;
-
+		return data
 	}
-
 }
 
-export default Node;
+export default Node

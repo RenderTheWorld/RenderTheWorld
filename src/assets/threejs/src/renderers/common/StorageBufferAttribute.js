@@ -1,4 +1,4 @@
-import { BufferAttribute } from '../../core/BufferAttribute.js';
+import { BufferAttribute } from '../../core/BufferAttribute.js'
 
 /**
  * This special type of buffer attribute is intended for compute shaders.
@@ -15,7 +15,6 @@ import { BufferAttribute } from '../../core/BufferAttribute.js';
  * @augments BufferAttribute
  */
 class StorageBufferAttribute extends BufferAttribute {
-
 	/**
 	 * Constructs a new storage buffer attribute.
 	 *
@@ -24,11 +23,12 @@ class StorageBufferAttribute extends BufferAttribute {
 	 * @param {Number} itemSize - The item size.
 	 * @param {TypedArray.constructor} [typeClass=Float32Array] - A typed array constructor.
 	 */
-	constructor( count, itemSize, typeClass = Float32Array ) {
+	constructor(count, itemSize, typeClass = Float32Array) {
+		const array = ArrayBuffer.isView(count)
+			? count
+			: new typeClass(count * itemSize)
 
-		const array = ArrayBuffer.isView( count ) ? count : new typeClass( count * itemSize );
-
-		super( array, itemSize );
+		super(array, itemSize)
 
 		/**
 		 * This flag can be used for type testing.
@@ -37,10 +37,8 @@ class StorageBufferAttribute extends BufferAttribute {
 		 * @readonly
 		 * @default true
 		 */
-		this.isStorageBufferAttribute = true;
-
+		this.isStorageBufferAttribute = true
 	}
-
 }
 
-export default StorageBufferAttribute;
+export default StorageBufferAttribute

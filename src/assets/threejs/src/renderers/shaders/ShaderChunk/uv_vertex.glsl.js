@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 #if defined( USE_UV ) || defined( USE_ANISOTROPY )
 
 	vUv = vec3( uv, 1 ).xy;
@@ -119,4 +119,4 @@ export default /* glsl */`
 	vThicknessMapUv = ( thicknessMapTransform * vec3( THICKNESSMAP_UV, 1 ) ).xy;
 
 #endif
-`;
+`

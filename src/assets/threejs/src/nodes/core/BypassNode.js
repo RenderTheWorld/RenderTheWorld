@@ -1,5 +1,5 @@
-import Node from './Node.js';
-import { addMethodChaining, nodeProxy } from '../tsl/TSLCore.js';
+import Node from './Node.js'
+import { addMethodChaining, nodeProxy } from '../tsl/TSLCore.js'
 
 /**
  * The class generates the code of a given node but returns another node in the output.
@@ -13,11 +13,8 @@ import { addMethodChaining, nodeProxy } from '../tsl/TSLCore.js';
  * @augments Node
  */
 class BypassNode extends Node {
-
 	static get type() {
-
-		return 'BypassNode';
-
+		return 'BypassNode'
 	}
 
 	/**
@@ -26,9 +23,8 @@ class BypassNode extends Node {
 	 * @param {Node} outputNode - The output node.
 	 * @param {Node} callNode - The call node.
 	 */
-	constructor( outputNode, callNode ) {
-
-		super();
+	constructor(outputNode, callNode) {
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -37,47 +33,39 @@ class BypassNode extends Node {
 		 * @readonly
 		 * @default true
 		 */
-		this.isBypassNode = true;
+		this.isBypassNode = true
 
 		/**
 		 * The output node.
 		 *
 		 * @type {Node}
 		 */
-		this.outputNode = outputNode;
+		this.outputNode = outputNode
 
 		/**
 		 * The call node.
 		 *
 		 * @type {Node}
 		 */
-		this.callNode = callNode;
-
+		this.callNode = callNode
 	}
 
-	getNodeType( builder ) {
-
-		return this.outputNode.getNodeType( builder );
-
+	getNodeType(builder) {
+		return this.outputNode.getNodeType(builder)
 	}
 
-	generate( builder ) {
+	generate(builder) {
+		const snippet = this.callNode.build(builder, 'void')
 
-		const snippet = this.callNode.build( builder, 'void' );
-
-		if ( snippet !== '' ) {
-
-			builder.addLineFlowCode( snippet, this );
-
+		if (snippet !== '') {
+			builder.addLineFlowCode(snippet, this)
 		}
 
-		return this.outputNode.build( builder );
-
+		return this.outputNode.build(builder)
 	}
-
 }
 
-export default BypassNode;
+export default BypassNode
 
 /**
  * TSL function for creating a bypass node.
@@ -87,6 +75,6 @@ export default BypassNode;
  * @param {Node} callNode - The call node.
  * @returns {BypassNode}
  */
-export const bypass = /*@__PURE__*/ nodeProxy( BypassNode );
+export const bypass = /*@__PURE__*/ nodeProxy(BypassNode)
 
-addMethodChaining( 'bypass', bypass );
+addMethodChaining('bypass', bypass)

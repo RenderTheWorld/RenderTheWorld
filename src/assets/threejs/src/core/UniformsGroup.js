@@ -1,98 +1,78 @@
-import { EventDispatcher } from './EventDispatcher.js';
-import { StaticDrawUsage } from '../constants.js';
+import { EventDispatcher } from './EventDispatcher.js'
+import { StaticDrawUsage } from '../constants.js'
 
-let _id = 0;
+let _id = 0
 
 class UniformsGroup extends EventDispatcher {
-
 	constructor() {
+		super()
 
-		super();
+		this.isUniformsGroup = true
 
-		this.isUniformsGroup = true;
+		Object.defineProperty(this, 'id', { value: _id++ })
 
-		Object.defineProperty( this, 'id', { value: _id ++ } );
+		this.name = ''
 
-		this.name = '';
-
-		this.usage = StaticDrawUsage;
-		this.uniforms = [];
-
+		this.usage = StaticDrawUsage
+		this.uniforms = []
 	}
 
-	add( uniform ) {
+	add(uniform) {
+		this.uniforms.push(uniform)
 
-		this.uniforms.push( uniform );
-
-		return this;
-
+		return this
 	}
 
-	remove( uniform ) {
+	remove(uniform) {
+		const index = this.uniforms.indexOf(uniform)
 
-		const index = this.uniforms.indexOf( uniform );
+		if (index !== -1) this.uniforms.splice(index, 1)
 
-		if ( index !== - 1 ) this.uniforms.splice( index, 1 );
-
-		return this;
-
+		return this
 	}
 
-	setName( name ) {
+	setName(name) {
+		this.name = name
 
-		this.name = name;
-
-		return this;
-
+		return this
 	}
 
-	setUsage( value ) {
+	setUsage(value) {
+		this.usage = value
 
-		this.usage = value;
-
-		return this;
-
+		return this
 	}
 
 	dispose() {
+		this.dispatchEvent({ type: 'dispose' })
 
-		this.dispatchEvent( { type: 'dispose' } );
-
-		return this;
-
+		return this
 	}
 
-	copy( source ) {
+	copy(source) {
+		this.name = source.name
+		this.usage = source.usage
 
-		this.name = source.name;
-		this.usage = source.usage;
+		const uniformsSource = source.uniforms
 
-		const uniformsSource = source.uniforms;
+		this.uniforms.length = 0
 
-		this.uniforms.length = 0;
+		for (let i = 0, l = uniformsSource.length; i < l; i++) {
+			const uniforms = Array.isArray(uniformsSource[i])
+				? uniformsSource[i]
+				: [uniformsSource[i]]
 
-		for ( let i = 0, l = uniformsSource.length; i < l; i ++ ) {
-
-			const uniforms = Array.isArray( uniformsSource[ i ] ) ? uniformsSource[ i ] : [ uniformsSource[ i ] ];
-
-			for ( let j = 0; j < uniforms.length; j ++ ) {
-
-				this.uniforms.push( uniforms[ j ].clone() );
-
+			for (let j = 0; j < uniforms.length; j++) {
+				this.uniforms.push(uniforms[j].clone())
 			}
-
 		}
 
-		return this;
-
+		return this
 	}
 
 	clone() {
-
-		return new this.constructor().copy( this );
-
+		return new this.constructor().copy(this)
 	}
-
 }
 
-export { UniformsGroup };
+export { UniformsGroup }

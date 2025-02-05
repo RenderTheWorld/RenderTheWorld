@@ -1,7 +1,7 @@
-import Node from '../core/Node.js';
-import { vectorComponents } from '../core/constants.js';
+import Node from '../core/Node.js'
+import { vectorComponents } from '../core/constants.js'
 
-const _stringVectorComponents = vectorComponents.join( '' );
+const _stringVectorComponents = vectorComponents.join('')
 
 /**
  * This module is part of the TSL core and usually not used in app level code.
@@ -15,11 +15,8 @@ const _stringVectorComponents = vectorComponents.join( '' );
  * @augments Node
  */
 class SplitNode extends Node {
-
 	static get type() {
-
-		return 'SplitNode';
-
+		return 'SplitNode'
 	}
 
 	/**
@@ -28,23 +25,22 @@ class SplitNode extends Node {
 	 * @param {Node} node - The node that should be accessed.
 	 * @param {String} [components='x'] - The components that should be accessed.
 	 */
-	constructor( node, components = 'x' ) {
-
-		super();
+	constructor(node, components = 'x') {
+		super()
 
 		/**
 		 * The node that should be accessed.
 		 *
 		 * @type {Node}
 		 */
-		this.node = node;
+		this.node = node
 
 		/**
 		 * The components that should be accessed.
 		 *
 		 * @type {string}
 		 */
-		this.components = components;
+		this.components = components
 
 		/**
 		 * This flag can be used for type testing.
@@ -53,8 +49,7 @@ class SplitNode extends Node {
 		 * @readonly
 		 * @default true
 		 */
-		this.isSplitNode = true;
-
+		this.isSplitNode = true
 	}
 
 	/**
@@ -63,17 +58,13 @@ class SplitNode extends Node {
 	 * @return {Number} The vector length.
 	 */
 	getVectorLength() {
+		let vectorLength = this.components.length
 
-		let vectorLength = this.components.length;
-
-		for ( const c of this.components ) {
-
-			vectorLength = Math.max( vectorComponents.indexOf( c ) + 1, vectorLength );
-
+		for (const c of this.components) {
+			vectorLength = Math.max(vectorComponents.indexOf(c) + 1, vectorLength)
 		}
 
-		return vectorLength;
-
+		return vectorLength
 	}
 
 	/**
@@ -82,10 +73,8 @@ class SplitNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The component type.
 	 */
-	getComponentType( builder ) {
-
-		return builder.getComponentType( this.node.getNodeType( builder ) );
-
+	getComponentType(builder) {
+		return builder.getComponentType(this.node.getNodeType(builder))
 	}
 
 	/**
@@ -94,75 +83,70 @@ class SplitNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The node type.
 	 */
-	getNodeType( builder ) {
-
-		return builder.getTypeFromLength( this.components.length, this.getComponentType( builder ) );
-
+	getNodeType(builder) {
+		return builder.getTypeFromLength(
+			this.components.length,
+			this.getComponentType(builder)
+		)
 	}
 
-	generate( builder, output ) {
+	generate(builder, output) {
+		const node = this.node
+		const nodeTypeLength = builder.getTypeLength(node.getNodeType(builder))
 
-		const node = this.node;
-		const nodeTypeLength = builder.getTypeLength( node.getNodeType( builder ) );
+		let snippet = null
 
-		let snippet = null;
+		if (nodeTypeLength > 1) {
+			let type = null
 
-		if ( nodeTypeLength > 1 ) {
+			const componentsLength = this.getVectorLength()
 
-			let type = null;
-
-			const componentsLength = this.getVectorLength();
-
-			if ( componentsLength >= nodeTypeLength ) {
-
+			if (componentsLength >= nodeTypeLength) {
 				// needed expand the input node
 
-				type = builder.getTypeFromLength( this.getVectorLength(), this.getComponentType( builder ) );
-
+				type = builder.getTypeFromLength(
+					this.getVectorLength(),
+					this.getComponentType(builder)
+				)
 			}
 
-			const nodeSnippet = node.build( builder, type );
+			const nodeSnippet = node.build(builder, type)
 
-			if ( this.components.length === nodeTypeLength && this.components === _stringVectorComponents.slice( 0, this.components.length ) ) {
-
+			if (
+				this.components.length === nodeTypeLength &&
+				this.components ===
+					_stringVectorComponents.slice(0, this.components.length)
+			) {
 				// unnecessary swizzle
 
-				snippet = builder.format( nodeSnippet, type, output );
-
+				snippet = builder.format(nodeSnippet, type, output)
 			} else {
-
-				snippet = builder.format( `${nodeSnippet}.${this.components}`, this.getNodeType( builder ), output );
-
+				snippet = builder.format(
+					`${nodeSnippet}.${this.components}`,
+					this.getNodeType(builder),
+					output
+				)
 			}
-
 		} else {
-
 			// ignore .components if .node returns float/integer
 
-			snippet = node.build( builder, output );
-
+			snippet = node.build(builder, output)
 		}
 
-		return snippet;
-
+		return snippet
 	}
 
-	serialize( data ) {
+	serialize(data) {
+		super.serialize(data)
 
-		super.serialize( data );
-
-		data.components = this.components;
-
+		data.components = this.components
 	}
 
-	deserialize( data ) {
+	deserialize(data) {
+		super.deserialize(data)
 
-		super.deserialize( data );
-
-		this.components = data.components;
-
+		this.components = data.components
 	}
-
 }
 
-export default SplitNode;
+export default SplitNode

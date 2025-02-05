@@ -7,7 +7,7 @@
 export const NodeShaderStage = {
 	VERTEX: 'vertex',
 	FRAGMENT: 'fragment'
-};
+}
 
 /**
  * Update types of a node.
@@ -22,7 +22,7 @@ export const NodeUpdateType = {
 	FRAME: 'frame',
 	RENDER: 'render',
 	OBJECT: 'object'
-};
+}
 
 /**
  * Data types of a node.
@@ -47,7 +47,7 @@ export const NodeType = {
 	MATRIX2: 'mat2',
 	MATRIX3: 'mat3',
 	MATRIX4: 'mat4'
-};
+}
 
 /**
  * Access types of a node. These are relevant for compute and storage usage.
@@ -59,10 +59,10 @@ export const NodeType = {
 export const NodeAccess = {
 	READ_ONLY: 'readOnly',
 	WRITE_ONLY: 'writeOnly',
-	READ_WRITE: 'readWrite',
-};
+	READ_WRITE: 'readWrite'
+}
 
-export const defaultShaderStages = [ 'fragment', 'vertex' ];
-export const defaultBuildStages = [ 'setup', 'analyze', 'generate' ];
-export const shaderStages = [ ...defaultShaderStages, 'compute' ];
-export const vectorComponents = [ 'x', 'y', 'z', 'w' ];
+export const defaultShaderStages = ['fragment', 'vertex']
+export const defaultBuildStages = ['setup', 'analyze', 'generate']
+export const shaderStages = [...defaultShaderStages, 'compute']
+export const vectorComponents = ['x', 'y', 'z', 'w']

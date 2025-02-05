@@ -1,10 +1,10 @@
-import NodeMaterial from './NodeMaterial.js';
-import BasicEnvironmentNode from '../../nodes/lighting/BasicEnvironmentNode.js';
-import PhongLightingModel from '../../nodes/functions/PhongLightingModel.js';
+import NodeMaterial from './NodeMaterial.js'
+import BasicEnvironmentNode from '../../nodes/lighting/BasicEnvironmentNode.js'
+import PhongLightingModel from '../../nodes/functions/PhongLightingModel.js'
 
-import { MeshLambertMaterial } from '../MeshLambertMaterial.js';
+import { MeshLambertMaterial } from '../MeshLambertMaterial.js'
 
-const _defaultValues = /*@__PURE__*/ new MeshLambertMaterial();
+const _defaultValues = /*@__PURE__*/ new MeshLambertMaterial()
 
 /**
  * Node material version of `MeshLambertMaterial`.
@@ -12,11 +12,8 @@ const _defaultValues = /*@__PURE__*/ new MeshLambertMaterial();
  * @augments NodeMaterial
  */
 class MeshLambertNodeMaterial extends NodeMaterial {
-
 	static get type() {
-
-		return 'MeshLambertNodeMaterial';
-
+		return 'MeshLambertNodeMaterial'
 	}
 
 	/**
@@ -24,9 +21,8 @@ class MeshLambertNodeMaterial extends NodeMaterial {
 	 *
 	 * @param {Object?} parameters - The configuration parameter.
 	 */
-	constructor( parameters ) {
-
-		super();
+	constructor(parameters) {
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -35,7 +31,7 @@ class MeshLambertNodeMaterial extends NodeMaterial {
 		 * @readonly
 		 * @default true
 		 */
-		this.isMeshLambertNodeMaterial = true;
+		this.isMeshLambertNodeMaterial = true
 
 		/**
 		 * Set to `true` because lambert materials react on lights.
@@ -43,12 +39,11 @@ class MeshLambertNodeMaterial extends NodeMaterial {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.lights = true;
+		this.lights = true
 
-		this.setDefaultValues( _defaultValues );
+		this.setDefaultValues(_defaultValues)
 
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
 	/**
@@ -58,12 +53,10 @@ class MeshLambertNodeMaterial extends NodeMaterial {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {BasicEnvironmentNode<vec3>?} The environment node.
 	 */
-	setupEnvironment( builder ) {
+	setupEnvironment(builder) {
+		const envNode = super.setupEnvironment(builder)
 
-		const envNode = super.setupEnvironment( builder );
-
-		return envNode ? new BasicEnvironmentNode( envNode ) : null;
-
+		return envNode ? new BasicEnvironmentNode(envNode) : null
 	}
 
 	/**
@@ -71,12 +64,9 @@ class MeshLambertNodeMaterial extends NodeMaterial {
 	 *
 	 * @return {PhongLightingModel} The lighting model.
 	 */
-	setupLightingModel( /*builder*/ ) {
-
-		return new PhongLightingModel( false ); // ( specular ) -> force lambert
-
+	setupLightingModel(/*builder*/) {
+		return new PhongLightingModel(false) // ( specular ) -> force lambert
 	}
-
 }
 
-export default MeshLambertNodeMaterial;
+export default MeshLambertNodeMaterial

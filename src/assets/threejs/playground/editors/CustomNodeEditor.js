@@ -1,97 +1,77 @@
-import { LabelElement } from 'flow';
-import { Color, Vector2, Vector3, Vector4 } from 'three';
-import * as Nodes from 'three/tsl';
-import { uniform } from 'three/tsl';
-import { BaseNodeEditor } from '../BaseNodeEditor.js';
-import { createInputLib } from '../NodeEditorUtils.js';
-import { setInputAestheticsFromType } from '../DataTypeLib.js';
+import { LabelElement } from 'flow'
+import { Color, Vector2, Vector3, Vector4 } from 'three'
+import * as Nodes from 'three/tsl'
+import { uniform } from 'three/tsl'
+import { BaseNodeEditor } from '../BaseNodeEditor.js'
+import { createInputLib } from '../NodeEditorUtils.js'
+import { setInputAestheticsFromType } from '../DataTypeLib.js'
 
 const typeToValue = {
-	'color': Color,
-	'vec2': Vector2,
-	'vec3': Vector3,
-	'vec4': Vector4
-};
+	color: Color,
+	vec2: Vector2,
+	vec3: Vector3,
+	vec4: Vector4
+}
 
-const createElementFromProperty = ( node, property ) => {
+const createElementFromProperty = (node, property) => {
+	const nodeType = property.nodeType
+	const defaultValue = uniform(
+		typeToValue[nodeType] ? new typeToValue[nodeType]() : 0
+	)
 
-	const nodeType = property.nodeType;
-	const defaultValue = uniform( typeToValue[ nodeType ] ? new typeToValue[ nodeType ]() : 0 );
+	let label = property.label
 
-	let label = property.label;
+	if (label === undefined) {
+		label = property.name
 
-	if ( label === undefined ) {
-
-		label = property.name;
-
-		if ( label.endsWith( 'Node' ) === true ) {
-
-			label = label.slice( 0, label.length - 4 );
-
+		if (label.endsWith('Node') === true) {
+			label = label.slice(0, label.length - 4)
 		}
-
 	}
 
-	node[ property.name ] = defaultValue;
+	node[property.name] = defaultValue
 
-	const element = setInputAestheticsFromType( new LabelElement( label ), nodeType );
+	const element = setInputAestheticsFromType(new LabelElement(label), nodeType)
 
-	if ( createInputLib[ nodeType ] !== undefined ) {
-
-		createInputLib[ nodeType ]( defaultValue, element );
-
+	if (createInputLib[nodeType] !== undefined) {
+		createInputLib[nodeType](defaultValue, element)
 	}
 
-	element.onConnect( ( elmt ) => {
+	element.onConnect(elmt => {
+		elmt.setEnabledInputs(!elmt.getLinkedObject())
 
-		elmt.setEnabledInputs( ! elmt.getLinkedObject() );
+		node[property.name] = elmt.getLinkedObject() || defaultValue
+	})
 
-		node[ property.name ] = elmt.getLinkedObject() || defaultValue;
-
-	} );
-
-	return element;
-
-};
+	return element
+}
 
 export class CustomNodeEditor extends BaseNodeEditor {
+	constructor(settings) {
+		const shaderNode = Nodes[settings.shaderNode]
 
-	constructor( settings ) {
+		let node = null
 
-		const shaderNode = Nodes[ settings.shaderNode ];
+		const elements = []
 
-		let node = null;
+		if (settings.properties !== undefined) {
+			node = shaderNode()
 
-		const elements = [];
-
-		if ( settings.properties !== undefined ) {
-
-			node = shaderNode();
-
-			for ( const property of settings.properties ) {
-
-				elements.push( createElementFromProperty( node, property ) );
-
+			for (const property of settings.properties) {
+				elements.push(createElementFromProperty(node, property))
 			}
-
 		} else {
-
-			node = shaderNode;
-
+			node = shaderNode
 		}
 
-		node.nodeType = node.nodeType || settings.nodeType;
+		node.nodeType = node.nodeType || settings.nodeType
 
-		super( settings.name, node, 300 );
+		super(settings.name, node, 300)
 
-		this.title.setIcon( 'ti ti-' + settings.icon );
+		this.title.setIcon('ti ti-' + settings.icon)
 
-		for ( const element of elements ) {
-
-			this.add( element );
-
+		for (const element of elements) {
+			this.add(element)
 		}
-
 	}
-
 }

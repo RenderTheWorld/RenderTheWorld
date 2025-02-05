@@ -1,14 +1,41 @@
 import {
-	CullFaceNone, CullFaceBack, CullFaceFront, DoubleSide, BackSide,
-	NormalBlending, NoBlending, CustomBlending, AddEquation,
-	AdditiveBlending, SubtractiveBlending, MultiplyBlending, SubtractEquation, ReverseSubtractEquation,
-	ZeroFactor, OneFactor, SrcColorFactor, SrcAlphaFactor, SrcAlphaSaturateFactor, DstColorFactor, DstAlphaFactor,
-	OneMinusSrcColorFactor, OneMinusSrcAlphaFactor, OneMinusDstColorFactor, OneMinusDstAlphaFactor,
-	NeverDepth, AlwaysDepth, LessDepth, LessEqualDepth, EqualDepth, GreaterEqualDepth, GreaterDepth, NotEqualDepth
-} from '../../../constants.js';
-import { Vector4 } from '../../../math/Vector4.js';
+	CullFaceNone,
+	CullFaceBack,
+	CullFaceFront,
+	DoubleSide,
+	BackSide,
+	NormalBlending,
+	NoBlending,
+	CustomBlending,
+	AddEquation,
+	AdditiveBlending,
+	SubtractiveBlending,
+	MultiplyBlending,
+	SubtractEquation,
+	ReverseSubtractEquation,
+	ZeroFactor,
+	OneFactor,
+	SrcColorFactor,
+	SrcAlphaFactor,
+	SrcAlphaSaturateFactor,
+	DstColorFactor,
+	DstAlphaFactor,
+	OneMinusSrcColorFactor,
+	OneMinusSrcAlphaFactor,
+	OneMinusDstColorFactor,
+	OneMinusDstAlphaFactor,
+	NeverDepth,
+	AlwaysDepth,
+	LessDepth,
+	LessEqualDepth,
+	EqualDepth,
+	GreaterEqualDepth,
+	GreaterDepth,
+	NotEqualDepth
+} from '../../../constants.js'
+import { Vector4 } from '../../../math/Vector4.js'
 
-let equationToGL, factorToGL;
+let equationToGL, factorToGL
 
 /**
  * A WebGL 2 backend utility module for managing the WebGL state.
@@ -21,69 +48,65 @@ let equationToGL, factorToGL;
  * @private
  */
 class WebGLState {
-
 	/**
 	 * Constructs a new utility object.
 	 *
 	 * @param {WebGLBackend} backend - The WebGL 2 backend.
 	 */
-	constructor( backend ) {
-
+	constructor(backend) {
 		/**
 		 * A reference to the WebGL 2 backend.
 		 *
 		 * @type {WebGLBackend}
 		 */
-		this.backend = backend;
+		this.backend = backend
 
 		/**
 		 * A reference to the rendering context.
 		 *
 		 * @type {WebGL2RenderingContext}
 		 */
-		this.gl = this.backend.gl;
+		this.gl = this.backend.gl
 
 		// Below properties are intended to cache
 		// the WebGL state and are not explicitly
 		// documented for convenience reasons.
 
-		this.enabled = {};
-		this.currentFlipSided = null;
-		this.currentCullFace = null;
-		this.currentProgram = null;
-		this.currentBlendingEnabled = false;
-		this.currentBlending = null;
-		this.currentBlendSrc = null;
-		this.currentBlendDst = null;
-		this.currentBlendSrcAlpha = null;
-		this.currentBlendDstAlpha = null;
-		this.currentPremultipledAlpha = null;
-		this.currentPolygonOffsetFactor = null;
-		this.currentPolygonOffsetUnits = null;
-		this.currentColorMask = null;
-		this.currentDepthFunc = null;
-		this.currentDepthMask = null;
-		this.currentStencilFunc = null;
-		this.currentStencilRef = null;
-		this.currentStencilFuncMask = null;
-		this.currentStencilFail = null;
-		this.currentStencilZFail = null;
-		this.currentStencilZPass = null;
-		this.currentStencilMask = null;
-		this.currentLineWidth = null;
-		this.currentClippingPlanes = 0;
+		this.enabled = {}
+		this.currentFlipSided = null
+		this.currentCullFace = null
+		this.currentProgram = null
+		this.currentBlendingEnabled = false
+		this.currentBlending = null
+		this.currentBlendSrc = null
+		this.currentBlendDst = null
+		this.currentBlendSrcAlpha = null
+		this.currentBlendDstAlpha = null
+		this.currentPremultipledAlpha = null
+		this.currentPolygonOffsetFactor = null
+		this.currentPolygonOffsetUnits = null
+		this.currentColorMask = null
+		this.currentDepthFunc = null
+		this.currentDepthMask = null
+		this.currentStencilFunc = null
+		this.currentStencilRef = null
+		this.currentStencilFuncMask = null
+		this.currentStencilFail = null
+		this.currentStencilZFail = null
+		this.currentStencilZPass = null
+		this.currentStencilMask = null
+		this.currentLineWidth = null
+		this.currentClippingPlanes = 0
 
-		this.currentBoundFramebuffers = {};
-		this.currentDrawbuffers = new WeakMap();
+		this.currentBoundFramebuffers = {}
+		this.currentDrawbuffers = new WeakMap()
 
-		this.maxTextures = this.gl.getParameter( this.gl.MAX_TEXTURE_IMAGE_UNITS );
-		this.currentTextureSlot = null;
-		this.currentBoundTextures = {};
-		this.currentBoundBufferBases = {};
+		this.maxTextures = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS)
+		this.currentTextureSlot = null
+		this.currentBoundTextures = {}
+		this.currentBoundBufferBases = {}
 
-
-		this._init();
-
+		this._init()
 	}
 
 	/**
@@ -92,39 +115,37 @@ class WebGLState {
 	 * @private
 	 */
 	_init() {
-
-		const gl = this.gl;
+		const gl = this.gl
 
 		// Store only WebGL constants here.
 
 		equationToGL = {
-			[ AddEquation ]: gl.FUNC_ADD,
-			[ SubtractEquation ]: gl.FUNC_SUBTRACT,
-			[ ReverseSubtractEquation ]: gl.FUNC_REVERSE_SUBTRACT
-		};
+			[AddEquation]: gl.FUNC_ADD,
+			[SubtractEquation]: gl.FUNC_SUBTRACT,
+			[ReverseSubtractEquation]: gl.FUNC_REVERSE_SUBTRACT
+		}
 
 		factorToGL = {
-			[ ZeroFactor ]: gl.ZERO,
-			[ OneFactor ]: gl.ONE,
-			[ SrcColorFactor ]: gl.SRC_COLOR,
-			[ SrcAlphaFactor ]: gl.SRC_ALPHA,
-			[ SrcAlphaSaturateFactor ]: gl.SRC_ALPHA_SATURATE,
-			[ DstColorFactor ]: gl.DST_COLOR,
-			[ DstAlphaFactor ]: gl.DST_ALPHA,
-			[ OneMinusSrcColorFactor ]: gl.ONE_MINUS_SRC_COLOR,
-			[ OneMinusSrcAlphaFactor ]: gl.ONE_MINUS_SRC_ALPHA,
-			[ OneMinusDstColorFactor ]: gl.ONE_MINUS_DST_COLOR,
-			[ OneMinusDstAlphaFactor ]: gl.ONE_MINUS_DST_ALPHA
-		};
+			[ZeroFactor]: gl.ZERO,
+			[OneFactor]: gl.ONE,
+			[SrcColorFactor]: gl.SRC_COLOR,
+			[SrcAlphaFactor]: gl.SRC_ALPHA,
+			[SrcAlphaSaturateFactor]: gl.SRC_ALPHA_SATURATE,
+			[DstColorFactor]: gl.DST_COLOR,
+			[DstAlphaFactor]: gl.DST_ALPHA,
+			[OneMinusSrcColorFactor]: gl.ONE_MINUS_SRC_COLOR,
+			[OneMinusSrcAlphaFactor]: gl.ONE_MINUS_SRC_ALPHA,
+			[OneMinusDstColorFactor]: gl.ONE_MINUS_DST_COLOR,
+			[OneMinusDstAlphaFactor]: gl.ONE_MINUS_DST_ALPHA
+		}
 
-		const scissorParam = gl.getParameter( gl.SCISSOR_BOX );
-		const viewportParam = gl.getParameter( gl.VIEWPORT );
+		const scissorParam = gl.getParameter(gl.SCISSOR_BOX)
+		const viewportParam = gl.getParameter(gl.VIEWPORT)
 
-		this.currentScissor = new Vector4().fromArray( scissorParam );
-		this.currentViewport = new Vector4().fromArray( viewportParam );
+		this.currentScissor = new Vector4().fromArray(scissorParam)
+		this.currentViewport = new Vector4().fromArray(viewportParam)
 
-		this._tempVec4 = new Vector4();
-
+		this._tempVec4 = new Vector4()
 	}
 
 	/**
@@ -135,17 +156,13 @@ class WebGLState {
 	 *
 	 * @param {GLenum} id - The capability to enable.
 	 */
-	enable( id ) {
+	enable(id) {
+		const { enabled } = this
 
-		const { enabled } = this;
-
-		if ( enabled[ id ] !== true ) {
-
-			this.gl.enable( id );
-			enabled[ id ] = true;
-
+		if (enabled[id] !== true) {
+			this.gl.enable(id)
+			enabled[id] = true
 		}
-
 	}
 
 	/**
@@ -156,17 +173,13 @@ class WebGLState {
 	 *
 	 * @param {GLenum} id - The capability to enable.
 	 */
-	disable( id ) {
+	disable(id) {
+		const { enabled } = this
 
-		const { enabled } = this;
-
-		if ( enabled[ id ] !== false ) {
-
-			this.gl.disable( id );
-			enabled[ id ] = false;
-
+		if (enabled[id] !== false) {
+			this.gl.disable(id)
+			enabled[id] = false
 		}
-
 	}
 
 	/**
@@ -178,26 +191,18 @@ class WebGLState {
 	 *
 	 * @param {Boolean} flipSided - Whether triangles flipped their sides or not.
 	 */
-	setFlipSided( flipSided ) {
+	setFlipSided(flipSided) {
+		if (this.currentFlipSided !== flipSided) {
+			const { gl } = this
 
-		if ( this.currentFlipSided !== flipSided ) {
-
-			const { gl } = this;
-
-			if ( flipSided ) {
-
-				gl.frontFace( gl.CW );
-
+			if (flipSided) {
+				gl.frontFace(gl.CW)
 			} else {
-
-				gl.frontFace( gl.CCW );
-
+				gl.frontFace(gl.CCW)
 			}
 
-			this.currentFlipSided = flipSided;
-
+			this.currentFlipSided = flipSided
 		}
-
 	}
 
 	/**
@@ -209,40 +214,26 @@ class WebGLState {
 	 *
 	 * @param {Number} cullFace - Defines which polygons are candidates for culling.
 	 */
-	setCullFace( cullFace ) {
+	setCullFace(cullFace) {
+		const { gl } = this
 
-		const { gl } = this;
+		if (cullFace !== CullFaceNone) {
+			this.enable(gl.CULL_FACE)
 
-		if ( cullFace !== CullFaceNone ) {
-
-			this.enable( gl.CULL_FACE );
-
-			if ( cullFace !== this.currentCullFace ) {
-
-				if ( cullFace === CullFaceBack ) {
-
-					gl.cullFace( gl.BACK );
-
-				} else if ( cullFace === CullFaceFront ) {
-
-					gl.cullFace( gl.FRONT );
-
+			if (cullFace !== this.currentCullFace) {
+				if (cullFace === CullFaceBack) {
+					gl.cullFace(gl.BACK)
+				} else if (cullFace === CullFaceFront) {
+					gl.cullFace(gl.FRONT)
 				} else {
-
-					gl.cullFace( gl.FRONT_AND_BACK );
-
+					gl.cullFace(gl.FRONT_AND_BACK)
 				}
-
 			}
-
 		} else {
-
-			this.disable( gl.CULL_FACE );
-
+			this.disable(gl.CULL_FACE)
 		}
 
-		this.currentCullFace = cullFace;
-
+		this.currentCullFace = cullFace
 	}
 
 	/**
@@ -253,18 +244,14 @@ class WebGLState {
 	 *
 	 * @param {Number} width - The line width.
 	 */
-	setLineWidth( width ) {
+	setLineWidth(width) {
+		const { currentLineWidth, gl } = this
 
-		const { currentLineWidth, gl } = this;
+		if (width !== currentLineWidth) {
+			gl.lineWidth(width)
 
-		if ( width !== currentLineWidth ) {
-
-			gl.lineWidth( width );
-
-			this.currentLineWidth = width;
-
+			this.currentLineWidth = width
 		}
-
 	}
 
 	/**
@@ -282,140 +269,165 @@ class WebGLState {
 	 * @param {Number} blendDstAlpha - Only relevant for custom blending. The alpha destination blending factor.
 	 * @param {Boolean} premultipliedAlpha - Whether premultiplied alpha is enabled or not.
 	 */
-	setBlending( blending, blendEquation, blendSrc, blendDst, blendEquationAlpha, blendSrcAlpha, blendDstAlpha, premultipliedAlpha ) {
+	setBlending(
+		blending,
+		blendEquation,
+		blendSrc,
+		blendDst,
+		blendEquationAlpha,
+		blendSrcAlpha,
+		blendDstAlpha,
+		premultipliedAlpha
+	) {
+		const { gl } = this
 
-		const { gl } = this;
-
-		if ( blending === NoBlending ) {
-
-			if ( this.currentBlendingEnabled === true ) {
-
-				this.disable( gl.BLEND );
-				this.currentBlendingEnabled = false;
-
+		if (blending === NoBlending) {
+			if (this.currentBlendingEnabled === true) {
+				this.disable(gl.BLEND)
+				this.currentBlendingEnabled = false
 			}
 
-			return;
-
+			return
 		}
 
-		if ( this.currentBlendingEnabled === false ) {
-
-			this.enable( gl.BLEND );
-			this.currentBlendingEnabled = true;
-
+		if (this.currentBlendingEnabled === false) {
+			this.enable(gl.BLEND)
+			this.currentBlendingEnabled = true
 		}
 
-		if ( blending !== CustomBlending ) {
+		if (blending !== CustomBlending) {
+			if (
+				blending !== this.currentBlending ||
+				premultipliedAlpha !== this.currentPremultipledAlpha
+			) {
+				if (
+					this.currentBlendEquation !== AddEquation ||
+					this.currentBlendEquationAlpha !== AddEquation
+				) {
+					gl.blendEquation(gl.FUNC_ADD)
 
-			if ( blending !== this.currentBlending || premultipliedAlpha !== this.currentPremultipledAlpha ) {
-
-				if ( this.currentBlendEquation !== AddEquation || this.currentBlendEquationAlpha !== AddEquation ) {
-
-					gl.blendEquation( gl.FUNC_ADD );
-
-					this.currentBlendEquation = AddEquation;
-					this.currentBlendEquationAlpha = AddEquation;
-
+					this.currentBlendEquation = AddEquation
+					this.currentBlendEquationAlpha = AddEquation
 				}
 
-				if ( premultipliedAlpha ) {
-
-					switch ( blending ) {
-
+				if (premultipliedAlpha) {
+					switch (blending) {
 						case NormalBlending:
-							gl.blendFuncSeparate( gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA );
-							break;
+							gl.blendFuncSeparate(
+								gl.ONE,
+								gl.ONE_MINUS_SRC_ALPHA,
+								gl.ONE,
+								gl.ONE_MINUS_SRC_ALPHA
+							)
+							break
 
 						case AdditiveBlending:
-							gl.blendFunc( gl.ONE, gl.ONE );
-							break;
+							gl.blendFunc(gl.ONE, gl.ONE)
+							break
 
 						case SubtractiveBlending:
-							gl.blendFuncSeparate( gl.ZERO, gl.ONE_MINUS_SRC_COLOR, gl.ZERO, gl.ONE );
-							break;
+							gl.blendFuncSeparate(
+								gl.ZERO,
+								gl.ONE_MINUS_SRC_COLOR,
+								gl.ZERO,
+								gl.ONE
+							)
+							break
 
 						case MultiplyBlending:
-							gl.blendFuncSeparate( gl.ZERO, gl.SRC_COLOR, gl.ZERO, gl.SRC_ALPHA );
-							break;
+							gl.blendFuncSeparate(gl.ZERO, gl.SRC_COLOR, gl.ZERO, gl.SRC_ALPHA)
+							break
 
 						default:
-							console.error( 'THREE.WebGLState: Invalid blending: ', blending );
-							break;
-
+							console.error('THREE.WebGLState: Invalid blending: ', blending)
+							break
 					}
-
 				} else {
-
-					switch ( blending ) {
-
+					switch (blending) {
 						case NormalBlending:
-							gl.blendFuncSeparate( gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA );
-							break;
+							gl.blendFuncSeparate(
+								gl.SRC_ALPHA,
+								gl.ONE_MINUS_SRC_ALPHA,
+								gl.ONE,
+								gl.ONE_MINUS_SRC_ALPHA
+							)
+							break
 
 						case AdditiveBlending:
-							gl.blendFunc( gl.SRC_ALPHA, gl.ONE );
-							break;
+							gl.blendFunc(gl.SRC_ALPHA, gl.ONE)
+							break
 
 						case SubtractiveBlending:
-							gl.blendFuncSeparate( gl.ZERO, gl.ONE_MINUS_SRC_COLOR, gl.ZERO, gl.ONE );
-							break;
+							gl.blendFuncSeparate(
+								gl.ZERO,
+								gl.ONE_MINUS_SRC_COLOR,
+								gl.ZERO,
+								gl.ONE
+							)
+							break
 
 						case MultiplyBlending:
-							gl.blendFunc( gl.ZERO, gl.SRC_COLOR );
-							break;
+							gl.blendFunc(gl.ZERO, gl.SRC_COLOR)
+							break
 
 						default:
-							console.error( 'THREE.WebGLState: Invalid blending: ', blending );
-							break;
-
+							console.error('THREE.WebGLState: Invalid blending: ', blending)
+							break
 					}
-
 				}
 
-				this.currentBlendSrc = null;
-				this.currentBlendDst = null;
-				this.currentBlendSrcAlpha = null;
-				this.currentBlendDstAlpha = null;
+				this.currentBlendSrc = null
+				this.currentBlendDst = null
+				this.currentBlendSrcAlpha = null
+				this.currentBlendDstAlpha = null
 
-				this.currentBlending = blending;
-				this.currentPremultipledAlpha = premultipliedAlpha;
-
+				this.currentBlending = blending
+				this.currentPremultipledAlpha = premultipliedAlpha
 			}
 
-			return;
-
+			return
 		}
 
 		// custom blending
 
-		blendEquationAlpha = blendEquationAlpha || blendEquation;
-		blendSrcAlpha = blendSrcAlpha || blendSrc;
-		blendDstAlpha = blendDstAlpha || blendDst;
+		blendEquationAlpha = blendEquationAlpha || blendEquation
+		blendSrcAlpha = blendSrcAlpha || blendSrc
+		blendDstAlpha = blendDstAlpha || blendDst
 
-		if ( blendEquation !== this.currentBlendEquation || blendEquationAlpha !== this.currentBlendEquationAlpha ) {
+		if (
+			blendEquation !== this.currentBlendEquation ||
+			blendEquationAlpha !== this.currentBlendEquationAlpha
+		) {
+			gl.blendEquationSeparate(
+				equationToGL[blendEquation],
+				equationToGL[blendEquationAlpha]
+			)
 
-			gl.blendEquationSeparate( equationToGL[ blendEquation ], equationToGL[ blendEquationAlpha ] );
-
-			this.currentBlendEquation = blendEquation;
-			this.currentBlendEquationAlpha = blendEquationAlpha;
-
+			this.currentBlendEquation = blendEquation
+			this.currentBlendEquationAlpha = blendEquationAlpha
 		}
 
-		if ( blendSrc !== this.currentBlendSrc || blendDst !== this.currentBlendDst || blendSrcAlpha !== this.currentBlendSrcAlpha || blendDstAlpha !== this.currentBlendDstAlpha ) {
+		if (
+			blendSrc !== this.currentBlendSrc ||
+			blendDst !== this.currentBlendDst ||
+			blendSrcAlpha !== this.currentBlendSrcAlpha ||
+			blendDstAlpha !== this.currentBlendDstAlpha
+		) {
+			gl.blendFuncSeparate(
+				factorToGL[blendSrc],
+				factorToGL[blendDst],
+				factorToGL[blendSrcAlpha],
+				factorToGL[blendDstAlpha]
+			)
 
-			gl.blendFuncSeparate( factorToGL[ blendSrc ], factorToGL[ blendDst ], factorToGL[ blendSrcAlpha ], factorToGL[ blendDstAlpha ] );
-
-			this.currentBlendSrc = blendSrc;
-			this.currentBlendDst = blendDst;
-			this.currentBlendSrcAlpha = blendSrcAlpha;
-			this.currentBlendDstAlpha = blendDstAlpha;
-
+			this.currentBlendSrc = blendSrc
+			this.currentBlendDst = blendDst
+			this.currentBlendSrcAlpha = blendSrcAlpha
+			this.currentBlendDstAlpha = blendDstAlpha
 		}
 
-		this.currentBlending = blending;
-		this.currentPremultipledAlpha = false;
-
+		this.currentBlending = blending
+		this.currentPremultipledAlpha = false
 	}
 
 	/**
@@ -427,15 +439,11 @@ class WebGLState {
 	 *
 	 * @param {Boolean} colorMask - The color mask.
 	 */
-	setColorMask( colorMask ) {
-
-		if ( this.currentColorMask !== colorMask ) {
-
-			this.gl.colorMask( colorMask, colorMask, colorMask, colorMask );
-			this.currentColorMask = colorMask;
-
+	setColorMask(colorMask) {
+		if (this.currentColorMask !== colorMask) {
+			this.gl.colorMask(colorMask, colorMask, colorMask, colorMask)
+			this.currentColorMask = colorMask
 		}
-
 	}
 
 	/**
@@ -443,20 +451,14 @@ class WebGLState {
 	 *
 	 * @param {Boolean} depthTest - Whether the depth test is enabled or not.
 	 */
-	setDepthTest( depthTest ) {
+	setDepthTest(depthTest) {
+		const { gl } = this
 
-		const { gl } = this;
-
-		if ( depthTest ) {
-
-			this.enable( gl.DEPTH_TEST );
-
+		if (depthTest) {
+			this.enable(gl.DEPTH_TEST)
 		} else {
-
-			this.disable( gl.DEPTH_TEST );
-
+			this.disable(gl.DEPTH_TEST)
 		}
-
 	}
 
 	/**
@@ -468,15 +470,11 @@ class WebGLState {
 	 *
 	 * @param {Boolean} depthMask - The depth mask.
 	 */
-	setDepthMask( depthMask ) {
-
-		if ( this.currentDepthMask !== depthMask ) {
-
-			this.gl.depthMask( depthMask );
-			this.currentDepthMask = depthMask;
-
+	setDepthMask(depthMask) {
+		if (this.currentDepthMask !== depthMask) {
+			this.gl.depthMask(depthMask)
+			this.currentDepthMask = depthMask
 		}
-
 	}
 
 	/**
@@ -487,64 +485,49 @@ class WebGLState {
 	 *
 	 * @param {Number} depthFunc - The depth compare function.
 	 */
-	setDepthFunc( depthFunc ) {
+	setDepthFunc(depthFunc) {
+		if (this.currentDepthFunc !== depthFunc) {
+			const { gl } = this
 
-		if ( this.currentDepthFunc !== depthFunc ) {
-
-			const { gl } = this;
-
-			switch ( depthFunc ) {
-
+			switch (depthFunc) {
 				case NeverDepth:
-
-					gl.depthFunc( gl.NEVER );
-					break;
+					gl.depthFunc(gl.NEVER)
+					break
 
 				case AlwaysDepth:
-
-					gl.depthFunc( gl.ALWAYS );
-					break;
+					gl.depthFunc(gl.ALWAYS)
+					break
 
 				case LessDepth:
-
-					gl.depthFunc( gl.LESS );
-					break;
+					gl.depthFunc(gl.LESS)
+					break
 
 				case LessEqualDepth:
-
-					gl.depthFunc( gl.LEQUAL );
-					break;
+					gl.depthFunc(gl.LEQUAL)
+					break
 
 				case EqualDepth:
-
-					gl.depthFunc( gl.EQUAL );
-					break;
+					gl.depthFunc(gl.EQUAL)
+					break
 
 				case GreaterEqualDepth:
-
-					gl.depthFunc( gl.GEQUAL );
-					break;
+					gl.depthFunc(gl.GEQUAL)
+					break
 
 				case GreaterDepth:
-
-					gl.depthFunc( gl.GREATER );
-					break;
+					gl.depthFunc(gl.GREATER)
+					break
 
 				case NotEqualDepth:
-
-					gl.depthFunc( gl.NOTEQUAL );
-					break;
+					gl.depthFunc(gl.NOTEQUAL)
+					break
 
 				default:
-
-					gl.depthFunc( gl.LEQUAL );
-
+					gl.depthFunc(gl.LEQUAL)
 			}
 
-			this.currentDepthFunc = depthFunc;
-
+			this.currentDepthFunc = depthFunc
 		}
-
 	}
 
 	/**
@@ -556,19 +539,15 @@ class WebGLState {
 	 * @param {Number} height - The height of the viewport.
 	 *
 	 */
-	scissor( x, y, width, height ) {
+	scissor(x, y, width, height) {
+		const scissor = this._tempVec4.set(x, y, width, height)
 
-		const scissor = this._tempVec4.set( x, y, width, height );
+		if (this.currentScissor.equals(scissor) === false) {
+			const { gl } = this
 
-		if ( this.currentScissor.equals( scissor ) === false ) {
-
-			const { gl } = this;
-
-			gl.scissor( scissor.x, scissor.y, scissor.z, scissor.w );
-			this.currentScissor.copy( scissor );
-
+			gl.scissor(scissor.x, scissor.y, scissor.z, scissor.w)
+			this.currentScissor.copy(scissor)
 		}
-
 	}
 
 	/**
@@ -580,19 +559,15 @@ class WebGLState {
 	 * @param {Number} height - The height of the viewport.
 	 *
 	 */
-	viewport( x, y, width, height ) {
+	viewport(x, y, width, height) {
+		const viewport = this._tempVec4.set(x, y, width, height)
 
-		const viewport = this._tempVec4.set( x, y, width, height );
+		if (this.currentViewport.equals(viewport) === false) {
+			const { gl } = this
 
-		if ( this.currentViewport.equals( viewport ) === false ) {
-
-			const { gl } = this;
-
-			gl.viewport( viewport.x, viewport.y, viewport.z, viewport.w );
-			this.currentViewport.copy( viewport );
-
+			gl.viewport(viewport.x, viewport.y, viewport.z, viewport.w)
+			this.currentViewport.copy(viewport)
 		}
-
 	}
 
 	/**
@@ -600,20 +575,14 @@ class WebGLState {
 	 *
 	 * @param {Boolean} boolean - Whether the scissor test should be enabled or not.
 	 */
-	setScissorTest( boolean ) {
+	setScissorTest(boolean) {
+		const gl = this.gl
 
-		const gl = this.gl;
-
-		if ( boolean ) {
-
-			gl.enable( gl.SCISSOR_TEST );
-
+		if (boolean) {
+			gl.enable(gl.SCISSOR_TEST)
 		} else {
-
-			gl.disable( gl.SCISSOR_TEST );
-
+			gl.disable(gl.SCISSOR_TEST)
 		}
-
 	}
 
 	/**
@@ -621,20 +590,14 @@ class WebGLState {
 	 *
 	 * @param {Boolean} stencilTest - Whether the stencil test is enabled or not.
 	 */
-	setStencilTest( stencilTest ) {
+	setStencilTest(stencilTest) {
+		const { gl } = this
 
-		const { gl } = this;
-
-		if ( stencilTest ) {
-
-			this.enable( gl.STENCIL_TEST );
-
+		if (stencilTest) {
+			this.enable(gl.STENCIL_TEST)
 		} else {
-
-			this.disable( gl.STENCIL_TEST );
-
+			this.disable(gl.STENCIL_TEST)
 		}
-
 	}
 
 	/**
@@ -646,15 +609,11 @@ class WebGLState {
 	 *
 	 * @param {Boolean} stencilMask - The stencil mask.
 	 */
-	setStencilMask( stencilMask ) {
-
-		if ( this.currentStencilMask !== stencilMask ) {
-
-			this.gl.stencilMask( stencilMask );
-			this.currentStencilMask = stencilMask;
-
+	setStencilMask(stencilMask) {
+		if (this.currentStencilMask !== stencilMask) {
+			this.gl.stencilMask(stencilMask)
+			this.currentStencilMask = stencilMask
 		}
-
 	}
 
 	/**
@@ -667,20 +626,18 @@ class WebGLState {
 	 * @param {Number} stencilRef - The reference value for the stencil test.
 	 * @param {Number} stencilMask - A bit-wise mask that is used to AND the reference value and the stored stencil value when the test is done.
 	 */
-	setStencilFunc( stencilFunc, stencilRef, stencilMask ) {
+	setStencilFunc(stencilFunc, stencilRef, stencilMask) {
+		if (
+			this.currentStencilFunc !== stencilFunc ||
+			this.currentStencilRef !== stencilRef ||
+			this.currentStencilFuncMask !== stencilMask
+		) {
+			this.gl.stencilFunc(stencilFunc, stencilRef, stencilMask)
 
-		if ( this.currentStencilFunc !== stencilFunc ||
-			 this.currentStencilRef !== stencilRef ||
-			 this.currentStencilFuncMask !== stencilMask ) {
-
-			this.gl.stencilFunc( stencilFunc, stencilRef, stencilMask );
-
-			this.currentStencilFunc = stencilFunc;
-			this.currentStencilRef = stencilRef;
-			this.currentStencilFuncMask = stencilMask;
-
+			this.currentStencilFunc = stencilFunc
+			this.currentStencilRef = stencilRef
+			this.currentStencilFuncMask = stencilMask
 		}
-
 	}
 
 	/**
@@ -694,20 +651,18 @@ class WebGLState {
 	 * @param {Number} stencilZPass - The function to use when both the stencil test and the depth test pass,
 	 * or when the stencil test passes and there is no depth buffer or depth testing is disabled.
 	 */
-	setStencilOp( stencilFail, stencilZFail, stencilZPass ) {
+	setStencilOp(stencilFail, stencilZFail, stencilZPass) {
+		if (
+			this.currentStencilFail !== stencilFail ||
+			this.currentStencilZFail !== stencilZFail ||
+			this.currentStencilZPass !== stencilZPass
+		) {
+			this.gl.stencilOp(stencilFail, stencilZFail, stencilZPass)
 
-		if ( this.currentStencilFail !== stencilFail ||
-			 this.currentStencilZFail !== stencilZFail ||
-			 this.currentStencilZPass !== stencilZPass ) {
-
-			this.gl.stencilOp( stencilFail, stencilZFail, stencilZPass );
-
-			this.currentStencilFail = stencilFail;
-			this.currentStencilZFail = stencilZFail;
-			this.currentStencilZPass = stencilZPass;
-
+			this.currentStencilFail = stencilFail
+			this.currentStencilZFail = stencilZFail
+			this.currentStencilZPass = stencilZPass
 		}
-
 	}
 
 	/**
@@ -717,68 +672,75 @@ class WebGLState {
 	 * @param {Number} frontFaceCW - Whether the front faces are counter-clockwise or not.
 	 * @param {Number} hardwareClippingPlanes - The number of hardware clipping planes.
 	 */
-	setMaterial( material, frontFaceCW, hardwareClippingPlanes ) {
-
-		const { gl } = this;
+	setMaterial(material, frontFaceCW, hardwareClippingPlanes) {
+		const { gl } = this
 
 		material.side === DoubleSide
-			? this.disable( gl.CULL_FACE )
-			: this.enable( gl.CULL_FACE );
+			? this.disable(gl.CULL_FACE)
+			: this.enable(gl.CULL_FACE)
 
-		let flipSided = ( material.side === BackSide );
-		if ( frontFaceCW ) flipSided = ! flipSided;
+		let flipSided = material.side === BackSide
+		if (frontFaceCW) flipSided = !flipSided
 
-		this.setFlipSided( flipSided );
+		this.setFlipSided(flipSided)
 
-		( material.blending === NormalBlending && material.transparent === false )
-			? this.setBlending( NoBlending )
-			: this.setBlending( material.blending, material.blendEquation, material.blendSrc, material.blendDst, material.blendEquationAlpha, material.blendSrcAlpha, material.blendDstAlpha, material.premultipliedAlpha );
+		material.blending === NormalBlending && material.transparent === false
+			? this.setBlending(NoBlending)
+			: this.setBlending(
+					material.blending,
+					material.blendEquation,
+					material.blendSrc,
+					material.blendDst,
+					material.blendEquationAlpha,
+					material.blendSrcAlpha,
+					material.blendDstAlpha,
+					material.premultipliedAlpha
+				)
 
-		this.setDepthFunc( material.depthFunc );
-		this.setDepthTest( material.depthTest );
-		this.setDepthMask( material.depthWrite );
-		this.setColorMask( material.colorWrite );
+		this.setDepthFunc(material.depthFunc)
+		this.setDepthTest(material.depthTest)
+		this.setDepthMask(material.depthWrite)
+		this.setColorMask(material.colorWrite)
 
-		const stencilWrite = material.stencilWrite;
-		this.setStencilTest( stencilWrite );
-		if ( stencilWrite ) {
-
-			this.setStencilMask( material.stencilWriteMask );
-			this.setStencilFunc( material.stencilFunc, material.stencilRef, material.stencilFuncMask );
-			this.setStencilOp( material.stencilFail, material.stencilZFail, material.stencilZPass );
-
+		const stencilWrite = material.stencilWrite
+		this.setStencilTest(stencilWrite)
+		if (stencilWrite) {
+			this.setStencilMask(material.stencilWriteMask)
+			this.setStencilFunc(
+				material.stencilFunc,
+				material.stencilRef,
+				material.stencilFuncMask
+			)
+			this.setStencilOp(
+				material.stencilFail,
+				material.stencilZFail,
+				material.stencilZPass
+			)
 		}
 
-		this.setPolygonOffset( material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits );
+		this.setPolygonOffset(
+			material.polygonOffset,
+			material.polygonOffsetFactor,
+			material.polygonOffsetUnits
+		)
 
 		material.alphaToCoverage === true && this.backend.renderer.samples > 1
-			? this.enable( gl.SAMPLE_ALPHA_TO_COVERAGE )
-			: this.disable( gl.SAMPLE_ALPHA_TO_COVERAGE );
+			? this.enable(gl.SAMPLE_ALPHA_TO_COVERAGE)
+			: this.disable(gl.SAMPLE_ALPHA_TO_COVERAGE)
 
-		if ( hardwareClippingPlanes > 0 ) {
+		if (hardwareClippingPlanes > 0) {
+			if (this.currentClippingPlanes !== hardwareClippingPlanes) {
+				const CLIP_DISTANCE0_WEBGL = 0x3000
 
-			if ( this.currentClippingPlanes !== hardwareClippingPlanes ) {
-
-				const CLIP_DISTANCE0_WEBGL = 0x3000;
-
-				for ( let i = 0; i < 8; i ++ ) {
-
-					if ( i < hardwareClippingPlanes ) {
-
-						this.enable( CLIP_DISTANCE0_WEBGL + i );
-
+				for (let i = 0; i < 8; i++) {
+					if (i < hardwareClippingPlanes) {
+						this.enable(CLIP_DISTANCE0_WEBGL + i)
 					} else {
-
-						this.disable( CLIP_DISTANCE0_WEBGL + i );
-
+						this.disable(CLIP_DISTANCE0_WEBGL + i)
 					}
-
 				}
-
 			}
-
 		}
-
 	}
 
 	/**
@@ -791,29 +753,24 @@ class WebGLState {
 	 * @param {Number} factor - The scale factor for the variable depth offset for each polygon.
 	 * @param {Number} units - The multiplier by which an implementation-specific value is multiplied with to create a constant depth offset.
 	 */
-	setPolygonOffset( polygonOffset, factor, units ) {
+	setPolygonOffset(polygonOffset, factor, units) {
+		const { gl } = this
 
-		const { gl } = this;
+		if (polygonOffset) {
+			this.enable(gl.POLYGON_OFFSET_FILL)
 
-		if ( polygonOffset ) {
+			if (
+				this.currentPolygonOffsetFactor !== factor ||
+				this.currentPolygonOffsetUnits !== units
+			) {
+				gl.polygonOffset(factor, units)
 
-			this.enable( gl.POLYGON_OFFSET_FILL );
-
-			if ( this.currentPolygonOffsetFactor !== factor || this.currentPolygonOffsetUnits !== units ) {
-
-				gl.polygonOffset( factor, units );
-
-				this.currentPolygonOffsetFactor = factor;
-				this.currentPolygonOffsetUnits = units;
-
+				this.currentPolygonOffsetFactor = factor
+				this.currentPolygonOffsetUnits = units
 			}
-
 		} else {
-
-			this.disable( gl.POLYGON_OFFSET_FILL );
-
+			this.disable(gl.POLYGON_OFFSET_FILL)
 		}
-
 	}
 
 	/**
@@ -825,24 +782,19 @@ class WebGLState {
 	 * @param {WebGLProgram} program - The WebGL program to use.
 	 * @return {Boolean} Whether a program change has been executed or not.
 	 */
-	useProgram( program ) {
+	useProgram(program) {
+		if (this.currentProgram !== program) {
+			this.gl.useProgram(program)
 
-		if ( this.currentProgram !== program ) {
+			this.currentProgram = program
 
-			this.gl.useProgram( program );
-
-			this.currentProgram = program;
-
-			return true;
-
+			return true
 		}
 
-		return false;
-
+		return false
 	}
 
 	// framebuffer
-
 
 	/**
 	 * Binds the given framebuffer.
@@ -854,36 +806,28 @@ class WebGLState {
 	 * @param {WebGLFramebuffer} framebuffer - The WebGL framebuffer to bind.
 	 * @return {Boolean} Whether a bind has been executed or not.
 	 */
-	bindFramebuffer( target, framebuffer ) {
+	bindFramebuffer(target, framebuffer) {
+		const { gl, currentBoundFramebuffers } = this
 
-		const { gl, currentBoundFramebuffers } = this;
+		if (currentBoundFramebuffers[target] !== framebuffer) {
+			gl.bindFramebuffer(target, framebuffer)
 
-		if ( currentBoundFramebuffers[ target ] !== framebuffer ) {
-
-			gl.bindFramebuffer( target, framebuffer );
-
-			currentBoundFramebuffers[ target ] = framebuffer;
+			currentBoundFramebuffers[target] = framebuffer
 
 			// gl.DRAW_FRAMEBUFFER is equivalent to gl.FRAMEBUFFER
 
-			if ( target === gl.DRAW_FRAMEBUFFER ) {
-
-				currentBoundFramebuffers[ gl.FRAMEBUFFER ] = framebuffer;
-
+			if (target === gl.DRAW_FRAMEBUFFER) {
+				currentBoundFramebuffers[gl.FRAMEBUFFER] = framebuffer
 			}
 
-			if ( target === gl.FRAMEBUFFER ) {
-
-				currentBoundFramebuffers[ gl.DRAW_FRAMEBUFFER ] = framebuffer;
-
+			if (target === gl.FRAMEBUFFER) {
+				currentBoundFramebuffers[gl.DRAW_FRAMEBUFFER] = framebuffer
 			}
 
-			return true;
-
+			return true
 		}
 
-		return false;
-
+		return false
 	}
 
 	/**
@@ -896,63 +840,47 @@ class WebGLState {
 	 * @param {RenderContext} renderContext - The render context.
 	 * @param {WebGLFramebuffer} framebuffer - The WebGL framebuffer.
 	 */
-	drawBuffers( renderContext, framebuffer ) {
+	drawBuffers(renderContext, framebuffer) {
+		const { gl } = this
 
-		const { gl } = this;
+		let drawBuffers = []
 
-		let drawBuffers = [];
+		let needsUpdate = false
 
-		let needsUpdate = false;
+		if (renderContext.textures !== null) {
+			drawBuffers = this.currentDrawbuffers.get(framebuffer)
 
-		if ( renderContext.textures !== null ) {
-
-			drawBuffers = this.currentDrawbuffers.get( framebuffer );
-
-			if ( drawBuffers === undefined ) {
-
-				drawBuffers = [];
-				this.currentDrawbuffers.set( framebuffer, drawBuffers );
-
+			if (drawBuffers === undefined) {
+				drawBuffers = []
+				this.currentDrawbuffers.set(framebuffer, drawBuffers)
 			}
 
+			const textures = renderContext.textures
 
-			const textures = renderContext.textures;
-
-			if ( drawBuffers.length !== textures.length || drawBuffers[ 0 ] !== gl.COLOR_ATTACHMENT0 ) {
-
-				for ( let i = 0, il = textures.length; i < il; i ++ ) {
-
-					drawBuffers[ i ] = gl.COLOR_ATTACHMENT0 + i;
-
+			if (
+				drawBuffers.length !== textures.length ||
+				drawBuffers[0] !== gl.COLOR_ATTACHMENT0
+			) {
+				for (let i = 0, il = textures.length; i < il; i++) {
+					drawBuffers[i] = gl.COLOR_ATTACHMENT0 + i
 				}
 
-				drawBuffers.length = textures.length;
+				drawBuffers.length = textures.length
 
-				needsUpdate = true;
-
+				needsUpdate = true
 			}
-
-
 		} else {
+			if (drawBuffers[0] !== gl.BACK) {
+				drawBuffers[0] = gl.BACK
 
-			if ( drawBuffers[ 0 ] !== gl.BACK ) {
-
-				drawBuffers[ 0 ] = gl.BACK;
-
-				needsUpdate = true;
-
+				needsUpdate = true
 			}
-
 		}
 
-		if ( needsUpdate ) {
-
-			gl.drawBuffers( drawBuffers );
-
+		if (needsUpdate) {
+			gl.drawBuffers(drawBuffers)
 		}
-
 	}
-
 
 	// texture
 
@@ -964,19 +892,15 @@ class WebGLState {
 	 *
 	 * @param {Number} webglSlot - The texture unit to make active.
 	 */
-	activeTexture( webglSlot ) {
+	activeTexture(webglSlot) {
+		const { gl, currentTextureSlot, maxTextures } = this
 
-		const { gl, currentTextureSlot, maxTextures } = this;
+		if (webglSlot === undefined) webglSlot = gl.TEXTURE0 + maxTextures - 1
 
-		if ( webglSlot === undefined ) webglSlot = gl.TEXTURE0 + maxTextures - 1;
-
-		if ( currentTextureSlot !== webglSlot ) {
-
-			gl.activeTexture( webglSlot );
-			this.currentTextureSlot = webglSlot;
-
+		if (currentTextureSlot !== webglSlot) {
+			gl.activeTexture(webglSlot)
+			this.currentTextureSlot = webglSlot
 		}
-
 	}
 
 	/**
@@ -989,49 +913,38 @@ class WebGLState {
 	 * @param {WebGLTexture} webglTexture - The WebGL texture to bind.
 	 * @param {Number} webglSlot - The texture.
 	 */
-	bindTexture( webglType, webglTexture, webglSlot ) {
+	bindTexture(webglType, webglTexture, webglSlot) {
+		const { gl, currentTextureSlot, currentBoundTextures, maxTextures } = this
 
-		const { gl, currentTextureSlot, currentBoundTextures, maxTextures } = this;
-
-		if ( webglSlot === undefined ) {
-
-			if ( currentTextureSlot === null ) {
-
-				webglSlot = gl.TEXTURE0 + maxTextures - 1;
-
+		if (webglSlot === undefined) {
+			if (currentTextureSlot === null) {
+				webglSlot = gl.TEXTURE0 + maxTextures - 1
 			} else {
+				webglSlot = currentTextureSlot
+			}
+		}
 
-				webglSlot = currentTextureSlot;
+		let boundTexture = currentBoundTextures[webglSlot]
 
+		if (boundTexture === undefined) {
+			boundTexture = { type: undefined, texture: undefined }
+			currentBoundTextures[webglSlot] = boundTexture
+		}
+
+		if (
+			boundTexture.type !== webglType ||
+			boundTexture.texture !== webglTexture
+		) {
+			if (currentTextureSlot !== webglSlot) {
+				gl.activeTexture(webglSlot)
+				this.currentTextureSlot = webglSlot
 			}
 
+			gl.bindTexture(webglType, webglTexture)
+
+			boundTexture.type = webglType
+			boundTexture.texture = webglTexture
 		}
-
-		let boundTexture = currentBoundTextures[ webglSlot ];
-
-		if ( boundTexture === undefined ) {
-
-			boundTexture = { type: undefined, texture: undefined };
-			currentBoundTextures[ webglSlot ] = boundTexture;
-
-		}
-
-		if ( boundTexture.type !== webglType || boundTexture.texture !== webglTexture ) {
-
-			if ( currentTextureSlot !== webglSlot ) {
-
-				gl.activeTexture( webglSlot );
-				this.currentTextureSlot = webglSlot;
-
-			}
-
-			gl.bindTexture( webglType, webglTexture );
-
-			boundTexture.type = webglType;
-			boundTexture.texture = webglTexture;
-
-		}
-
 	}
 
 	/**
@@ -1045,25 +958,20 @@ class WebGLState {
 	 * @param {WebGLBuffer} buffer - The WebGL buffer.
 	 * @return {Boolean} Whether a bind has been executed or not.
 	 */
-	bindBufferBase( target, index, buffer ) {
+	bindBufferBase(target, index, buffer) {
+		const { gl } = this
 
-		const { gl } = this;
+		const key = `${target}-${index}`
 
-		const key = `${target}-${index}`;
+		if (this.currentBoundBufferBases[key] !== buffer) {
+			gl.bindBufferBase(target, index, buffer)
+			this.currentBoundBufferBases[key] = buffer
 
-		if ( this.currentBoundBufferBases[ key ] !== buffer ) {
-
-			gl.bindBufferBase( target, index, buffer );
-			this.currentBoundBufferBases[ key ] = buffer;
-
-			return true;
-
+			return true
 		}
 
-		return false;
-
+		return false
 	}
-
 
 	/**
 	 * Unbinds the current bound texture.
@@ -1072,22 +980,17 @@ class WebGLState {
 	 * called when necessary.
 	 */
 	unbindTexture() {
+		const { gl, currentTextureSlot, currentBoundTextures } = this
 
-		const { gl, currentTextureSlot, currentBoundTextures } = this;
+		const boundTexture = currentBoundTextures[currentTextureSlot]
 
-		const boundTexture = currentBoundTextures[ currentTextureSlot ];
+		if (boundTexture !== undefined && boundTexture.type !== undefined) {
+			gl.bindTexture(boundTexture.type, null)
 
-		if ( boundTexture !== undefined && boundTexture.type !== undefined ) {
-
-			gl.bindTexture( boundTexture.type, null );
-
-			boundTexture.type = undefined;
-			boundTexture.texture = undefined;
-
+			boundTexture.type = undefined
+			boundTexture.texture = undefined
 		}
-
 	}
-
 }
 
-export default WebGLState;
+export default WebGLState

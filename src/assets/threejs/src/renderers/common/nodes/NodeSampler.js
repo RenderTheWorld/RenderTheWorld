@@ -1,4 +1,4 @@
-import Sampler from '../Sampler.js';
+import Sampler from '../Sampler.js'
 
 /**
  * A special form of sampler binding type.
@@ -8,7 +8,6 @@ import Sampler from '../Sampler.js';
  * @augments Sampler
  */
 class NodeSampler extends Sampler {
-
 	/**
 	 * Constructs a new node-based sampler.
 	 *
@@ -16,35 +15,30 @@ class NodeSampler extends Sampler {
 	 * @param {TextureNode} textureNode - The texture node.
 	 * @param {UniformGroupNode} groupNode - The uniform group node.
 	 */
-	constructor( name, textureNode, groupNode ) {
-
-		super( name, textureNode ? textureNode.value : null );
+	constructor(name, textureNode, groupNode) {
+		super(name, textureNode ? textureNode.value : null)
 
 		/**
 		 * The texture node.
 		 *
 		 * @type {TextureNode}
 		 */
-		this.textureNode = textureNode;
+		this.textureNode = textureNode
 
 		/**
 		 * The uniform group node.
 		 *
 		 * @type {UniformGroupNode}
 		 */
-		this.groupNode = groupNode;
-
+		this.groupNode = groupNode
 	}
 
 	/**
 	 * Updates the texture value of this sampler.
 	 */
 	update() {
-
-		this.texture = this.textureNode.value;
-
+		this.texture = this.textureNode.value
 	}
-
 }
 
-export default NodeSampler;
+export default NodeSampler

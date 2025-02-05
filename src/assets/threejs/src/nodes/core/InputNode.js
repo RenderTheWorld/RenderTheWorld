@@ -1,5 +1,9 @@
-import Node from './Node.js';
-import { getValueType, getValueFromType, arrayBufferToBase64 } from './NodeUtils.js';
+import Node from './Node.js'
+import {
+	getValueType,
+	getValueFromType,
+	arrayBufferToBase64
+} from './NodeUtils.js'
 
 /**
  * Base class for representing data input nodes.
@@ -7,11 +11,8 @@ import { getValueType, getValueFromType, arrayBufferToBase64 } from './NodeUtils
  * @augments Node
  */
 class InputNode extends Node {
-
 	static get type() {
-
-		return 'InputNode';
-
+		return 'InputNode'
 	}
 
 	/**
@@ -20,9 +21,8 @@ class InputNode extends Node {
 	 * @param {Any} value - The value of this node. This can be a any JS primitive, functions, array buffers or even three.js objects (vector, matrices, colors).
 	 * @param {String?} nodeType - The node type. If no explicit type is defined, the node tries to derive the type from its value.
 	 */
-	constructor( value, nodeType = null ) {
-
-		super( nodeType );
+	constructor(value, nodeType = null) {
+		super(nodeType)
 
 		/**
 		 * This flag can be used for type testing.
@@ -31,14 +31,14 @@ class InputNode extends Node {
 		 * @readonly
 		 * @default true
 		 */
-		this.isInputNode = true;
+		this.isInputNode = true
 
 		/**
 		 * The value of this node. This can be a any JS primitive, functions, array buffers or even three.js objects (vector, matrices, colors).
 		 *
 		 * @type {Any}
 		 */
-		this.value = value;
+		this.value = value
 
 		/**
 		 * The precision of the value in the shader.
@@ -46,20 +46,15 @@ class InputNode extends Node {
 		 * @type {('low'|'medium'|'high')?}
 		 * @default null
 		 */
-		this.precision = null;
-
+		this.precision = null
 	}
 
-	getNodeType( /*builder*/ ) {
-
-		if ( this.nodeType === null ) {
-
-			return getValueType( this.value );
-
+	getNodeType(/*builder*/) {
+		if (this.nodeType === null) {
+			return getValueType(this.value)
 		}
 
-		return this.nodeType;
-
+		return this.nodeType
 	}
 
 	/**
@@ -72,10 +67,8 @@ class InputNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The input type.
 	 */
-	getInputType( builder ) {
-
-		return this.getNodeType( builder );
-
+	getInputType(builder) {
+		return this.getNodeType(builder)
 	}
 
 	/**
@@ -86,50 +79,45 @@ class InputNode extends Node {
 	 * @param {('low'|'medium'|'high')} precision - The precision of the input value in the shader.
 	 * @return {InputNode} A reference to this node.
 	 */
-	setPrecision( precision ) {
+	setPrecision(precision) {
+		this.precision = precision
 
-		this.precision = precision;
-
-		return this;
-
+		return this
 	}
 
-	serialize( data ) {
+	serialize(data) {
+		super.serialize(data)
 
-		super.serialize( data );
+		data.value = this.value
 
-		data.value = this.value;
+		if (this.value && this.value.toArray) data.value = this.value.toArray()
 
-		if ( this.value && this.value.toArray ) data.value = this.value.toArray();
+		data.valueType = getValueType(this.value)
+		data.nodeType = this.nodeType
 
-		data.valueType = getValueType( this.value );
-		data.nodeType = this.nodeType;
+		if (data.valueType === 'ArrayBuffer')
+			data.value = arrayBufferToBase64(data.value)
 
-		if ( data.valueType === 'ArrayBuffer' ) data.value = arrayBufferToBase64( data.value );
-
-		data.precision = this.precision;
-
+		data.precision = this.precision
 	}
 
-	deserialize( data ) {
+	deserialize(data) {
+		super.deserialize(data)
 
-		super.deserialize( data );
+		this.nodeType = data.nodeType
+		this.value = Array.isArray(data.value)
+			? getValueFromType(data.valueType, ...data.value)
+			: data.value
 
-		this.nodeType = data.nodeType;
-		this.value = Array.isArray( data.value ) ? getValueFromType( data.valueType, ...data.value ) : data.value;
+		this.precision = data.precision || null
 
-		this.precision = data.precision || null;
-
-		if ( this.value && this.value.fromArray ) this.value = this.value.fromArray( data.value );
-
+		if (this.value && this.value.fromArray)
+			this.value = this.value.fromArray(data.value)
 	}
 
-	generate( /*builder, output*/ ) {
-
-		console.warn( 'Abstract function.' );
-
+	generate(/*builder, output*/) {
+		console.warn('Abstract function.')
 	}
-
 }
 
-export default InputNode;
+export default InputNode

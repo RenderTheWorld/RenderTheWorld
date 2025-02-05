@@ -1,5 +1,5 @@
-import UniformNode from '../core/UniformNode.js';
-import { nodeObject } from '../tsl/TSLBase.js';
+import UniformNode from '../core/UniformNode.js'
+import { nodeObject } from '../tsl/TSLBase.js'
 
 /**
  * A special type of uniform node which represents array-like data
@@ -16,11 +16,8 @@ import { nodeObject } from '../tsl/TSLBase.js';
  * @augments UniformNode
  */
 class BufferNode extends UniformNode {
-
 	static get type() {
-
-		return 'BufferNode';
-
+		return 'BufferNode'
 	}
 
 	/**
@@ -30,9 +27,8 @@ class BufferNode extends UniformNode {
 	 * @param {String} bufferType - The data type of the buffer.
 	 * @param {Number} [bufferCount=0] - The count of buffer elements.
 	 */
-	constructor( value, bufferType, bufferCount = 0 ) {
-
-		super( value, bufferType );
+	constructor(value, bufferType, bufferCount = 0) {
+		super(value, bufferType)
 
 		/**
 		 * This flag can be used for type testing.
@@ -41,14 +37,14 @@ class BufferNode extends UniformNode {
 		 * @readonly
 		 * @default true
 		 */
-		this.isBufferNode = true;
+		this.isBufferNode = true
 
 		/**
 		 * The data type of the buffer.
 		 *
 		 * @type {String}
 		 */
-		this.bufferType = bufferType;
+		this.bufferType = bufferType
 
 		/**
 		 * The uniform node that holds the value of the reference node.
@@ -56,8 +52,7 @@ class BufferNode extends UniformNode {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this.bufferCount = bufferCount;
-
+		this.bufferCount = bufferCount
 	}
 
 	/**
@@ -66,10 +61,8 @@ class BufferNode extends UniformNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The element type.
 	 */
-	getElementType( builder ) {
-
-		return this.getNodeType( builder );
-
+	getElementType(builder) {
+		return this.getNodeType(builder)
 	}
 
 	/**
@@ -78,15 +71,12 @@ class BufferNode extends UniformNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The input type.
 	 */
-	getInputType( /*builder*/ ) {
-
-		return 'buffer';
-
+	getInputType(/*builder*/) {
+		return 'buffer'
 	}
-
 }
 
-export default BufferNode;
+export default BufferNode
 
 /**
  * TSL function for creating a buffer node.
@@ -97,4 +87,5 @@ export default BufferNode;
  * @param {Number} count - The count of buffer elements.
  * @returns {BufferNode}
  */
-export const buffer = ( value, type, count ) => nodeObject( new BufferNode( value, type, count ) );
+export const buffer = (value, type, count) =>
+	nodeObject(new BufferNode(value, type, count))

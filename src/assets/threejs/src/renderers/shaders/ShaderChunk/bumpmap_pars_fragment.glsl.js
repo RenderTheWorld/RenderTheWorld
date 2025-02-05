@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 #ifdef USE_BUMPMAP
 
 	uniform sampler2D bumpMap;
@@ -40,4 +40,4 @@ export default /* glsl */`
 	}
 
 #endif
-`;
+`

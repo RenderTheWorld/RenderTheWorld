@@ -1,5 +1,12 @@
-import DataMap from '../../common/DataMap.js';
-import { GPUTextureViewDimension, GPUIndexFormat, GPUFilterMode, GPUPrimitiveTopology, GPULoadOp, GPUStoreOp } from './WebGPUConstants.js';
+import DataMap from '../../common/DataMap.js'
+import {
+	GPUTextureViewDimension,
+	GPUIndexFormat,
+	GPUFilterMode,
+	GPUPrimitiveTopology,
+	GPULoadOp,
+	GPUStoreOp
+} from './WebGPUConstants.js'
 
 /**
  * A WebGPU backend utility module used by {@link WebGPUTextureUtils}.
@@ -7,22 +14,20 @@ import { GPUTextureViewDimension, GPUIndexFormat, GPUFilterMode, GPUPrimitiveTop
  * @private
  */
 class WebGPUTexturePassUtils extends DataMap {
-
 	/**
 	 * Constructs a new utility object.
 	 *
 	 * @param {GPUDevice} device - The WebGPU device.
 	 */
-	constructor( device ) {
-
-		super();
+	constructor(device) {
+		super()
 
 		/**
 		 * The WebGPU device.
 		 *
 		 * @type {GPUDevice}
 		 */
-		this.device = device;
+		this.device = device
 
 		const mipmapVertexSource = `
 struct VarysStruct {
@@ -55,7 +60,7 @@ fn main( @builtin( vertex_index ) vertexIndex : u32 ) -> VarysStruct {
 	return Varys;
 
 }
-`;
+`
 
 		const mipmapFragmentSource = `
 @group( 0 ) @binding( 0 )
@@ -70,7 +75,7 @@ fn main( @location( 0 ) vTex : vec2<f32> ) -> @location( 0 ) vec4<f32> {
 	return textureSample( img, imgSampler, vTex );
 
 }
-`;
+`
 
 		const flipYFragmentSource = `
 @group( 0 ) @binding( 0 )
@@ -85,21 +90,25 @@ fn main( @location( 0 ) vTex : vec2<f32> ) -> @location( 0 ) vec4<f32> {
 	return textureSample( img, imgSampler, vec2( vTex.x, 1.0 - vTex.y ) );
 
 }
-`;
+`
 
 		/**
 		 * The mipmap GPU sampler.
 		 *
 		 * @type {GPUSampler}
 		 */
-		this.mipmapSampler = device.createSampler( { minFilter: GPUFilterMode.Linear } );
+		this.mipmapSampler = device.createSampler({
+			minFilter: GPUFilterMode.Linear
+		})
 
 		/**
 		 * The flipY GPU sampler.
 		 *
 		 * @type {GPUSampler}
 		 */
-		this.flipYSampler = device.createSampler( { minFilter: GPUFilterMode.Nearest } ); //@TODO?: Consider using textureLoad()
+		this.flipYSampler = device.createSampler({
+			minFilter: GPUFilterMode.Nearest
+		}) //@TODO?: Consider using textureLoad()
 
 		/**
 		 * A cache for GPU render pipelines used for copy/transfer passes.
@@ -107,7 +116,7 @@ fn main( @location( 0 ) vTex : vec2<f32> ) -> @location( 0 ) vec4<f32> {
 		 *
 		 * @type {Object<String,GPURenderPipeline>}
 		 */
-		this.transferPipelines = {};
+		this.transferPipelines = {}
 
 		/**
 		 * A cache for GPU render pipelines used for flipY passes.
@@ -115,38 +124,37 @@ fn main( @location( 0 ) vTex : vec2<f32> ) -> @location( 0 ) vec4<f32> {
 		 *
 		 * @type {Object<String,GPURenderPipeline>}
 		 */
-		this.flipYPipelines = {};
+		this.flipYPipelines = {}
 
 		/**
 		 * The mipmap vertex shader module.
 		 *
 		 * @type {GPUShaderModule}
 		 */
-		this.mipmapVertexShaderModule = device.createShaderModule( {
+		this.mipmapVertexShaderModule = device.createShaderModule({
 			label: 'mipmapVertex',
 			code: mipmapVertexSource
-		} );
+		})
 
 		/**
 		 * The mipmap fragment shader module.
 		 *
 		 * @type {GPUShaderModule}
 		 */
-		this.mipmapFragmentShaderModule = device.createShaderModule( {
+		this.mipmapFragmentShaderModule = device.createShaderModule({
 			label: 'mipmapFragment',
 			code: mipmapFragmentSource
-		} );
+		})
 
 		/**
 		 * The flipY fragment shader module.
 		 *
 		 * @type {GPUShaderModule}
 		 */
-		this.flipYFragmentShaderModule = device.createShaderModule( {
+		this.flipYFragmentShaderModule = device.createShaderModule({
 			label: 'flipYFragment',
 			code: flipYFragmentSource
-		} );
-
+		})
 	}
 
 	/**
@@ -156,14 +164,12 @@ fn main( @location( 0 ) vTex : vec2<f32> ) -> @location( 0 ) vec4<f32> {
 	 * @param {String} format - The GPU texture format
 	 * @return {GPURenderPipeline} The GPU render pipeline.
 	 */
-	getTransferPipeline( format ) {
+	getTransferPipeline(format) {
+		let pipeline = this.transferPipelines[format]
 
-		let pipeline = this.transferPipelines[ format ];
-
-		if ( pipeline === undefined ) {
-
-			pipeline = this.device.createRenderPipeline( {
-				label: `mipmap-${ format }`,
+		if (pipeline === undefined) {
+			pipeline = this.device.createRenderPipeline({
+				label: `mipmap-${format}`,
 				vertex: {
 					module: this.mipmapVertexShaderModule,
 					entryPoint: 'main'
@@ -171,21 +177,19 @@ fn main( @location( 0 ) vTex : vec2<f32> ) -> @location( 0 ) vec4<f32> {
 				fragment: {
 					module: this.mipmapFragmentShaderModule,
 					entryPoint: 'main',
-					targets: [ { format } ]
+					targets: [{ format }]
 				},
 				primitive: {
 					topology: GPUPrimitiveTopology.TriangleStrip,
 					stripIndexFormat: GPUIndexFormat.Uint32
 				},
 				layout: 'auto'
-			} );
+			})
 
-			this.transferPipelines[ format ] = pipeline;
-
+			this.transferPipelines[format] = pipeline
 		}
 
-		return pipeline;
-
+		return pipeline
 	}
 
 	/**
@@ -195,14 +199,12 @@ fn main( @location( 0 ) vTex : vec2<f32> ) -> @location( 0 ) vec4<f32> {
 	 * @param {String} format - The GPU texture format
 	 * @return {GPURenderPipeline} The GPU render pipeline.
 	 */
-	getFlipYPipeline( format ) {
+	getFlipYPipeline(format) {
+		let pipeline = this.flipYPipelines[format]
 
-		let pipeline = this.flipYPipelines[ format ];
-
-		if ( pipeline === undefined ) {
-
-			pipeline = this.device.createRenderPipeline( {
-				label: `flipY-${ format }`,
+		if (pipeline === undefined) {
+			pipeline = this.device.createRenderPipeline({
+				label: `flipY-${format}`,
 				vertex: {
 					module: this.mipmapVertexShaderModule,
 					entryPoint: 'main'
@@ -210,21 +212,19 @@ fn main( @location( 0 ) vTex : vec2<f32> ) -> @location( 0 ) vec4<f32> {
 				fragment: {
 					module: this.flipYFragmentShaderModule,
 					entryPoint: 'main',
-					targets: [ { format } ]
+					targets: [{ format }]
 				},
 				primitive: {
 					topology: GPUPrimitiveTopology.TriangleStrip,
 					stripIndexFormat: GPUIndexFormat.Uint32
 				},
 				layout: 'auto'
-			} );
+			})
 
-			this.flipYPipelines[ format ] = pipeline;
-
+			this.flipYPipelines[format] = pipeline
 		}
 
-		return pipeline;
-
+		return pipeline
 	}
 
 	/**
@@ -234,74 +234,75 @@ fn main( @location( 0 ) vTex : vec2<f32> ) -> @location( 0 ) vec4<f32> {
 	 * @param {Object} textureGPUDescriptor - The texture descriptor.
 	 * @param {Number} [baseArrayLayer=0] - The index of the first array layer accessible to the texture view.
 	 */
-	flipY( textureGPU, textureGPUDescriptor, baseArrayLayer = 0 ) {
+	flipY(textureGPU, textureGPUDescriptor, baseArrayLayer = 0) {
+		const format = textureGPUDescriptor.format
+		const { width, height } = textureGPUDescriptor.size
 
-		const format = textureGPUDescriptor.format;
-		const { width, height } = textureGPUDescriptor.size;
+		const transferPipeline = this.getTransferPipeline(format)
+		const flipYPipeline = this.getFlipYPipeline(format)
 
-		const transferPipeline = this.getTransferPipeline( format );
-		const flipYPipeline = this.getFlipYPipeline( format );
-
-		const tempTexture = this.device.createTexture( {
+		const tempTexture = this.device.createTexture({
 			size: { width, height, depthOrArrayLayers: 1 },
 			format,
 			usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
-		} );
+		})
 
-		const srcView = textureGPU.createView( {
+		const srcView = textureGPU.createView({
 			baseMipLevel: 0,
 			mipLevelCount: 1,
 			dimension: GPUTextureViewDimension.TwoD,
 			baseArrayLayer
-		} );
+		})
 
-		const dstView = tempTexture.createView( {
+		const dstView = tempTexture.createView({
 			baseMipLevel: 0,
 			mipLevelCount: 1,
 			dimension: GPUTextureViewDimension.TwoD,
 			baseArrayLayer: 0
-		} );
+		})
 
-		const commandEncoder = this.device.createCommandEncoder( {} );
+		const commandEncoder = this.device.createCommandEncoder({})
 
-		const pass = ( pipeline, sourceView, destinationView ) => {
+		const pass = (pipeline, sourceView, destinationView) => {
+			const bindGroupLayout = pipeline.getBindGroupLayout(0) // @TODO: Consider making this static.
 
-			const bindGroupLayout = pipeline.getBindGroupLayout( 0 ); // @TODO: Consider making this static.
-
-			const bindGroup = this.device.createBindGroup( {
+			const bindGroup = this.device.createBindGroup({
 				layout: bindGroupLayout,
-				entries: [ {
-					binding: 0,
-					resource: this.flipYSampler
-				}, {
-					binding: 1,
-					resource: sourceView
-				} ]
-			} );
+				entries: [
+					{
+						binding: 0,
+						resource: this.flipYSampler
+					},
+					{
+						binding: 1,
+						resource: sourceView
+					}
+				]
+			})
 
-			const passEncoder = commandEncoder.beginRenderPass( {
-				colorAttachments: [ {
-					view: destinationView,
-					loadOp: GPULoadOp.Clear,
-					storeOp: GPUStoreOp.Store,
-					clearValue: [ 0, 0, 0, 0 ]
-				} ]
-			} );
+			const passEncoder = commandEncoder.beginRenderPass({
+				colorAttachments: [
+					{
+						view: destinationView,
+						loadOp: GPULoadOp.Clear,
+						storeOp: GPUStoreOp.Store,
+						clearValue: [0, 0, 0, 0]
+					}
+				]
+			})
 
-			passEncoder.setPipeline( pipeline );
-			passEncoder.setBindGroup( 0, bindGroup );
-			passEncoder.draw( 4, 1, 0, 0 );
-			passEncoder.end();
+			passEncoder.setPipeline(pipeline)
+			passEncoder.setBindGroup(0, bindGroup)
+			passEncoder.draw(4, 1, 0, 0)
+			passEncoder.end()
+		}
 
-		};
+		pass(transferPipeline, srcView, dstView)
+		pass(flipYPipeline, dstView, srcView)
 
-		pass( transferPipeline, srcView, dstView );
-		pass( flipYPipeline, dstView, srcView );
+		this.device.queue.submit([commandEncoder.finish()])
 
-		this.device.queue.submit( [ commandEncoder.finish() ] );
-
-		tempTexture.destroy();
-
+		tempTexture.destroy()
 	}
 
 	/**
@@ -311,29 +312,31 @@ fn main( @location( 0 ) vTex : vec2<f32> ) -> @location( 0 ) vec4<f32> {
 	 * @param {Object} textureGPUDescriptor - The texture descriptor.
 	 * @param {Number} [baseArrayLayer=0] - The index of the first array layer accessible to the texture view.
 	 */
-	generateMipmaps( textureGPU, textureGPUDescriptor, baseArrayLayer = 0 ) {
+	generateMipmaps(textureGPU, textureGPUDescriptor, baseArrayLayer = 0) {
+		const textureData = this.get(textureGPU)
 
-		const textureData = this.get( textureGPU );
-
-		if ( textureData.useCount === undefined ) {
-
-			textureData.useCount = 0;
-			textureData.layers = [];
-
+		if (textureData.useCount === undefined) {
+			textureData.useCount = 0
+			textureData.layers = []
 		}
 
-		const passes = textureData.layers[ baseArrayLayer ] || this._mipmapCreateBundles( textureGPU, textureGPUDescriptor, baseArrayLayer );
+		const passes =
+			textureData.layers[baseArrayLayer] ||
+			this._mipmapCreateBundles(
+				textureGPU,
+				textureGPUDescriptor,
+				baseArrayLayer
+			)
 
-		const commandEncoder = this.device.createCommandEncoder( {} );
+		const commandEncoder = this.device.createCommandEncoder({})
 
-		this._mipmapRunBundles( commandEncoder, passes );
+		this._mipmapRunBundles(commandEncoder, passes)
 
-		this.device.queue.submit( [ commandEncoder.finish() ] );
+		this.device.queue.submit([commandEncoder.finish()])
 
-		if ( textureData.useCount !== 0 ) textureData.layers[ baseArrayLayer ] = passes;
+		if (textureData.useCount !== 0) textureData.layers[baseArrayLayer] = passes
 
-		textureData.useCount ++;
-
+		textureData.useCount++
 	}
 
 	/**
@@ -345,69 +348,70 @@ fn main( @location( 0 ) vTex : vec2<f32> ) -> @location( 0 ) vec4<f32> {
 	 * @param {Number} baseArrayLayer - The index of the first array layer accessible to the texture view.
 	 * @return {Array} An array of render bundles.
 	 */
-	_mipmapCreateBundles( textureGPU, textureGPUDescriptor, baseArrayLayer ) {
+	_mipmapCreateBundles(textureGPU, textureGPUDescriptor, baseArrayLayer) {
+		const pipeline = this.getTransferPipeline(textureGPUDescriptor.format)
 
-		const pipeline = this.getTransferPipeline( textureGPUDescriptor.format );
+		const bindGroupLayout = pipeline.getBindGroupLayout(0) // @TODO: Consider making this static.
 
-		const bindGroupLayout = pipeline.getBindGroupLayout( 0 ); // @TODO: Consider making this static.
-
-		let srcView = textureGPU.createView( {
+		let srcView = textureGPU.createView({
 			baseMipLevel: 0,
 			mipLevelCount: 1,
 			dimension: GPUTextureViewDimension.TwoD,
 			baseArrayLayer
-		} );
+		})
 
-		const passes = [];
+		const passes = []
 
-		for ( let i = 1; i < textureGPUDescriptor.mipLevelCount; i ++ ) {
-
-			const bindGroup = this.device.createBindGroup( {
+		for (let i = 1; i < textureGPUDescriptor.mipLevelCount; i++) {
+			const bindGroup = this.device.createBindGroup({
 				layout: bindGroupLayout,
-				entries: [ {
-					binding: 0,
-					resource: this.mipmapSampler
-				}, {
-					binding: 1,
-					resource: srcView
-				} ]
-			} );
+				entries: [
+					{
+						binding: 0,
+						resource: this.mipmapSampler
+					},
+					{
+						binding: 1,
+						resource: srcView
+					}
+				]
+			})
 
-			const dstView = textureGPU.createView( {
+			const dstView = textureGPU.createView({
 				baseMipLevel: i,
 				mipLevelCount: 1,
 				dimension: GPUTextureViewDimension.TwoD,
 				baseArrayLayer
-			} );
+			})
 
 			const passDescriptor = {
-				colorAttachments: [ {
-					view: dstView,
-					loadOp: GPULoadOp.Clear,
-					storeOp: GPUStoreOp.Store,
-					clearValue: [ 0, 0, 0, 0 ]
-				} ]
-			};
+				colorAttachments: [
+					{
+						view: dstView,
+						loadOp: GPULoadOp.Clear,
+						storeOp: GPUStoreOp.Store,
+						clearValue: [0, 0, 0, 0]
+					}
+				]
+			}
 
-			const passEncoder = this.device.createRenderBundleEncoder( {
-				colorFormats: [ textureGPUDescriptor.format ]
-			} );
+			const passEncoder = this.device.createRenderBundleEncoder({
+				colorFormats: [textureGPUDescriptor.format]
+			})
 
-			passEncoder.setPipeline( pipeline );
-			passEncoder.setBindGroup( 0, bindGroup );
-			passEncoder.draw( 4, 1, 0, 0 );
+			passEncoder.setPipeline(pipeline)
+			passEncoder.setBindGroup(0, bindGroup)
+			passEncoder.draw(4, 1, 0, 0)
 
-			passes.push( {
-				renderBundles: [ passEncoder.finish() ],
+			passes.push({
+				renderBundles: [passEncoder.finish()],
 				passDescriptor
-			} );
+			})
 
-			srcView = dstView;
-
+			srcView = dstView
 		}
 
-		return passes;
-
+		return passes
 	}
 
 	/**
@@ -416,24 +420,19 @@ fn main( @location( 0 ) vTex : vec2<f32> ) -> @location( 0 ) vec4<f32> {
 	 * @param {GPUCommandEncoder} commandEncoder - The GPU command encoder.
 	 * @param {Array} passes - An array of render bundles.
 	 */
-	_mipmapRunBundles( commandEncoder, passes ) {
+	_mipmapRunBundles(commandEncoder, passes) {
+		const levels = passes.length
 
-		const levels = passes.length;
+		for (let i = 0; i < levels; i++) {
+			const pass = passes[i]
 
-		for ( let i = 0; i < levels; i ++ ) {
+			const passEncoder = commandEncoder.beginRenderPass(pass.passDescriptor)
 
-			const pass = passes[ i ];
+			passEncoder.executeBundles(pass.renderBundles)
 
-			const passEncoder = commandEncoder.beginRenderPass( pass.passDescriptor );
-
-			passEncoder.executeBundles( pass.renderBundles );
-
-			passEncoder.end();
-
+			passEncoder.end()
 		}
-
 	}
-
 }
 
-export default WebGPUTexturePassUtils;
+export default WebGPUTexturePassUtils

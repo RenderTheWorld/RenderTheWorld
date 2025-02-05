@@ -1,87 +1,80 @@
-import NodeFunction from '../core/NodeFunction.js';
-import NodeFunctionInput from '../core/NodeFunctionInput.js';
+import NodeFunction from '../core/NodeFunction.js'
+import NodeFunctionInput from '../core/NodeFunctionInput.js'
 
-const declarationRegexp = /^\s*(highp|mediump|lowp)?\s*([a-z_0-9]+)\s*([a-z_0-9]+)?\s*\(([\s\S]*?)\)/i;
-const propertiesRegexp = /[a-z_0-9]+/ig;
+const declarationRegexp =
+	/^\s*(highp|mediump|lowp)?\s*([a-z_0-9]+)\s*([a-z_0-9]+)?\s*\(([\s\S]*?)\)/i
+const propertiesRegexp = /[a-z_0-9]+/gi
 
-const pragmaMain = '#pragma main';
+const pragmaMain = '#pragma main'
 
-const parse = ( source ) => {
+const parse = source => {
+	source = source.trim()
 
-	source = source.trim();
+	const pragmaMainIndex = source.indexOf(pragmaMain)
 
-	const pragmaMainIndex = source.indexOf( pragmaMain );
+	const mainCode =
+		pragmaMainIndex !== -1
+			? source.slice(pragmaMainIndex + pragmaMain.length)
+			: source
 
-	const mainCode = pragmaMainIndex !== - 1 ? source.slice( pragmaMainIndex + pragmaMain.length ) : source;
+	const declaration = mainCode.match(declarationRegexp)
 
-	const declaration = mainCode.match( declarationRegexp );
-
-	if ( declaration !== null && declaration.length === 5 ) {
-
+	if (declaration !== null && declaration.length === 5) {
 		// tokenizer
 
-		const inputsCode = declaration[ 4 ];
-		const propsMatches = [];
+		const inputsCode = declaration[4]
+		const propsMatches = []
 
-		let nameMatch = null;
+		let nameMatch = null
 
-		while ( ( nameMatch = propertiesRegexp.exec( inputsCode ) ) !== null ) {
-
-			propsMatches.push( nameMatch );
-
+		while ((nameMatch = propertiesRegexp.exec(inputsCode)) !== null) {
+			propsMatches.push(nameMatch)
 		}
 
 		// parser
 
-		const inputs = [];
+		const inputs = []
 
-		let i = 0;
+		let i = 0
 
-		while ( i < propsMatches.length ) {
+		while (i < propsMatches.length) {
+			const isConst = propsMatches[i][0] === 'const'
 
-			const isConst = propsMatches[ i ][ 0 ] === 'const';
-
-			if ( isConst === true ) {
-
-				i ++;
-
+			if (isConst === true) {
+				i++
 			}
 
-			let qualifier = propsMatches[ i ][ 0 ];
+			let qualifier = propsMatches[i][0]
 
-			if ( qualifier === 'in' || qualifier === 'out' || qualifier === 'inout' ) {
-
-				i ++;
-
+			if (qualifier === 'in' || qualifier === 'out' || qualifier === 'inout') {
+				i++
 			} else {
-
-				qualifier = '';
-
+				qualifier = ''
 			}
 
-			const type = propsMatches[ i ++ ][ 0 ];
+			const type = propsMatches[i++][0]
 
-			let count = Number.parseInt( propsMatches[ i ][ 0 ] );
+			let count = Number.parseInt(propsMatches[i][0])
 
-			if ( Number.isNaN( count ) === false ) i ++;
-			else count = null;
+			if (Number.isNaN(count) === false) i++
+			else count = null
 
-			const name = propsMatches[ i ++ ][ 0 ];
+			const name = propsMatches[i++][0]
 
-			inputs.push( new NodeFunctionInput( type, name, count, qualifier, isConst ) );
-
+			inputs.push(new NodeFunctionInput(type, name, count, qualifier, isConst))
 		}
 
 		//
 
-		const blockCode = mainCode.substring( declaration[ 0 ].length );
+		const blockCode = mainCode.substring(declaration[0].length)
 
-		const name = declaration[ 3 ] !== undefined ? declaration[ 3 ] : '';
-		const type = declaration[ 2 ];
+		const name = declaration[3] !== undefined ? declaration[3] : ''
+		const type = declaration[2]
 
-		const precision = declaration[ 1 ] !== undefined ? declaration[ 1 ] : '';
+		const precision = declaration[1] !== undefined ? declaration[1] : ''
 
-		const headerCode = pragmaMainIndex !== - 1 ? source.slice( 0, pragmaMainIndex ) : '';
+		const headerCode =
+			pragmaMainIndex !== -1 ? source.slice(0, pragmaMainIndex) : ''
 
 		return {
 			type,
@@ -91,15 +84,11 @@ const parse = ( source ) => {
 			inputsCode,
 			blockCode,
 			headerCode
-		};
-
+		}
 	} else {
-
-		throw new Error( 'FunctionNode: Function is not a GLSL code.' );
-
+		throw new Error('FunctionNode: Function is not a GLSL code.')
 	}
-
-};
+}
 
 /**
  * This class represents a GLSL node function.
@@ -107,22 +96,20 @@ const parse = ( source ) => {
  * @augments NodeFunction
  */
 class GLSLNodeFunction extends NodeFunction {
-
 	/**
 	 * Constructs a new GLSL node function.
 	 *
 	 * @param {String} source - The GLSL source.
 	 */
-	constructor( source ) {
+	constructor(source) {
+		const { type, inputs, name, precision, inputsCode, blockCode, headerCode } =
+			parse(source)
 
-		const { type, inputs, name, precision, inputsCode, blockCode, headerCode } = parse( source );
+		super(type, inputs, name, precision)
 
-		super( type, inputs, name, precision );
-
-		this.inputsCode = inputsCode;
-		this.blockCode = blockCode;
-		this.headerCode = headerCode;
-
+		this.inputsCode = inputsCode
+		this.blockCode = blockCode
+		this.headerCode = headerCode
 	}
 
 	/**
@@ -131,38 +118,29 @@ class GLSLNodeFunction extends NodeFunction {
 	 * @param {String} [name=this.name] - The function's name.
 	 * @return {String} The shader code.
 	 */
-	getCode( name = this.name ) {
+	getCode(name = this.name) {
+		let code
 
-		let code;
+		const blockCode = this.blockCode
 
-		const blockCode = this.blockCode;
+		if (blockCode !== '') {
+			const { type, inputsCode, headerCode, precision } = this
 
-		if ( blockCode !== '' ) {
+			let declarationCode = `${type} ${name} ( ${inputsCode.trim()} )`
 
-			const { type, inputsCode, headerCode, precision } = this;
-
-			let declarationCode = `${ type } ${ name } ( ${ inputsCode.trim() } )`;
-
-			if ( precision !== '' ) {
-
-				declarationCode = `${ precision } ${ declarationCode }`;
-
+			if (precision !== '') {
+				declarationCode = `${precision} ${declarationCode}`
 			}
 
-			code = headerCode + declarationCode + blockCode;
-
+			code = headerCode + declarationCode + blockCode
 		} else {
-
 			// interface function
 
-			code = '';
-
+			code = ''
 		}
 
-		return code;
-
+		return code
 	}
-
 }
 
-export default GLSLNodeFunction;
+export default GLSLNodeFunction

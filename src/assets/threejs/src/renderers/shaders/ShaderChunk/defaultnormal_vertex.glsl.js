@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 
 vec3 transformedNormal = objectNormal;
 #ifdef USE_TANGENT
@@ -60,4 +60,4 @@ transformedNormal = normalMatrix * transformedNormal;
 	#endif
 
 #endif
-`;
+`

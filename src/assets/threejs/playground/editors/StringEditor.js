@@ -1,33 +1,25 @@
-import { BaseNodeEditor } from '../BaseNodeEditor.js';
-import { createElementFromJSON } from '../NodeEditorUtils.js';
+import { BaseNodeEditor } from '../BaseNodeEditor.js'
+import { createElementFromJSON } from '../NodeEditorUtils.js'
 
 export class StringEditor extends BaseNodeEditor {
-
 	constructor() {
-
-		const { element, inputNode } = createElementFromJSON( {
+		const { element, inputNode } = createElementFromJSON({
 			inputType: 'string',
 			inputConnection: false
-		} );
+		})
 
-		super( 'String', inputNode, 350 );
+		super('String', inputNode, 350)
 
-		element.addEventListener( 'changeInput', () => this.invalidate() );
+		element.addEventListener('changeInput', () => this.invalidate())
 
-		this.add( element );
-
+		this.add(element)
 	}
 
 	get stringNode() {
-
-		return this.value;
-
+		return this.value
 	}
 
 	getURL() {
-
-		return this.stringNode.value;
-
+		return this.stringNode.value
 	}
-
 }

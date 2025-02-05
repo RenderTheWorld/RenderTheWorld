@@ -1,12 +1,21 @@
-import Node from '../core/Node.js';
-import { normalLocal } from './Normal.js';
-import { positionLocal } from './Position.js';
-import { nodeProxy, vec3, mat3, mat4, int, ivec2, float, Fn } from '../tsl/TSLBase.js';
-import { textureLoad } from './TextureNode.js';
-import { textureSize } from './TextureSizeNode.js';
-import { tangentLocal } from './Tangent.js';
-import { instanceIndex, drawIndex } from '../core/IndexNode.js';
-import { varyingProperty } from '../core/PropertyNode.js';
+import Node from '../core/Node.js'
+import { normalLocal } from './Normal.js'
+import { positionLocal } from './Position.js'
+import {
+	nodeProxy,
+	vec3,
+	mat3,
+	mat4,
+	int,
+	ivec2,
+	float,
+	Fn
+} from '../tsl/TSLBase.js'
+import { textureLoad } from './TextureNode.js'
+import { textureSize } from './TextureSizeNode.js'
+import { tangentLocal } from './Tangent.js'
+import { instanceIndex, drawIndex } from '../core/IndexNode.js'
+import { varyingProperty } from '../core/PropertyNode.js'
 
 /**
  * This node implements the vertex shader logic which is required
@@ -16,11 +25,8 @@ import { varyingProperty } from '../core/PropertyNode.js';
  * @augments Node
  */
 class BatchNode extends Node {
-
 	static get type() {
-
-		return 'BatchNode';
-
+		return 'BatchNode'
 	}
 
 	/**
@@ -28,16 +34,15 @@ class BatchNode extends Node {
 	 *
 	 * @param {BatchedMesh} batchMesh - A reference to batched mesh.
 	 */
-	constructor( batchMesh ) {
-
-		super( 'void' );
+	constructor(batchMesh) {
+		super('void')
 
 		/**
 		 * A reference to batched mesh.
 		 *
 		 * @type {BatchedMesh}
 		 */
-		this.batchMesh = batchMesh;
+		this.batchMesh = batchMesh
 
 		/**
 		 * The batching index node.
@@ -45,8 +50,7 @@ class BatchNode extends Node {
 		 * @type {IndexNode?}
 		 * @default null
 		 */
-		this.batchingIdNode = null;
-
+		this.batchingIdNode = null
 	}
 
 	/**
@@ -56,101 +60,83 @@ class BatchNode extends Node {
 	 *
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	setup( builder ) {
-
-		if ( this.batchingIdNode === null ) {
-
-			if ( builder.getDrawIndex() === null ) {
-
-				this.batchingIdNode = instanceIndex;
-
+	setup(builder) {
+		if (this.batchingIdNode === null) {
+			if (builder.getDrawIndex() === null) {
+				this.batchingIdNode = instanceIndex
 			} else {
-
-				this.batchingIdNode = drawIndex;
-
+				this.batchingIdNode = drawIndex
 			}
-
 		}
 
-		const getIndirectIndex = Fn( ( [ id ] ) => {
-
-			const size = int( textureSize( textureLoad( this.batchMesh._indirectTexture ), 0 ) );
-			const x = int( id ).modInt( size );
-			const y = int( id ).div( size );
-			return textureLoad( this.batchMesh._indirectTexture, ivec2( x, y ) ).x;
-
-		} ).setLayout( {
+		const getIndirectIndex = Fn(([id]) => {
+			const size = int(
+				textureSize(textureLoad(this.batchMesh._indirectTexture), 0)
+			)
+			const x = int(id).modInt(size)
+			const y = int(id).div(size)
+			return textureLoad(this.batchMesh._indirectTexture, ivec2(x, y)).x
+		}).setLayout({
 			name: 'getIndirectIndex',
 			type: 'uint',
-			inputs: [
-				{ name: 'id', type: 'int' }
-			]
-		} );
+			inputs: [{ name: 'id', type: 'int' }]
+		})
 
-		const indirectId = getIndirectIndex( int( this.batchingIdNode ) );
+		const indirectId = getIndirectIndex(int(this.batchingIdNode))
 
-		const matricesTexture = this.batchMesh._matricesTexture;
+		const matricesTexture = this.batchMesh._matricesTexture
 
-		const size = textureSize( textureLoad( matricesTexture ), 0 );
-		const j = float( indirectId ).mul( 4 ).toInt().toVar();
+		const size = textureSize(textureLoad(matricesTexture), 0)
+		const j = float(indirectId).mul(4).toInt().toVar()
 
-		const x = j.modInt( size );
-		const y = j.div( int( size ) );
+		const x = j.modInt(size)
+		const y = j.div(int(size))
 		const batchingMatrix = mat4(
-			textureLoad( matricesTexture, ivec2( x, y ) ),
-			textureLoad( matricesTexture, ivec2( x.add( 1 ), y ) ),
-			textureLoad( matricesTexture, ivec2( x.add( 2 ), y ) ),
-			textureLoad( matricesTexture, ivec2( x.add( 3 ), y ) )
-		);
+			textureLoad(matricesTexture, ivec2(x, y)),
+			textureLoad(matricesTexture, ivec2(x.add(1), y)),
+			textureLoad(matricesTexture, ivec2(x.add(2), y)),
+			textureLoad(matricesTexture, ivec2(x.add(3), y))
+		)
 
+		const colorsTexture = this.batchMesh._colorsTexture
 
-		const colorsTexture = this.batchMesh._colorsTexture;
-
-		if ( colorsTexture !== null ) {
-
-			const getBatchingColor = Fn( ( [ id ] ) => {
-
-				const size = textureSize( textureLoad( colorsTexture ), 0 ).x;
-				const j = id;
-				const x = j.modInt( size );
-				const y = j.div( size );
-				return textureLoad( colorsTexture, ivec2( x, y ) ).rgb;
-
-			} ).setLayout( {
+		if (colorsTexture !== null) {
+			const getBatchingColor = Fn(([id]) => {
+				const size = textureSize(textureLoad(colorsTexture), 0).x
+				const j = id
+				const x = j.modInt(size)
+				const y = j.div(size)
+				return textureLoad(colorsTexture, ivec2(x, y)).rgb
+			}).setLayout({
 				name: 'getBatchingColor',
 				type: 'vec3',
-				inputs: [
-					{ name: 'id', type: 'int' }
-				]
-			} );
+				inputs: [{ name: 'id', type: 'int' }]
+			})
 
-			const color = getBatchingColor( indirectId );
+			const color = getBatchingColor(indirectId)
 
-			varyingProperty( 'vec3', 'vBatchColor' ).assign( color );
-
+			varyingProperty('vec3', 'vBatchColor').assign(color)
 		}
 
-		const bm = mat3( batchingMatrix );
+		const bm = mat3(batchingMatrix)
 
-		positionLocal.assign( batchingMatrix.mul( positionLocal ) );
+		positionLocal.assign(batchingMatrix.mul(positionLocal))
 
-		const transformedNormal = normalLocal.div( vec3( bm[ 0 ].dot( bm[ 0 ] ), bm[ 1 ].dot( bm[ 1 ] ), bm[ 2 ].dot( bm[ 2 ] ) ) );
+		const transformedNormal = normalLocal.div(
+			vec3(bm[0].dot(bm[0]), bm[1].dot(bm[1]), bm[2].dot(bm[2]))
+		)
 
-		const batchingNormal = bm.mul( transformedNormal ).xyz;
+		const batchingNormal = bm.mul(transformedNormal).xyz
 
-		normalLocal.assign( batchingNormal );
+		normalLocal.assign(batchingNormal)
 
-		if ( builder.hasGeometryAttribute( 'tangent' ) ) {
-
-			tangentLocal.mulAssign( bm );
-
+		if (builder.hasGeometryAttribute('tangent')) {
+			tangentLocal.mulAssign(bm)
 		}
-
 	}
-
 }
 
-export default BatchNode;
+export default BatchNode
 
 /**
  * TSL function for creating a batch node.
@@ -159,4 +145,4 @@ export default BatchNode;
  * @param {BatchedMesh} batchMesh - A reference to batched mesh.
  * @returns {BatchNode}
  */
-export const batch = /*@__PURE__*/ nodeProxy( BatchNode );
+export const batch = /*@__PURE__*/ nodeProxy(BatchNode)

@@ -1,22 +1,19 @@
-import { EventDispatcher } from '../core/EventDispatcher.js';
+import { EventDispatcher } from '../core/EventDispatcher.js'
 
 class Controls extends EventDispatcher {
+	constructor(object, domElement = null) {
+		super()
 
-	constructor( object, domElement = null ) {
+		this.object = object
+		this.domElement = domElement
 
-		super();
+		this.enabled = true
 
-		this.object = object;
-		this.domElement = domElement;
+		this.state = -1
 
-		this.enabled = true;
-
-		this.state = - 1;
-
-		this.keys = {};
-		this.mouseButtons = { LEFT: null, MIDDLE: null, RIGHT: null };
-		this.touches = { ONE: null, TWO: null };
-
+		this.keys = {}
+		this.mouseButtons = { LEFT: null, MIDDLE: null, RIGHT: null }
+		this.touches = { ONE: null, TWO: null }
 	}
 
 	connect() {}
@@ -25,8 +22,7 @@ class Controls extends EventDispatcher {
 
 	dispose() {}
 
-	update( /* delta */ ) {}
-
+	update(/* delta */) {}
 }
 
-export { Controls };
+export { Controls }

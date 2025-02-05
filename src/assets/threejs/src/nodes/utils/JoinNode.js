@@ -1,4 +1,4 @@
-import TempNode from '../core/TempNode.js';
+import TempNode from '../core/TempNode.js'
 
 /**
  * This module is part of the TSL core and usually not used in app level code.
@@ -8,11 +8,8 @@ import TempNode from '../core/TempNode.js';
  * @augments TempNode
  */
 class JoinNode extends TempNode {
-
 	static get type() {
-
-		return 'JoinNode';
-
+		return 'JoinNode'
 	}
 
 	/**
@@ -21,17 +18,15 @@ class JoinNode extends TempNode {
 	 * @param {Array<Node>} nodes - An array of nodes that should be joined.
 	 * @param {String?} [nodeType=null] - The node type.
 	 */
-	constructor( nodes = [], nodeType = null ) {
-
-		super( nodeType );
+	constructor(nodes = [], nodeType = null) {
+		super(nodeType)
 
 		/**
 		 * An array of nodes that should be joined.
 		 *
 		 * @type {Array<Node>}
 		 */
-		this.nodes = nodes;
-
+		this.nodes = nodes
 	}
 
 	/**
@@ -41,49 +36,49 @@ class JoinNode extends TempNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The node type.
 	 */
-	getNodeType( builder ) {
-
-		if ( this.nodeType !== null ) {
-
-			return builder.getVectorType( this.nodeType );
-
+	getNodeType(builder) {
+		if (this.nodeType !== null) {
+			return builder.getVectorType(this.nodeType)
 		}
 
-		return builder.getTypeFromLength( this.nodes.reduce( ( count, cur ) => count + builder.getTypeLength( cur.getNodeType( builder ) ), 0 ) );
-
+		return builder.getTypeFromLength(
+			this.nodes.reduce(
+				(count, cur) => count + builder.getTypeLength(cur.getNodeType(builder)),
+				0
+			)
+		)
 	}
 
-	generate( builder, output ) {
+	generate(builder, output) {
+		const type = this.getNodeType(builder)
+		const nodes = this.nodes
 
-		const type = this.getNodeType( builder );
-		const nodes = this.nodes;
+		const primitiveType = builder.getComponentType(type)
 
-		const primitiveType = builder.getComponentType( type );
+		const snippetValues = []
 
-		const snippetValues = [];
+		for (const input of nodes) {
+			let inputSnippet = input.build(builder)
 
-		for ( const input of nodes ) {
+			const inputPrimitiveType = builder.getComponentType(
+				input.getNodeType(builder)
+			)
 
-			let inputSnippet = input.build( builder );
-
-			const inputPrimitiveType = builder.getComponentType( input.getNodeType( builder ) );
-
-			if ( inputPrimitiveType !== primitiveType ) {
-
-				inputSnippet = builder.format( inputSnippet, inputPrimitiveType, primitiveType );
-
+			if (inputPrimitiveType !== primitiveType) {
+				inputSnippet = builder.format(
+					inputSnippet,
+					inputPrimitiveType,
+					primitiveType
+				)
 			}
 
-			snippetValues.push( inputSnippet );
-
+			snippetValues.push(inputSnippet)
 		}
 
-		const snippet = `${ builder.getType( type ) }( ${ snippetValues.join( ', ' ) } )`;
+		const snippet = `${builder.getType(type)}( ${snippetValues.join(', ')} )`
 
-		return builder.format( snippet, type, output );
-
+		return builder.format(snippet, type, output)
 	}
-
 }
 
-export default JoinNode;
+export default JoinNode

@@ -1,25 +1,17 @@
-let _context;
+let _context
 
 class AudioContext {
-
 	static getContext() {
-
-		if ( _context === undefined ) {
-
-			_context = new ( window.AudioContext || window.webkitAudioContext )();
-
+		if (_context === undefined) {
+			_context = new (window.AudioContext || window.webkitAudioContext)()
 		}
 
-		return _context;
-
+		return _context
 	}
 
-	static setContext( value ) {
-
-		_context = value;
-
+	static setContext(value) {
+		_context = value
 	}
-
 }
 
-export { AudioContext };
+export { AudioContext }

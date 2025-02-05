@@ -1,5 +1,5 @@
-import Node from './Node.js';
-import { addMethodChaining, nodeProxy } from '../tsl/TSLCore.js';
+import Node from './Node.js'
+import { addMethodChaining, nodeProxy } from '../tsl/TSLCore.js'
 
 /**
  * This node can be used as a context management component for another node.
@@ -12,11 +12,8 @@ import { addMethodChaining, nodeProxy } from '../tsl/TSLCore.js';
  * @augments Node
  */
 class ContextNode extends Node {
-
 	static get type() {
-
-		return 'ContextNode';
-
+		return 'ContextNode'
 	}
 
 	/**
@@ -25,9 +22,8 @@ class ContextNode extends Node {
 	 * @param {Node} node - The node whose context should be modified.
 	 * @param {Object} [value={}] - The modified context data.
 	 */
-	constructor( node, value = {} ) {
-
-		super();
+	constructor(node, value = {}) {
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -36,14 +32,14 @@ class ContextNode extends Node {
 		 * @readonly
 		 * @default true
 		 */
-		this.isContextNode = true;
+		this.isContextNode = true
 
 		/**
 		 * The node whose context should be modified.
 		 *
 		 * @type {Node}
 		 */
-		this.node = node;
+		this.node = node
 
 		/**
 		 * The modified context data.
@@ -51,8 +47,7 @@ class ContextNode extends Node {
 		 * @type {Object}
 		 * @default {}
 		 */
-		this.value = value;
-
+		this.value = value
 	}
 
 	/**
@@ -61,9 +56,7 @@ class ContextNode extends Node {
 	 * @return {Node} A reference to {@link ContextNode#node}.
 	 */
 	getScope() {
-
-		return this.node.getScope();
-
+		return this.node.getScope()
 	}
 
 	/**
@@ -72,49 +65,40 @@ class ContextNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The node type.
 	 */
-	getNodeType( builder ) {
-
-		return this.node.getNodeType( builder );
-
+	getNodeType(builder) {
+		return this.node.getNodeType(builder)
 	}
 
-	analyze( builder ) {
-
-		this.node.build( builder );
-
+	analyze(builder) {
+		this.node.build(builder)
 	}
 
-	setup( builder ) {
+	setup(builder) {
+		const previousContext = builder.getContext()
 
-		const previousContext = builder.getContext();
+		builder.setContext({ ...builder.context, ...this.value })
 
-		builder.setContext( { ...builder.context, ...this.value } );
+		const node = this.node.build(builder)
 
-		const node = this.node.build( builder );
+		builder.setContext(previousContext)
 
-		builder.setContext( previousContext );
-
-		return node;
-
+		return node
 	}
 
-	generate( builder, output ) {
+	generate(builder, output) {
+		const previousContext = builder.getContext()
 
-		const previousContext = builder.getContext();
+		builder.setContext({ ...builder.context, ...this.value })
 
-		builder.setContext( { ...builder.context, ...this.value } );
+		const snippet = this.node.build(builder, output)
 
-		const snippet = this.node.build( builder, output );
+		builder.setContext(previousContext)
 
-		builder.setContext( previousContext );
-
-		return snippet;
-
+		return snippet
 	}
-
 }
 
-export default ContextNode;
+export default ContextNode
 
 /**
  * TSL function for creating a context node.
@@ -124,7 +108,7 @@ export default ContextNode;
  * @param {Object} [value={}] - The modified context data.
  * @returns {ContextNode}
  */
-export const context = /*@__PURE__*/ nodeProxy( ContextNode );
+export const context = /*@__PURE__*/ nodeProxy(ContextNode)
 
 /**
  * TSL function for defining a label context value for a given node.
@@ -134,7 +118,7 @@ export const context = /*@__PURE__*/ nodeProxy( ContextNode );
  * @param {String} name - The name/label to set.
  * @returns {ContextNode}
  */
-export const label = ( node, name ) => context( node, { label: name } );
+export const label = (node, name) => context(node, { label: name })
 
-addMethodChaining( 'context', context );
-addMethodChaining( 'label', label );
+addMethodChaining('context', context)
+addMethodChaining('label', label)

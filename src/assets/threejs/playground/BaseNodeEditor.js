@@ -1,199 +1,165 @@
-import { Node, ButtonInput, TitleElement, ContextMenu } from 'flow';
-import { exportJSON, onValidNode } from './NodeEditorUtils.js';
-import { setOutputAestheticsFromNode, getColorFromNode, getLengthFromNode } from './DataTypeLib.js';
+import { Node, ButtonInput, TitleElement, ContextMenu } from 'flow'
+import { exportJSON, onValidNode } from './NodeEditorUtils.js'
+import {
+	setOutputAestheticsFromNode,
+	getColorFromNode,
+	getLengthFromNode
+} from './DataTypeLib.js'
 
 export class BaseNodeEditor extends Node {
+	constructor(name, value = null, width = 300) {
+		super()
 
-	constructor( name, value = null, width = 300 ) {
+		const getObjectCallback = (/*output = null*/) => {
+			return this.value
+		}
 
-		super();
+		this.setWidth(width)
 
-		const getObjectCallback = ( /*output = null*/ ) => {
+		const title = new TitleElement(name)
+			.setObjectCallback(getObjectCallback)
+			.setSerializable(false)
 
-			return this.value;
+		setOutputAestheticsFromNode(title, value)
 
-		};
-
-		this.setWidth( width );
-
-		const title = new TitleElement( name )
-			.setObjectCallback( getObjectCallback )
-			.setSerializable( false );
-
-		setOutputAestheticsFromNode( title, value );
-
-		const contextButton = new ButtonInput().onClick( () => {
-
-			context.open();
-
-		} ).setIcon( 'ti ti-dots' );
+		const contextButton = new ButtonInput()
+			.onClick(() => {
+				context.open()
+			})
+			.setIcon('ti ti-dots')
 
 		const onAddButtons = () => {
+			context.removeEventListener('show', onAddButtons)
 
-			context.removeEventListener( 'show', onAddButtons );
+			context.add(
+				new ButtonInput('Remove').setIcon('ti ti-trash').onClick(() => {
+					this.dispose()
+				})
+			)
 
-			context.add( new ButtonInput( 'Remove' ).setIcon( 'ti ti-trash' ).onClick( () => {
-
-				this.dispose();
-
-			} ) );
-
-			if ( this.hasJSON() ) {
-
-				this.context.add( new ButtonInput( 'Export' ).setIcon( 'ti ti-download' ).onClick( () => {
-
-					exportJSON( this.exportJSON(), this.constructor.name );
-
-				} ) );
-
+			if (this.hasJSON()) {
+				this.context.add(
+					new ButtonInput('Export').setIcon('ti ti-download').onClick(() => {
+						exportJSON(this.exportJSON(), this.constructor.name)
+					})
+				)
 			}
 
-			context.add( new ButtonInput( 'Isolate' ).setIcon( 'ti ti-3d-cube-sphere' ).onClick( () => {
+			context.add(
+				new ButtonInput('Isolate')
+					.setIcon('ti ti-3d-cube-sphere')
+					.onClick(() => {
+						this.context.hide()
 
-				this.context.hide();
+						this.title.dom.dispatchEvent(new MouseEvent('dblclick'))
+					})
+			)
+		}
 
-				this.title.dom.dispatchEvent( new MouseEvent( 'dblclick' ) );
+		const context = new ContextMenu(this.dom)
+		context.addEventListener('show', onAddButtons)
 
-			} ) );
+		this.title = title
 
-		};
+		if (this.icon) this.setIcon('ti ti-' + this.icon)
 
-		const context = new ContextMenu( this.dom );
-		context.addEventListener( 'show', onAddButtons );
+		this.contextButton = contextButton
+		this.context = context
 
-		this.title = title;
+		title.addButton(contextButton)
 
-		if ( this.icon ) this.setIcon( 'ti ti-' + this.icon );
+		this.add(title)
 
-		this.contextButton = contextButton;
-		this.context = context;
+		this.editor = null
 
-		title.addButton( contextButton );
+		this.value = value
 
-		this.add( title );
+		this.onValidElement = onValidNode
 
-		this.editor = null;
-
-		this.value = value;
-
-		this.onValidElement = onValidNode;
-
-		this.outputLength = getLengthFromNode( value );
-
+		this.outputLength = getLengthFromNode(value)
 	}
 
 	getColor() {
+		const color = getColorFromNode(this.value)
 
-		const color = getColorFromNode( this.value );
-
-		return color ? color + 'BB' : null;
-
+		return color ? color + 'BB' : null
 	}
 
 	hasJSON() {
-
-		return this.value && typeof this.value.toJSON === 'function';
-
+		return this.value && typeof this.value.toJSON === 'function'
 	}
 
 	exportJSON() {
-
-		return this.value.toJSON();
-
+		return this.value.toJSON()
 	}
 
-	serialize( data ) {
+	serialize(data) {
+		super.serialize(data)
 
-		super.serialize( data );
-
-		delete data.width;
-
+		delete data.width
 	}
 
-	deserialize( data ) {
+	deserialize(data) {
+		delete data.width
 
-		delete data.width;
-
-		super.deserialize( data );
-
+		super.deserialize(data)
 	}
 
-	setEditor( value ) {
+	setEditor(value) {
+		this.editor = value
 
-		this.editor = value;
+		this.dispatchEvent(new Event('editor'))
 
-		this.dispatchEvent( new Event( 'editor' ) );
-
-		return this;
-
+		return this
 	}
 
-	add( element ) {
+	add(element) {
+		element.onValid((source, target) => this.onValidElement(source, target))
 
-		element.onValid( ( source, target ) => this.onValidElement( source, target ) );
-
-		return super.add( element );
-
+		return super.add(element)
 	}
 
-	setName( value ) {
+	setName(value) {
+		this.title.setTitle(value)
 
-		this.title.setTitle( value );
-
-		return this;
-
+		return this
 	}
 
-	setIcon( value ) {
+	setIcon(value) {
+		this.title.setIcon('ti ti-' + value)
 
-		this.title.setIcon( 'ti ti-' + value );
-
-		return this;
-
+		return this
 	}
 
 	getName() {
-
-		return this.title.getTitle();
-
+		return this.title.getTitle()
 	}
 
-	setObjectCallback( callback ) {
+	setObjectCallback(callback) {
+		this.title.setObjectCallback(callback)
 
-		this.title.setObjectCallback( callback );
-
-		return this;
-
+		return this
 	}
 
-	getObject( callback ) {
-
-		return this.title.getObject( callback );
-
+	getObject(callback) {
+		return this.title.getObject(callback)
 	}
 
-	setColor( color ) {
+	setColor(color) {
+		this.title.setColor(color)
 
-		this.title.setColor( color );
-
-		return this;
-
+		return this
 	}
 
 	invalidate() {
-
-		this.title.dispatchEvent( new Event( 'connect' ) );
-
+		this.title.dispatchEvent(new Event('connect'))
 	}
 
 	dispose() {
+		this.setEditor(null)
 
-		this.setEditor( null );
+		this.context.hide()
 
-		this.context.hide();
-
-		super.dispose();
-
+		super.dispose()
 	}
-
 }

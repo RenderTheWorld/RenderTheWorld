@@ -1,4 +1,4 @@
-import { RenderTarget } from '../../core/RenderTarget.js';
+import { RenderTarget } from '../../core/RenderTarget.js'
 
 /**
  * A special type of render target that is used when rendering
@@ -8,7 +8,6 @@ import { RenderTarget } from '../../core/RenderTarget.js';
  * @augments RenderTarget
  */
 class XRRenderTarget extends RenderTarget {
-
 	/**
 	 * Constructs a new XR render target.
 	 *
@@ -16,9 +15,8 @@ class XRRenderTarget extends RenderTarget {
 	 * @param {Number} [height=1] - The height of the render target.
 	 * @param {Object} [options={}] - The configuration options.
 	 */
-	constructor( width = 1, height = 1, options = {} ) {
-
-		super( width, height, options );
+	constructor(width = 1, height = 1, options = {}) {
+		super(width, height, options)
 
 		/**
 		 * This flag can be used for type testing.
@@ -27,7 +25,7 @@ class XRRenderTarget extends RenderTarget {
 		 * @readonly
 		 * @default true
 		 */
-		this.isXRRenderTarget = true;
+		this.isXRRenderTarget = true
 
 		/**
 		 * Whether the attachments of the render target
@@ -37,7 +35,7 @@ class XRRenderTarget extends RenderTarget {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.hasExternalTextures = false;
+		this.hasExternalTextures = false
 
 		/**
 		 * Whether a depth buffer should automatically be allocated
@@ -53,22 +51,17 @@ class XRRenderTarget extends RenderTarget {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.autoAllocateDepthBuffer = true;
-
+		this.autoAllocateDepthBuffer = true
 	}
 
-	copy( source ) {
+	copy(source) {
+		super.copy(source)
 
-		super.copy( source );
+		this.hasExternalTextures = source.hasExternalTextures
+		this.autoAllocateDepthBuffer = source.autoAllocateDepthBuffer
 
-		this.hasExternalTextures = source.hasExternalTextures;
-		this.autoAllocateDepthBuffer = source.autoAllocateDepthBuffer;
-
-		return this;
-
+		return this
 	}
-
-
 }
 
-export { XRRenderTarget };
+export { XRRenderTarget }

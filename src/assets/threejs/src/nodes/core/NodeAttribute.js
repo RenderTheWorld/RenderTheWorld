@@ -5,7 +5,6 @@
  * and {@link NodeBuilder#bufferAttributes} for this purpose.
  */
 class NodeAttribute {
-
 	/**
 	 * Constructs a new node attribute.
 	 *
@@ -13,8 +12,7 @@ class NodeAttribute {
 	 * @param {String} type - The type of the attribute.
 	 * @param {Node?} node - An optional reference to the node.
 	 */
-	constructor( name, type, node = null ) {
-
+	constructor(name, type, node = null) {
 		/**
 		 * This flag can be used for type testing.
 		 *
@@ -22,21 +20,21 @@ class NodeAttribute {
 		 * @readonly
 		 * @default true
 		 */
-		this.isNodeAttribute = true;
+		this.isNodeAttribute = true
 
 		/**
 		 * The name of the attribute.
 		 *
 		 * @type {String}
 		 */
-		this.name = name;
+		this.name = name
 
 		/**
 		 * The type of the attribute.
 		 *
 		 * @type {String}
 		 */
-		this.type = type;
+		this.type = type
 
 		/**
 		 * An optional reference to the node.
@@ -44,10 +42,8 @@ class NodeAttribute {
 		 * @type {Node?}
 		 * @default null
 		 */
-		this.node = node;
-
+		this.node = node
 	}
-
 }
 
-export default NodeAttribute;
+export default NodeAttribute

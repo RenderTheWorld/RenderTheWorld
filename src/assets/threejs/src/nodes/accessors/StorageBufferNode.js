@@ -1,9 +1,9 @@
-import BufferNode from './BufferNode.js';
-import { bufferAttribute } from './BufferAttributeNode.js';
-import { nodeObject, varying } from '../tsl/TSLBase.js';
-import { storageElement } from '../utils/StorageArrayElementNode.js';
-import { NodeAccess } from '../core/constants.js';
-import { getTypeFromLength } from '../core/NodeUtils.js';
+import BufferNode from './BufferNode.js'
+import { bufferAttribute } from './BufferAttributeNode.js'
+import { nodeObject, varying } from '../tsl/TSLBase.js'
+import { storageElement } from '../utils/StorageArrayElementNode.js'
+import { NodeAccess } from '../core/constants.js'
+import { getTypeFromLength } from '../core/NodeUtils.js'
 
 /**
  * This node is used in context of compute shaders and allows to define a
@@ -37,11 +37,8 @@ import { getTypeFromLength } from '../core/NodeUtils.js';
  * @augments BufferNode
  */
 class StorageBufferNode extends BufferNode {
-
 	static get type() {
-
-		return 'StorageBufferNode';
-
+		return 'StorageBufferNode'
 	}
 
 	/**
@@ -51,27 +48,25 @@ class StorageBufferNode extends BufferNode {
 	 * @param {(String|Struct)?} [bufferType=null] - The buffer type (e.g. `'vec3'`).
 	 * @param {Number} [bufferCount=0] - The buffer count.
 	 */
-	constructor( value, bufferType = null, bufferCount = 0 ) {
+	constructor(value, bufferType = null, bufferCount = 0) {
+		let nodeType,
+			structTypeNode = null
 
-		let nodeType, structTypeNode = null;
-
-		if ( bufferType && bufferType.isStruct ) {
-
-			nodeType = 'struct';
-			structTypeNode = bufferType.layout;
-
-		} else if ( bufferType === null && ( value.isStorageBufferAttribute || value.isStorageInstancedBufferAttribute ) ) {
-
-			nodeType = getTypeFromLength( value.itemSize );
-			bufferCount = value.count;
-
+		if (bufferType && bufferType.isStruct) {
+			nodeType = 'struct'
+			structTypeNode = bufferType.layout
+		} else if (
+			bufferType === null &&
+			(value.isStorageBufferAttribute ||
+				value.isStorageInstancedBufferAttribute)
+		) {
+			nodeType = getTypeFromLength(value.itemSize)
+			bufferCount = value.count
 		} else {
-
-			nodeType = bufferType;
-
+			nodeType = bufferType
 		}
 
-		super( value, nodeType, bufferCount );
+		super(value, nodeType, bufferCount)
 
 		/**
 		 * This flag can be used for type testing.
@@ -80,8 +75,7 @@ class StorageBufferNode extends BufferNode {
 		 * @readonly
 		 * @default true
 		 */
-		this.isStorageBufferNode = true;
-
+		this.isStorageBufferNode = true
 
 		/**
 		 * The buffer struct type.
@@ -89,7 +83,7 @@ class StorageBufferNode extends BufferNode {
 		 * @type {structTypeNode?}
 		 * @default null
 		 */
-		this.structTypeNode = structTypeNode;
+		this.structTypeNode = structTypeNode
 
 		/**
 		 * The access type of the texture node.
@@ -97,7 +91,7 @@ class StorageBufferNode extends BufferNode {
 		 * @type {String}
 		 * @default 'readWrite'
 		 */
-		this.access = NodeAccess.READ_WRITE;
+		this.access = NodeAccess.READ_WRITE
 
 		/**
 		 * Whether the node is atomic or not.
@@ -105,7 +99,7 @@ class StorageBufferNode extends BufferNode {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.isAtomic = false;
+		this.isAtomic = false
 
 		/**
 		 * Whether the node represents a PBO or not.
@@ -114,7 +108,7 @@ class StorageBufferNode extends BufferNode {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.isPBO = false;
+		this.isPBO = false
 
 		/**
 		 * A reference to the internal buffer attribute node.
@@ -122,7 +116,7 @@ class StorageBufferNode extends BufferNode {
 		 * @type {BufferAttributeNode?}
 		 * @default null
 		 */
-		this._attribute = null;
+		this._attribute = null
 
 		/**
 		 * A reference to the internal varying node.
@@ -130,7 +124,7 @@ class StorageBufferNode extends BufferNode {
 		 * @type {VaryingNode?}
 		 * @default null
 		 */
-		this._varying = null;
+		this._varying = null
 
 		/**
 		 * `StorageBufferNode` sets this property to `true` by default.
@@ -138,17 +132,18 @@ class StorageBufferNode extends BufferNode {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.global = true;
+		this.global = true
 
-		if ( value.isStorageBufferAttribute !== true && value.isStorageInstancedBufferAttribute !== true ) {
-
+		if (
+			value.isStorageBufferAttribute !== true &&
+			value.isStorageInstancedBufferAttribute !== true
+		) {
 			// TODO: Improve it, possibly adding a new property to the BufferAttribute to identify it as a storage buffer read-only attribute in Renderer
 
-			if ( value.isInstancedBufferAttribute ) value.isStorageInstancedBufferAttribute = true;
-			else value.isStorageBufferAttribute = true;
-
+			if (value.isInstancedBufferAttribute)
+				value.isStorageInstancedBufferAttribute = true
+			else value.isStorageBufferAttribute = true
 		}
-
 	}
 
 	/**
@@ -158,28 +153,22 @@ class StorageBufferNode extends BufferNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The hash.
 	 */
-	getHash( builder ) {
+	getHash(builder) {
+		if (this.bufferCount === 0) {
+			let bufferData = builder.globalCache.getData(this.value)
 
-		if ( this.bufferCount === 0 ) {
-
-			let bufferData = builder.globalCache.getData( this.value );
-
-			if ( bufferData === undefined ) {
-
+			if (bufferData === undefined) {
 				bufferData = {
 					node: this
-				};
+				}
 
-				builder.globalCache.setData( this.value, bufferData );
-
+				builder.globalCache.setData(this.value, bufferData)
 			}
 
-			return bufferData.node.uuid;
-
+			return bufferData.node.uuid
 		}
 
-		return this.uuid;
-
+		return this.uuid
 	}
 
 	/**
@@ -188,10 +177,10 @@ class StorageBufferNode extends BufferNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The input type.
 	 */
-	getInputType( /*builder*/ ) {
-
-		return this.value.isIndirectStorageBufferAttribute ? 'indirectStorageBuffer' : 'storageBuffer';
-
+	getInputType(/*builder*/) {
+		return this.value.isIndirectStorageBufferAttribute
+			? 'indirectStorageBuffer'
+			: 'storageBuffer'
 	}
 
 	/**
@@ -200,10 +189,8 @@ class StorageBufferNode extends BufferNode {
 	 * @param {IndexNode} indexNode - The index node.
 	 * @return {StorageArrayElementNode} A node representing the element access.
 	 */
-	element( indexNode ) {
-
-		return storageElement( this, indexNode );
-
+	element(indexNode) {
+		return storageElement(this, indexNode)
 	}
 
 	/**
@@ -212,12 +199,10 @@ class StorageBufferNode extends BufferNode {
 	 * @param {Boolean} value - The value so set.
 	 * @return {StorageBufferNode} A reference to this node.
 	 */
-	setPBO( value ) {
+	setPBO(value) {
+		this.isPBO = value
 
-		this.isPBO = value;
-
-		return this;
-
+		return this
 	}
 
 	/**
@@ -226,9 +211,7 @@ class StorageBufferNode extends BufferNode {
 	 * @return {Boolean} Whether the node represents a PBO or not.
 	 */
 	getPBO() {
-
-		return this.isPBO;
-
+		return this.isPBO
 	}
 
 	/**
@@ -237,12 +220,10 @@ class StorageBufferNode extends BufferNode {
 	 * @param {String} value - The node access.
 	 * @return {StorageBufferNode} A reference to this node.
 	 */
-	setAccess( value ) {
+	setAccess(value) {
+		this.access = value
 
-		this.access = value;
-
-		return this;
-
+		return this
 	}
 
 	/**
@@ -251,9 +232,7 @@ class StorageBufferNode extends BufferNode {
 	 * @return {StorageBufferNode} A reference to this node.
 	 */
 	toReadOnly() {
-
-		return this.setAccess( NodeAccess.READ_ONLY );
-
+		return this.setAccess(NodeAccess.READ_ONLY)
 	}
 
 	/**
@@ -262,12 +241,10 @@ class StorageBufferNode extends BufferNode {
 	 * @param {Boolean} value - The atomic flag.
 	 * @return {StorageBufferNode} A reference to this node.
 	 */
-	setAtomic( value ) {
+	setAtomic(value) {
+		this.isAtomic = value
 
-		this.isAtomic = value;
-
-		return this;
-
+		return this
 	}
 
 	/**
@@ -276,9 +253,7 @@ class StorageBufferNode extends BufferNode {
 	 * @return {StorageBufferNode} A reference to this node.
 	 */
 	toAtomic() {
-
-		return this.setAtomic( true );
-
+		return this.setAtomic(true)
 	}
 
 	/**
@@ -287,19 +262,15 @@ class StorageBufferNode extends BufferNode {
 	 * @return {{attribute: BufferAttributeNode, varying: VaryingNode}} The attribute data.
 	 */
 	getAttributeData() {
-
-		if ( this._attribute === null ) {
-
-			this._attribute = bufferAttribute( this.value );
-			this._varying = varying( this._attribute );
-
+		if (this._attribute === null) {
+			this._attribute = bufferAttribute(this.value)
+			this._varying = varying(this._attribute)
 		}
 
 		return {
 			attribute: this._attribute,
 			varying: this._varying
-		};
-
+		}
 	}
 
 	/**
@@ -309,24 +280,21 @@ class StorageBufferNode extends BufferNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The node type.
 	 */
-	getNodeType( builder ) {
-
-		if ( this.structTypeNode !== null ) {
-
-			return this.structTypeNode.getNodeType( builder );
-
+	getNodeType(builder) {
+		if (this.structTypeNode !== null) {
+			return this.structTypeNode.getNodeType(builder)
 		}
 
-		if ( builder.isAvailable( 'storageBuffer' ) || builder.isAvailable( 'indirectStorageBuffer' ) ) {
-
-			return super.getNodeType( builder );
-
+		if (
+			builder.isAvailable('storageBuffer') ||
+			builder.isAvailable('indirectStorageBuffer')
+		) {
+			return super.getNodeType(builder)
 		}
 
-		const { attribute } = this.getAttributeData();
+		const { attribute } = this.getAttributeData()
 
-		return attribute.getNodeType( builder );
-
+		return attribute.getNodeType(builder)
 	}
 
 	/**
@@ -335,29 +303,27 @@ class StorageBufferNode extends BufferNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The generated code snippet.
 	 */
-	generate( builder ) {
+	generate(builder) {
+		if (this.structTypeNode !== null) this.structTypeNode.build(builder)
 
-		if ( this.structTypeNode !== null ) this.structTypeNode.build( builder );
-
-		if ( builder.isAvailable( 'storageBuffer' ) || builder.isAvailable( 'indirectStorageBuffer' ) ) {
-
-			return super.generate( builder );
-
+		if (
+			builder.isAvailable('storageBuffer') ||
+			builder.isAvailable('indirectStorageBuffer')
+		) {
+			return super.generate(builder)
 		}
 
-		const { attribute, varying } = this.getAttributeData();
+		const { attribute, varying } = this.getAttributeData()
 
-		const output = varying.build( builder );
+		const output = varying.build(builder)
 
-		builder.registerTransform( output, attribute );
+		builder.registerTransform(output, attribute)
 
-		return output;
-
+		return output
 	}
-
 }
 
-export default StorageBufferNode;
+export default StorageBufferNode
 
 /**
  * TSL function for creating a storage buffer node.
@@ -368,7 +334,8 @@ export default StorageBufferNode;
  * @param {Number} [count=0] - The buffer count.
  * @returns {StorageBufferNode}
  */
-export const storage = ( value, type = null, count = 0 ) => nodeObject( new StorageBufferNode( value, type, count ) );
+export const storage = (value, type = null, count = 0) =>
+	nodeObject(new StorageBufferNode(value, type, count))
 
 /**
  * @function
@@ -379,10 +346,12 @@ export const storage = ( value, type = null, count = 0 ) => nodeObject( new Stor
  * @param {Number} count - The buffer count.
  * @returns {StorageBufferNode}
  */
-export const storageObject = ( value, type, count ) => { // @deprecated, r171
+export const storageObject = (value, type, count) => {
+	// @deprecated, r171
 
-	console.warn( 'THREE.TSL: "storageObject()" is deprecated. Use "storage().setPBO( true )" instead.' );
+	console.warn(
+		'THREE.TSL: "storageObject()" is deprecated. Use "storage().setPBO( true )" instead.'
+	)
 
-	return storage( value, type, count ).setPBO( true );
-
-};
+	return storage(value, type, count).setPBO(true)
+}

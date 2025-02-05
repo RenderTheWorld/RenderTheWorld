@@ -1,13 +1,13 @@
-import NodeMaterial from './NodeMaterial.js';
-import { materialReference } from '../../nodes/accessors/MaterialReferenceNode.js';
-import { diffuseColor } from '../../nodes/core/PropertyNode.js';
-import { vec3 } from '../../nodes/tsl/TSLBase.js';
-import { mix } from '../../nodes/math/MathNode.js';
-import { matcapUV } from '../../nodes/utils/MatcapUVNode.js';
+import NodeMaterial from './NodeMaterial.js'
+import { materialReference } from '../../nodes/accessors/MaterialReferenceNode.js'
+import { diffuseColor } from '../../nodes/core/PropertyNode.js'
+import { vec3 } from '../../nodes/tsl/TSLBase.js'
+import { mix } from '../../nodes/math/MathNode.js'
+import { matcapUV } from '../../nodes/utils/MatcapUVNode.js'
 
-import { MeshMatcapMaterial } from '../MeshMatcapMaterial.js';
+import { MeshMatcapMaterial } from '../MeshMatcapMaterial.js'
 
-const _defaultValues = /*@__PURE__*/ new MeshMatcapMaterial();
+const _defaultValues = /*@__PURE__*/ new MeshMatcapMaterial()
 
 /**
  * Node material version of `MeshMatcapMaterial`.
@@ -15,11 +15,8 @@ const _defaultValues = /*@__PURE__*/ new MeshMatcapMaterial();
  * @augments NodeMaterial
  */
 class MeshMatcapNodeMaterial extends NodeMaterial {
-
 	static get type() {
-
-		return 'MeshMatcapNodeMaterial';
-
+		return 'MeshMatcapNodeMaterial'
 	}
 
 	/**
@@ -27,9 +24,8 @@ class MeshMatcapNodeMaterial extends NodeMaterial {
 	 *
 	 * @param {Object?} parameters - The configuration parameter.
 	 */
-	constructor( parameters ) {
-
-		super();
+	constructor(parameters) {
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -38,12 +34,11 @@ class MeshMatcapNodeMaterial extends NodeMaterial {
 		 * @readonly
 		 * @default true
 		 */
-		this.isMeshMatcapNodeMaterial = true;
+		this.isMeshMatcapNodeMaterial = true
 
-		this.setDefaultValues( _defaultValues );
+		this.setDefaultValues(_defaultValues)
 
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
 	/**
@@ -51,27 +46,21 @@ class MeshMatcapNodeMaterial extends NodeMaterial {
 	 *
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	setupVariants( builder ) {
+	setupVariants(builder) {
+		const uv = matcapUV
 
-		const uv = matcapUV;
+		let matcapColor
 
-		let matcapColor;
-
-		if ( builder.material.matcap ) {
-
-			matcapColor = materialReference( 'matcap', 'texture' ).context( { getUV: () => uv } );
-
+		if (builder.material.matcap) {
+			matcapColor = materialReference('matcap', 'texture').context({
+				getUV: () => uv
+			})
 		} else {
-
-			matcapColor = vec3( mix( 0.2, 0.8, uv.y ) ); // default if matcap is missing
-
+			matcapColor = vec3(mix(0.2, 0.8, uv.y)) // default if matcap is missing
 		}
 
-		diffuseColor.rgb.mulAssign( matcapColor.rgb );
-
+		diffuseColor.rgb.mulAssign(matcapColor.rgb)
 	}
-
 }
 
-
-export default MeshMatcapNodeMaterial;
+export default MeshMatcapNodeMaterial

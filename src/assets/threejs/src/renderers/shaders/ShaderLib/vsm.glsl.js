@@ -1,12 +1,12 @@
-export const vertex = /* glsl */`
+export const vertex = /* glsl */ `
 void main() {
 
 	gl_Position = vec4( position, 1.0 );
 
 }
-`;
+`
 
-export const fragment = /* glsl */`
+export const fragment = /* glsl */ `
 uniform sampler2D shadow_pass;
 uniform vec2 resolution;
 uniform float radius;
@@ -50,4 +50,4 @@ void main() {
 	gl_FragColor = pack2HalfToRGBA( vec2( mean, std_dev ) );
 
 }
-`;
+`

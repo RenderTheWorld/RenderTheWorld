@@ -1,25 +1,19 @@
-import { SpotLight } from '../SpotLight.js';
+import { SpotLight } from '../SpotLight.js'
 
 class IESSpotLight extends SpotLight {
+	constructor(color, intensity, distance, angle, penumbra, decay) {
+		super(color, intensity, distance, angle, penumbra, decay)
 
-	constructor( color, intensity, distance, angle, penumbra, decay ) {
-
-		super( color, intensity, distance, angle, penumbra, decay );
-
-		this.iesMap = null;
-
+		this.iesMap = null
 	}
 
-	copy( source, recursive ) {
+	copy(source, recursive) {
+		super.copy(source, recursive)
 
-		super.copy( source, recursive );
+		this.iesMap = source.iesMap
 
-		this.iesMap = source.iesMap;
-
-		return this;
-
+		return this
 	}
-
 }
 
-export default IESSpotLight;
+export default IESSpotLight

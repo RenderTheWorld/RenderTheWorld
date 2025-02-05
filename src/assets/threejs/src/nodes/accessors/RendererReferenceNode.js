@@ -1,6 +1,6 @@
-import ReferenceBaseNode from './ReferenceBaseNode.js';
-import { nodeObject } from '../tsl/TSLCore.js';
-import { renderGroup } from '../core/UniformGroupNode.js';
+import ReferenceBaseNode from './ReferenceBaseNode.js'
+import { nodeObject } from '../tsl/TSLCore.js'
+import { renderGroup } from '../core/UniformGroupNode.js'
 
 /**
  * This node is a special type of reference node which is intended
@@ -14,11 +14,8 @@ import { renderGroup } from '../core/UniformGroupNode.js';
  * @augments ReferenceBaseNode
  */
 class RendererReferenceNode extends ReferenceBaseNode {
-
 	static get type() {
-
-		return 'RendererReferenceNode';
-
+		return 'RendererReferenceNode'
 	}
 
 	/**
@@ -29,9 +26,8 @@ class RendererReferenceNode extends ReferenceBaseNode {
 	 * @param {Renderer?} [renderer=null] - The renderer the property belongs to. When no renderer is set,
 	 * the node refers to the renderer of the current state.
 	 */
-	constructor( property, inputType, renderer = null ) {
-
-		super( property, inputType, renderer );
+	constructor(property, inputType, renderer = null) {
+		super(property, inputType, renderer)
 
 		/**
 		 * The renderer the property belongs to. When no renderer is set,
@@ -40,10 +36,9 @@ class RendererReferenceNode extends ReferenceBaseNode {
 		 * @type {Renderer?}
 		 * @default null
 		 */
-		this.renderer = renderer;
+		this.renderer = renderer
 
-		this.setGroup( renderGroup );
-
+		this.setGroup(renderGroup)
 	}
 
 	/**
@@ -53,17 +48,14 @@ class RendererReferenceNode extends ReferenceBaseNode {
 	 * @param {(NodeFrame|NodeBuilder)} state - The current state.
 	 * @return {Object} The updated reference.
 	 */
-	updateReference( state ) {
+	updateReference(state) {
+		this.reference = this.renderer !== null ? this.renderer : state.renderer
 
-		this.reference = this.renderer !== null ? this.renderer : state.renderer;
-
-		return this.reference;
-
+		return this.reference
 	}
-
 }
 
-export default RendererReferenceNode;
+export default RendererReferenceNode
 
 /**
  * TSL function for creating a renderer reference node.
@@ -75,4 +67,5 @@ export default RendererReferenceNode;
  * the node refers to the renderer of the current state.
  * @returns {RendererReferenceNode}
  */
-export const rendererReference = ( name, type, renderer = null ) => nodeObject( new RendererReferenceNode( name, type, renderer ) );
+export const rendererReference = (name, type, renderer = null) =>
+	nodeObject(new RendererReferenceNode(name, type, renderer))

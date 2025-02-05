@@ -1,6 +1,6 @@
-import TextureNode from './TextureNode.js';
-import { nodeProxy } from '../tsl/TSLBase.js';
-import { NodeAccess } from '../core/constants.js';
+import TextureNode from './TextureNode.js'
+import { nodeProxy } from '../tsl/TSLBase.js'
+import { NodeAccess } from '../core/constants.js'
 
 /**
  * This special version of a texture node can be used to
@@ -34,11 +34,8 @@ import { NodeAccess } from '../core/constants.js';
  * @augments TextureNode
  */
 class StorageTextureNode extends TextureNode {
-
 	static get type() {
-
-		return 'StorageTextureNode';
-
+		return 'StorageTextureNode'
 	}
 
 	/**
@@ -48,9 +45,8 @@ class StorageTextureNode extends TextureNode {
 	 * @param {Node<vec2|vec3>} uvNode - The uv node.
 	 * @param {Node?} [storeNode=null] - The value node that should be stored in the texture.
 	 */
-	constructor( value, uvNode, storeNode = null ) {
-
-		super( value, uvNode );
+	constructor(value, uvNode, storeNode = null) {
+		super(value, uvNode)
 
 		/**
 		 * The value node that should be stored in the texture.
@@ -58,7 +54,7 @@ class StorageTextureNode extends TextureNode {
 		 * @type {Node?}
 		 * @default null
 		 */
-		this.storeNode = storeNode;
+		this.storeNode = storeNode
 
 		/**
 		 * This flag can be used for type testing.
@@ -67,7 +63,7 @@ class StorageTextureNode extends TextureNode {
 		 * @readonly
 		 * @default true
 		 */
-		this.isStorageTextureNode = true;
+		this.isStorageTextureNode = true
 
 		/**
 		 * The access type of the texture node.
@@ -75,8 +71,7 @@ class StorageTextureNode extends TextureNode {
 		 * @type {String}
 		 * @default 'writeOnly'
 		 */
-		this.access = NodeAccess.WRITE_ONLY;
-
+		this.access = NodeAccess.WRITE_ONLY
 	}
 
 	/**
@@ -85,19 +80,15 @@ class StorageTextureNode extends TextureNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The input type.
 	 */
-	getInputType( /*builder*/ ) {
-
-		return 'storageTexture';
-
+	getInputType(/*builder*/) {
+		return 'storageTexture'
 	}
 
-	setup( builder ) {
+	setup(builder) {
+		super.setup(builder)
 
-		super.setup( builder );
-
-		const properties = builder.getNodeProperties( this );
-		properties.storeNode = this.storeNode;
-
+		const properties = builder.getNodeProperties(this)
+		properties.storeNode = this.storeNode
 	}
 
 	/**
@@ -106,11 +97,9 @@ class StorageTextureNode extends TextureNode {
 	 * @param {String} value - The node access.
 	 * @return {StorageTextureNode} A reference to this node.
 	 */
-	setAccess( value ) {
-
-		this.access = value;
-		return this;
-
+	setAccess(value) {
+		this.access = value
+		return this
 	}
 
 	/**
@@ -121,22 +110,16 @@ class StorageTextureNode extends TextureNode {
 	 * @param {String} output - The current output.
 	 * @return {String} The generated code snippet.
 	 */
-	generate( builder, output ) {
+	generate(builder, output) {
+		let snippet
 
-		let snippet;
-
-		if ( this.storeNode !== null ) {
-
-			snippet = this.generateStore( builder );
-
+		if (this.storeNode !== null) {
+			snippet = this.generateStore(builder)
 		} else {
-
-			snippet = super.generate( builder, output );
-
+			snippet = super.generate(builder, output)
 		}
 
-		return snippet;
-
+		return snippet
 	}
 
 	/**
@@ -145,9 +128,7 @@ class StorageTextureNode extends TextureNode {
 	 * @return {StorageTextureNode} A reference to this node.
 	 */
 	toReadWrite() {
-
-		return this.setAccess( NodeAccess.READ_WRITE );
-
+		return this.setAccess(NodeAccess.READ_WRITE)
 	}
 
 	/**
@@ -156,9 +137,7 @@ class StorageTextureNode extends TextureNode {
 	 * @return {StorageTextureNode} A reference to this node.
 	 */
 	toReadOnly() {
-
-		return this.setAccess( NodeAccess.READ_ONLY );
-
+		return this.setAccess(NodeAccess.READ_ONLY)
 	}
 
 	/**
@@ -167,9 +146,7 @@ class StorageTextureNode extends TextureNode {
 	 * @return {StorageTextureNode} A reference to this node.
 	 */
 	toWriteOnly() {
-
-		return this.setAccess( NodeAccess.WRITE_ONLY );
-
+		return this.setAccess(NodeAccess.WRITE_ONLY)
 	}
 
 	/**
@@ -177,25 +154,27 @@ class StorageTextureNode extends TextureNode {
 	 *
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	generateStore( builder ) {
+	generateStore(builder) {
+		const properties = builder.getNodeProperties(this)
 
-		const properties = builder.getNodeProperties( this );
+		const { uvNode, storeNode } = properties
 
-		const { uvNode, storeNode } = properties;
+		const textureProperty = super.generate(builder, 'property')
+		const uvSnippet = uvNode.build(builder, 'uvec2')
+		const storeSnippet = storeNode.build(builder, 'vec4')
 
-		const textureProperty = super.generate( builder, 'property' );
-		const uvSnippet = uvNode.build( builder, 'uvec2' );
-		const storeSnippet = storeNode.build( builder, 'vec4' );
+		const snippet = builder.generateTextureStore(
+			builder,
+			textureProperty,
+			uvSnippet,
+			storeSnippet
+		)
 
-		const snippet = builder.generateTextureStore( builder, textureProperty, uvSnippet, storeSnippet );
-
-		builder.addLineFlowCode( snippet, this );
-
+		builder.addLineFlowCode(snippet, this)
 	}
-
 }
 
-export default StorageTextureNode;
+export default StorageTextureNode
 
 /**
  * TSL function for creating a storage texture node.
@@ -206,8 +185,7 @@ export default StorageTextureNode;
  * @param {Node?} [storeNode=null] - The value node that should be stored in the texture.
  * @returns {StorageTextureNode}
  */
-export const storageTexture = /*@__PURE__*/ nodeProxy( StorageTextureNode );
-
+export const storageTexture = /*@__PURE__*/ nodeProxy(StorageTextureNode)
 
 /**
  * TODO: Explain difference to `storageTexture()`.
@@ -218,12 +196,10 @@ export const storageTexture = /*@__PURE__*/ nodeProxy( StorageTextureNode );
  * @param {Node?} [storeNode=null] - The value node that should be stored in the texture.
  * @returns {StorageTextureNode}
  */
-export const textureStore = ( value, uvNode, storeNode ) => {
+export const textureStore = (value, uvNode, storeNode) => {
+	const node = storageTexture(value, uvNode, storeNode)
 
-	const node = storageTexture( value, uvNode, storeNode );
+	if (storeNode !== null) node.append()
 
-	if ( storeNode !== null ) node.append();
-
-	return node;
-
-};
+	return node
+}

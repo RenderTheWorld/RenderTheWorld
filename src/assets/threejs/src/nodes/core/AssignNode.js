@@ -1,6 +1,6 @@
-import TempNode from '../core/TempNode.js';
-import { addMethodChaining, nodeProxy } from '../tsl/TSLCore.js';
-import { vectorComponents } from '../core/constants.js';
+import TempNode from '../core/TempNode.js'
+import { addMethodChaining, nodeProxy } from '../tsl/TSLCore.js'
+import { vectorComponents } from '../core/constants.js'
 
 /**
  * These node represents an assign operation. Meaning a node is assigned
@@ -9,11 +9,8 @@ import { vectorComponents } from '../core/constants.js';
  * @augments TempNode
  */
 class AssignNode extends TempNode {
-
 	static get type() {
-
-		return 'AssignNode';
-
+		return 'AssignNode'
 	}
 
 	/**
@@ -22,24 +19,22 @@ class AssignNode extends TempNode {
 	 * @param {Node} targetNode - The target node.
 	 * @param {Node} sourceNode - The source type.
 	 */
-	constructor( targetNode, sourceNode ) {
-
-		super();
+	constructor(targetNode, sourceNode) {
+		super()
 
 		/**
 		 * The target node.
 		 *
 		 * @type {Node}
 		 */
-		this.targetNode = targetNode;
+		this.targetNode = targetNode
 
 		/**
 		 * The source node.
 		 *
 		 * @type {Node}
 		 */
-		this.sourceNode = sourceNode;
-
+		this.sourceNode = sourceNode
 	}
 
 	/**
@@ -49,15 +44,11 @@ class AssignNode extends TempNode {
 	 * @return {Boolean} A flag that indicates if there is more than one dependency to other nodes. Always `false`.
 	 */
 	hasDependencies() {
-
-		return false;
-
+		return false
 	}
 
-	getNodeType( builder, output ) {
-
-		return output !== 'void' ? this.targetNode.getNodeType( builder ) : 'void';
-
+	getNodeType(builder, output) {
+		return output !== 'void' ? this.targetNode.getNodeType(builder) : 'void'
 	}
 
 	/**
@@ -67,100 +58,90 @@ class AssignNode extends TempNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Boolean} Whether a split is required when assigning source to target.
 	 */
-	needsSplitAssign( builder ) {
+	needsSplitAssign(builder) {
+		const { targetNode } = this
 
-		const { targetNode } = this;
+		if (
+			builder.isAvailable('swizzleAssign') === false &&
+			targetNode.isSplitNode &&
+			targetNode.components.length > 1
+		) {
+			const targetLength = builder.getTypeLength(
+				targetNode.node.getNodeType(builder)
+			)
+			const assignDifferentVector =
+				vectorComponents.join('').slice(0, targetLength) !==
+				targetNode.components
 
-		if ( builder.isAvailable( 'swizzleAssign' ) === false && targetNode.isSplitNode && targetNode.components.length > 1 ) {
-
-			const targetLength = builder.getTypeLength( targetNode.node.getNodeType( builder ) );
-			const assignDifferentVector = vectorComponents.join( '' ).slice( 0, targetLength ) !== targetNode.components;
-
-			return assignDifferentVector;
-
+			return assignDifferentVector
 		}
 
-		return false;
-
+		return false
 	}
 
-	generate( builder, output ) {
+	generate(builder, output) {
+		const { targetNode, sourceNode } = this
 
-		const { targetNode, sourceNode } = this;
+		const needsSplitAssign = this.needsSplitAssign(builder)
 
-		const needsSplitAssign = this.needsSplitAssign( builder );
+		const targetType = targetNode.getNodeType(builder)
 
-		const targetType = targetNode.getNodeType( builder );
+		const target = targetNode.context({ assign: true }).build(builder)
+		const source = sourceNode.build(builder, targetType)
 
-		const target = targetNode.context( { assign: true } ).build( builder );
-		const source = sourceNode.build( builder, targetType );
+		const sourceType = sourceNode.getNodeType(builder)
 
-		const sourceType = sourceNode.getNodeType( builder );
-
-		const nodeData = builder.getDataFromNode( this );
+		const nodeData = builder.getDataFromNode(this)
 
 		//
 
-		let snippet;
+		let snippet
 
-		if ( nodeData.initialized === true ) {
+		if (nodeData.initialized === true) {
+			if (output !== 'void') {
+				snippet = target
+			}
+		} else if (needsSplitAssign) {
+			const sourceVar = builder.getVarFromNode(this, null, targetType)
+			const sourceProperty = builder.getPropertyName(sourceVar)
 
-			if ( output !== 'void' ) {
+			builder.addLineFlowCode(`${sourceProperty} = ${source}`, this)
 
-				snippet = target;
+			const targetRoot = targetNode.node
+				.context({ assign: true })
+				.build(builder)
 
+			for (let i = 0; i < targetNode.components.length; i++) {
+				const component = targetNode.components[i]
+
+				builder.addLineFlowCode(
+					`${targetRoot}.${component} = ${sourceProperty}[ ${i} ]`,
+					this
+				)
 			}
 
-		} else if ( needsSplitAssign ) {
-
-			const sourceVar = builder.getVarFromNode( this, null, targetType );
-			const sourceProperty = builder.getPropertyName( sourceVar );
-
-			builder.addLineFlowCode( `${ sourceProperty } = ${ source }`, this );
-
-			const targetRoot = targetNode.node.context( { assign: true } ).build( builder );
-
-			for ( let i = 0; i < targetNode.components.length; i ++ ) {
-
-				const component = targetNode.components[ i ];
-
-				builder.addLineFlowCode( `${ targetRoot }.${ component } = ${ sourceProperty }[ ${ i } ]`, this );
-
+			if (output !== 'void') {
+				snippet = target
 			}
-
-			if ( output !== 'void' ) {
-
-				snippet = target;
-
-			}
-
 		} else {
+			snippet = `${target} = ${source}`
 
-			snippet = `${ target } = ${ source }`;
+			if (output === 'void' || sourceType === 'void') {
+				builder.addLineFlowCode(snippet, this)
 
-			if ( output === 'void' || sourceType === 'void' ) {
-
-				builder.addLineFlowCode( snippet, this );
-
-				if ( output !== 'void' ) {
-
-					snippet = target;
-
+				if (output !== 'void') {
+					snippet = target
 				}
-
 			}
-
 		}
 
-		nodeData.initialized = true;
+		nodeData.initialized = true
 
-		return builder.format( snippet, targetType, output );
-
+		return builder.format(snippet, targetType, output)
 	}
-
 }
 
-export default AssignNode;
+export default AssignNode
 
 /**
  * TSL function for creating an assign node.
@@ -170,6 +151,6 @@ export default AssignNode;
  * @param {Node} sourceNode - The source type.
  * @returns {AssignNode}
  */
-export const assign = /*@__PURE__*/ nodeProxy( AssignNode );
+export const assign = /*@__PURE__*/ nodeProxy(AssignNode)
 
-addMethodChaining( 'assign', assign );
+addMethodChaining('assign', assign)

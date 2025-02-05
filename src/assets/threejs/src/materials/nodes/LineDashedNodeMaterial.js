@@ -1,12 +1,17 @@
-import NodeMaterial from './NodeMaterial.js';
-import { attribute } from '../../nodes/core/AttributeNode.js';
-import { materialLineDashOffset, materialLineDashSize, materialLineGapSize, materialLineScale } from '../../nodes/accessors/MaterialNode.js';
-import { dashSize, gapSize } from '../../nodes/core/PropertyNode.js';
-import { varying, float } from '../../nodes/tsl/TSLBase.js';
+import NodeMaterial from './NodeMaterial.js'
+import { attribute } from '../../nodes/core/AttributeNode.js'
+import {
+	materialLineDashOffset,
+	materialLineDashSize,
+	materialLineGapSize,
+	materialLineScale
+} from '../../nodes/accessors/MaterialNode.js'
+import { dashSize, gapSize } from '../../nodes/core/PropertyNode.js'
+import { varying, float } from '../../nodes/tsl/TSLBase.js'
 
-import { LineDashedMaterial } from '../LineDashedMaterial.js';
+import { LineDashedMaterial } from '../LineDashedMaterial.js'
 
-const _defaultValues = /*@__PURE__*/ new LineDashedMaterial();
+const _defaultValues = /*@__PURE__*/ new LineDashedMaterial()
 
 /**
  * Node material version of `LineDashedMaterial`.
@@ -14,11 +19,8 @@ const _defaultValues = /*@__PURE__*/ new LineDashedMaterial();
  * @augments NodeMaterial
  */
 class LineDashedNodeMaterial extends NodeMaterial {
-
 	static get type() {
-
-		return 'LineDashedNodeMaterial';
-
+		return 'LineDashedNodeMaterial'
 	}
 
 	/**
@@ -26,9 +28,8 @@ class LineDashedNodeMaterial extends NodeMaterial {
 	 *
 	 * @param {Object?} parameters - The configuration parameter.
 	 */
-	constructor( parameters ) {
-
-		super();
+	constructor(parameters) {
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -37,9 +38,9 @@ class LineDashedNodeMaterial extends NodeMaterial {
 		 * @readonly
 		 * @default true
 		 */
-		this.isLineDashedNodeMaterial = true;
+		this.isLineDashedNodeMaterial = true
 
-		this.setDefaultValues( _defaultValues );
+		this.setDefaultValues(_defaultValues)
 
 		/**
 		 * The dash offset.
@@ -47,7 +48,7 @@ class LineDashedNodeMaterial extends NodeMaterial {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this.dashOffset = 0;
+		this.dashOffset = 0
 
 		/**
 		 * The offset of dash materials is by default inferred from the `dashOffset`
@@ -60,7 +61,7 @@ class LineDashedNodeMaterial extends NodeMaterial {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.offsetNode = null;
+		this.offsetNode = null
 
 		/**
 		 * The scale of dash materials is by default inferred from the `scale`
@@ -73,7 +74,7 @@ class LineDashedNodeMaterial extends NodeMaterial {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.dashScaleNode = null;
+		this.dashScaleNode = null
 
 		/**
 		 * The dash size of dash materials is by default inferred from the `dashSize`
@@ -86,7 +87,7 @@ class LineDashedNodeMaterial extends NodeMaterial {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.dashSizeNode = null;
+		this.dashSizeNode = null
 
 		/**
 		 * The gap size of dash materials is by default inferred from the `gapSize`
@@ -99,10 +100,9 @@ class LineDashedNodeMaterial extends NodeMaterial {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.gapSizeNode = null;
+		this.gapSizeNode = null
 
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
 	/**
@@ -110,23 +110,33 @@ class LineDashedNodeMaterial extends NodeMaterial {
 	 *
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	setupVariants( /* builder */ ) {
+	setupVariants(/* builder */) {
+		const offsetNode = this.offsetNode
+			? float(this.offsetNode)
+			: materialLineDashOffset
+		const dashScaleNode = this.dashScaleNode
+			? float(this.dashScaleNode)
+			: materialLineScale
+		const dashSizeNode = this.dashSizeNode
+			? float(this.dashSizeNode)
+			: materialLineDashSize
+		const gapSizeNode = this.gapSizeNode
+			? float(this.gapSizeNode)
+			: materialLineGapSize
 
-		const offsetNode = this.offsetNode ? float( this.offsetNode ) : materialLineDashOffset;
-		const dashScaleNode = this.dashScaleNode ? float( this.dashScaleNode ) : materialLineScale;
-		const dashSizeNode = this.dashSizeNode ? float( this.dashSizeNode ) : materialLineDashSize;
-		const gapSizeNode = this.gapSizeNode ? float( this.gapSizeNode ) : materialLineGapSize;
+		dashSize.assign(dashSizeNode)
+		gapSize.assign(gapSizeNode)
 
-		dashSize.assign( dashSizeNode );
-		gapSize.assign( gapSizeNode );
+		const vLineDistance = varying(attribute('lineDistance').mul(dashScaleNode))
+		const vLineDistanceOffset = offsetNode
+			? vLineDistance.add(offsetNode)
+			: vLineDistance
 
-		const vLineDistance = varying( attribute( 'lineDistance' ).mul( dashScaleNode ) );
-		const vLineDistanceOffset = offsetNode ? vLineDistance.add( offsetNode ) : vLineDistance;
-
-		vLineDistanceOffset.mod( dashSize.add( gapSize ) ).greaterThan( dashSize ).discard();
-
+		vLineDistanceOffset
+			.mod(dashSize.add(gapSize))
+			.greaterThan(dashSize)
+			.discard()
 	}
-
 }
 
-export default LineDashedNodeMaterial;
+export default LineDashedNodeMaterial

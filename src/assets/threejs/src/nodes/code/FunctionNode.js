@@ -1,5 +1,5 @@
-import CodeNode from './CodeNode.js';
-import { nodeObject } from '../tsl/TSLBase.js';
+import CodeNode from './CodeNode.js'
+import { nodeObject } from '../tsl/TSLBase.js'
 
 /**
  * This class represents a native shader function. It can be used to implement
@@ -28,11 +28,8 @@ import { nodeObject } from '../tsl/TSLBase.js';
  * @augments CodeNode
  */
 class FunctionNode extends CodeNode {
-
 	static get type() {
-
-		return 'FunctionNode';
-
+		return 'FunctionNode'
 	}
 
 	/**
@@ -42,16 +39,12 @@ class FunctionNode extends CodeNode {
 	 * @param {Array<Node>} [includes=[]] - An array of includes.
 	 * @param {('js'|'wgsl'|'glsl')} [language=''] - The used language.
 	 */
-	constructor( code = '', includes = [], language = '' ) {
-
-		super( code, includes, language );
-
+	constructor(code = '', includes = [], language = '') {
+		super(code, includes, language)
 	}
 
-	getNodeType( builder ) {
-
-		return this.getNodeFunction( builder ).type;
-
+	getNodeType(builder) {
+		return this.getNodeFunction(builder).type
 	}
 
 	/**
@@ -60,10 +53,8 @@ class FunctionNode extends CodeNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Array<NodeFunctionInput>} The inputs.
 	 */
-	getInputs( builder ) {
-
-		return this.getNodeFunction( builder ).inputs;
-
+	getInputs(builder) {
+		return this.getNodeFunction(builder).inputs
 	}
 
 	/**
@@ -72,89 +63,70 @@ class FunctionNode extends CodeNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {NodeFunction} The node function.
 	 */
-	getNodeFunction( builder ) {
+	getNodeFunction(builder) {
+		const nodeData = builder.getDataFromNode(this)
 
-		const nodeData = builder.getDataFromNode( this );
+		let nodeFunction = nodeData.nodeFunction
 
-		let nodeFunction = nodeData.nodeFunction;
+		if (nodeFunction === undefined) {
+			nodeFunction = builder.parser.parseFunction(this.code)
 
-		if ( nodeFunction === undefined ) {
-
-			nodeFunction = builder.parser.parseFunction( this.code );
-
-			nodeData.nodeFunction = nodeFunction;
-
+			nodeData.nodeFunction = nodeFunction
 		}
 
-		return nodeFunction;
-
+		return nodeFunction
 	}
 
-	generate( builder, output ) {
+	generate(builder, output) {
+		super.generate(builder)
 
-		super.generate( builder );
+		const nodeFunction = this.getNodeFunction(builder)
 
-		const nodeFunction = this.getNodeFunction( builder );
+		const name = nodeFunction.name
+		const type = nodeFunction.type
 
-		const name = nodeFunction.name;
-		const type = nodeFunction.type;
+		const nodeCode = builder.getCodeFromNode(this, type)
 
-		const nodeCode = builder.getCodeFromNode( this, type );
-
-		if ( name !== '' ) {
-
+		if (name !== '') {
 			// use a custom property name
 
-			nodeCode.name = name;
-
+			nodeCode.name = name
 		}
 
-		const propertyName = builder.getPropertyName( nodeCode );
+		const propertyName = builder.getPropertyName(nodeCode)
 
-		const code = this.getNodeFunction( builder ).getCode( propertyName );
+		const code = this.getNodeFunction(builder).getCode(propertyName)
 
-		nodeCode.code = code + '\n';
+		nodeCode.code = code + '\n'
 
-		if ( output === 'property' ) {
-
-			return propertyName;
-
+		if (output === 'property') {
+			return propertyName
 		} else {
-
-			return builder.format( `${ propertyName }()`, type, output );
-
+			return builder.format(`${propertyName}()`, type, output)
 		}
-
 	}
-
 }
 
-export default FunctionNode;
+export default FunctionNode
 
-const nativeFn = ( code, includes = [], language = '' ) => {
-
-	for ( let i = 0; i < includes.length; i ++ ) {
-
-		const include = includes[ i ];
+const nativeFn = (code, includes = [], language = '') => {
+	for (let i = 0; i < includes.length; i++) {
+		const include = includes[i]
 
 		// TSL Function: glslFn, wgslFn
 
-		if ( typeof include === 'function' ) {
-
-			includes[ i ] = include.functionNode;
-
+		if (typeof include === 'function') {
+			includes[i] = include.functionNode
 		}
-
 	}
 
-	const functionNode = nodeObject( new FunctionNode( code, includes, language ) );
+	const functionNode = nodeObject(new FunctionNode(code, includes, language))
 
-	const fn = ( ...params ) => functionNode.call( ...params );
-	fn.functionNode = functionNode;
+	const fn = (...params) => functionNode.call(...params)
+	fn.functionNode = functionNode
 
-	return fn;
+	return fn
+}
 
-};
-
-export const glslFn = ( code, includes ) => nativeFn( code, includes, 'glsl' );
-export const wgslFn = ( code, includes ) => nativeFn( code, includes, 'wgsl' );
+export const glslFn = (code, includes) => nativeFn(code, includes, 'glsl')
+export const wgslFn = (code, includes) => nativeFn(code, includes, 'wgsl')

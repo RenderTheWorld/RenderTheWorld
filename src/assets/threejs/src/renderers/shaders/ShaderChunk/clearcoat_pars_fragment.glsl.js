@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 
 #ifdef USE_CLEARCOATMAP
 
@@ -18,4 +18,4 @@ export default /* glsl */`
 	uniform sampler2D clearcoatRoughnessMap;
 
 #endif
-`;
+`

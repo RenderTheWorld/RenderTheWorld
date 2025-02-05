@@ -1,99 +1,81 @@
-import { Element, LoaderLib } from 'flow';
+import { Element, LoaderLib } from 'flow'
 
 export class CodeEditorElement extends Element {
+	constructor(source = '') {
+		super()
 
-	constructor( source = '' ) {
+		this.updateInterval = 500
 
-		super();
+		this._source = source
 
-		this.updateInterval = 500;
+		this.dom.style['z-index'] = -1
+		this.dom.classList.add('no-zoom')
 
-		this._source = source;
+		this.setHeight(500)
 
-		this.dom.style[ 'z-index' ] = - 1;
-		this.dom.classList.add( 'no-zoom' );
+		const editorDOM = document.createElement('div')
+		editorDOM.style.width = '100%'
+		editorDOM.style.height = '100%'
+		this.dom.appendChild(editorDOM)
 
-		this.setHeight( 500 );
+		this.editor = null // async
 
-		const editorDOM = document.createElement( 'div' );
-		editorDOM.style.width = '100%';
-		editorDOM.style.height = '100%';
-		this.dom.appendChild( editorDOM );
+		window.require.config({
+			paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.48.0/min/vs' }
+		})
 
-		this.editor = null; // async
-
-		window.require.config( { paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.48.0/min/vs' } } );
-
-		require( [ 'vs/editor/editor.main' ], () => {
-
-			this.editor = window.monaco.editor.create( editorDOM, {
+		require(['vs/editor/editor.main'], () => {
+			this.editor = window.monaco.editor.create(editorDOM, {
 				value: this.source,
 				language: 'javascript',
 				theme: 'vs-dark',
 				automaticLayout: true,
 				minimap: { enabled: false }
-			} );
+			})
 
-			let timeout = null;
+			let timeout = null
 
-			this.editor.getModel().onDidChangeContent( () => {
+			this.editor.getModel().onDidChangeContent(() => {
+				this._source = this.editor.getValue()
 
-				this._source = this.editor.getValue();
+				if (timeout) clearTimeout(timeout)
 
-				if ( timeout ) clearTimeout( timeout );
-
-				timeout = setTimeout( () => {
-
-					this.dispatchEvent( new Event( 'change' ) );
-
-				}, this.updateInterval );
-
-			} );
-
-		} );
-
+				timeout = setTimeout(() => {
+					this.dispatchEvent(new Event('change'))
+				}, this.updateInterval)
+			})
+		})
 	}
 
-	set source( value ) {
+	set source(value) {
+		if (this._source === value) return
 
-		if ( this._source === value ) return;
+		this._source = value
 
-		this._source = value;
+		if (this.editor) this.editor.setValue(value)
 
-		if ( this.editor ) this.editor.setValue( value );
-
-		this.dispatchEvent( new Event( 'change' ) );
-
+		this.dispatchEvent(new Event('change'))
 	}
 
 	get source() {
-
-		return this._source;
-
+		return this._source
 	}
 
 	focus() {
-
-		if ( this.editor ) this.editor.focus();
-
+		if (this.editor) this.editor.focus()
 	}
 
-	serialize( data ) {
+	serialize(data) {
+		super.serialize(data)
 
-		super.serialize( data );
-
-		data.source = this.source;
-
+		data.source = this.source
 	}
 
-	deserialize( data ) {
+	deserialize(data) {
+		super.deserialize(data)
 
-		super.deserialize( data );
-
-		this.source = data.source || '';
-
+		this.source = data.source || ''
 	}
-
 }
 
-LoaderLib[ 'CodeEditorElement' ] = CodeEditorElement;
+LoaderLib['CodeEditorElement'] = CodeEditorElement

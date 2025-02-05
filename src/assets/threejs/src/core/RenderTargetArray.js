@@ -1,22 +1,18 @@
-import { RenderTarget } from './RenderTarget.js';
-import { DataArrayTexture } from '../textures/DataArrayTexture.js';
+import { RenderTarget } from './RenderTarget.js'
+import { DataArrayTexture } from '../textures/DataArrayTexture.js'
 
 class RenderTargetArray extends RenderTarget {
+	constructor(width = 1, height = 1, depth = 1, options = {}) {
+		super(width, height, options)
 
-	constructor( width = 1, height = 1, depth = 1, options = {} ) {
+		this.isRenderTargetArray = true
 
-		super( width, height, options );
+		this.depth = depth
 
-		this.isRenderTargetArray = true;
+		this.texture = new DataArrayTexture(null, width, height, depth)
 
-		this.depth = depth;
-
-		this.texture = new DataArrayTexture( null, width, height, depth );
-
-		this.texture.isRenderTargetTexture = true;
-
+		this.texture.isRenderTargetTexture = true
 	}
-
 }
 
-export { RenderTargetArray };
+export { RenderTargetArray }

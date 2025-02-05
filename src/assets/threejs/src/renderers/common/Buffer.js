@@ -1,5 +1,5 @@
-import Binding from './Binding.js';
-import { getFloatLength } from './BufferUtils.js';
+import Binding from './Binding.js'
+import { getFloatLength } from './BufferUtils.js'
 
 /**
  * Represents a buffer binding type.
@@ -9,16 +9,14 @@ import { getFloatLength } from './BufferUtils.js';
  * @augments Binding
  */
 class Buffer extends Binding {
-
 	/**
 	 * Constructs a new buffer.
 	 *
 	 * @param {String} name - The buffer's name.
 	 * @param {TypedArray} [buffer=null] - The buffer.
 	 */
-	constructor( name, buffer = null ) {
-
-		super( name );
+	constructor(name, buffer = null) {
+		super(name)
 
 		/**
 		 * This flag can be used for type testing.
@@ -27,14 +25,14 @@ class Buffer extends Binding {
 		 * @readonly
 		 * @default true
 		 */
-		this.isBuffer = true;
+		this.isBuffer = true
 
 		/**
 		 * The bytes per element.
 		 *
 		 * @type {Number}
 		 */
-		this.bytesPerElement = Float32Array.BYTES_PER_ELEMENT;
+		this.bytesPerElement = Float32Array.BYTES_PER_ELEMENT
 
 		/**
 		 * A reference to the internal buffer.
@@ -42,8 +40,7 @@ class Buffer extends Binding {
 		 * @private
 		 * @type {TypedArray}
 		 */
-		this._buffer = buffer;
-
+		this._buffer = buffer
 	}
 
 	/**
@@ -53,9 +50,7 @@ class Buffer extends Binding {
 	 * @readonly
 	 */
 	get byteLength() {
-
-		return getFloatLength( this._buffer.byteLength );
-
+		return getFloatLength(this._buffer.byteLength)
 	}
 
 	/**
@@ -65,9 +60,7 @@ class Buffer extends Binding {
 	 * @readonly
 	 */
 	get buffer() {
-
-		return this._buffer;
-
+		return this._buffer
 	}
 
 	/**
@@ -77,11 +70,8 @@ class Buffer extends Binding {
 	 * uploaded to the GPU.
 	 */
 	update() {
-
-		return true;
-
+		return true
 	}
-
 }
 
-export default Buffer;
+export default Buffer

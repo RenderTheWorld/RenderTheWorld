@@ -24,22 +24,18 @@ export const typeToLengthLib = {
 	Texture: 1,
 	URL: 1,
 	node: 1
-};
-
-export const defaultLength = 1;
-
-export function getLengthFromType( type ) {
-
-	return typeToLengthLib[ type ] || defaultLength;
-
 }
 
-export function getLengthFromNode( value ) {
+export const defaultLength = 1
 
-	const type = getTypeFromNode( value );
+export function getLengthFromType(type) {
+	return typeToLengthLib[type] || defaultLength
+}
 
-	return getLengthFromType( type );
+export function getLengthFromNode(value) {
+	const type = getTypeFromNode(value)
 
+	return getLengthFromType(type)
 }
 
 export const typeToColorLib = {
@@ -59,108 +55,82 @@ export const typeToColorLib = {
 	CodeNode: '#ff00ff',
 	Texture: '#ffa500',
 	URL: '#ff0080'
-};
-
-export function getColorFromType( type ) {
-
-	return typeToColorLib[ type ] || null;
-
 }
 
-export function getColorFromNode( value ) {
-
-	const type = getTypeFromNode( value );
-
-	return getColorFromType( type );
-
+export function getColorFromType(type) {
+	return typeToColorLib[type] || null
 }
 
-function getTypeFromNode( value ) {
+export function getColorFromNode(value) {
+	const type = getTypeFromNode(value)
 
-	if ( value ) {
-
-		if ( value.isMaterial ) return 'Material';
-
-		return value.nodeType === 'ArrayBuffer' ? 'URL' : ( value.nodeType || getTypeFromValue( value.value ) );
-
-	}
-
+	return getColorFromType(type)
 }
 
-function getTypeFromValue( value ) {
+function getTypeFromNode(value) {
+	if (value) {
+		if (value.isMaterial) return 'Material'
 
-	if ( value && value.isScriptableValueNode ) value = value.value;
-	if ( ! value ) return;
-
-	if ( value.isNode && value.nodeType === 'string' ) return 'string';
-	if ( value.isNode && value.nodeType === 'ArrayBuffer' ) return 'URL';
-
-	for ( const type of Object.keys( typeToLengthLib ).reverse() ) {
-
-		if ( value[ 'is' + type ] === true ) return type;
-
+		return value.nodeType === 'ArrayBuffer'
+			? 'URL'
+			: value.nodeType || getTypeFromValue(value.value)
 	}
-
 }
 
-export function setInputAestheticsFromType( element, type ) {
+function getTypeFromValue(value) {
+	if (value && value.isScriptableValueNode) value = value.value
+	if (!value) return
 
-	element.setInput( getLengthFromType( type ) );
+	if (value.isNode && value.nodeType === 'string') return 'string'
+	if (value.isNode && value.nodeType === 'ArrayBuffer') return 'URL'
 
-	const color = getColorFromType( type );
-
-	if ( color ) {
-
-		element.setInputColor( color );
-
+	for (const type of Object.keys(typeToLengthLib).reverse()) {
+		if (value['is' + type] === true) return type
 	}
-
-	return element;
-
 }
 
-export function setOutputAestheticsFromNode( element, node ) {
+export function setInputAestheticsFromType(element, type) {
+	element.setInput(getLengthFromType(type))
 
-	if ( ! node ) {
+	const color = getColorFromType(type)
 
-		element.setOutput( 0 );
-
-		return element;
-
+	if (color) {
+		element.setInputColor(color)
 	}
 
-	return setOutputAestheticsFromType( element, getTypeFromNode( node ) );
-
+	return element
 }
 
-export function setOutputAestheticsFromType( element, type ) {
+export function setOutputAestheticsFromNode(element, node) {
+	if (!node) {
+		element.setOutput(0)
 
-	if ( ! type ) {
-
-		element.setOutput( 1 );
-
-		return element;
-
+		return element
 	}
 
-	if ( type == 'void' ) {
+	return setOutputAestheticsFromType(element, getTypeFromNode(node))
+}
 
-		element.setOutput( 0 );
+export function setOutputAestheticsFromType(element, type) {
+	if (!type) {
+		element.setOutput(1)
 
-		return element;
-
+		return element
 	}
 
-	element.setOutput( getLengthFromType( type ) );
+	if (type == 'void') {
+		element.setOutput(0)
 
-	const color = getColorFromType( type );
-
-	if ( color ) {
-
-		element.setOutputColor( color );
-
+		return element
 	}
 
-	return element;
+	element.setOutput(getLengthFromType(type))
 
+	const color = getColorFromType(type)
+
+	if (color) {
+		element.setOutputColor(color)
+	}
+
+	return element
 }

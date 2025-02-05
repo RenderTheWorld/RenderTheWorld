@@ -4,20 +4,18 @@
  * @private
  */
 class WebGLCapabilities {
-
 	/**
 	 * Constructs a new utility object.
 	 *
 	 * @param {WebGLBackend} backend - The WebGL 2 backend.
 	 */
-	constructor( backend ) {
-
+	constructor(backend) {
 		/**
 		 * A reference to the WebGL 2 backend.
 		 *
 		 * @type {WebGLBackend}
 		 */
-		this.backend = backend;
+		this.backend = backend
 
 		/**
 		 * This value holds the cached max anisotropy value.
@@ -25,8 +23,7 @@ class WebGLCapabilities {
 		 * @type {Number?}
 		 * @default null
 		 */
-		this.maxAnisotropy = null;
-
+		this.maxAnisotropy = null
 	}
 
 	/**
@@ -37,28 +34,23 @@ class WebGLCapabilities {
 	 * @return {Number} The maximum anisotropy texture filtering value.
 	 */
 	getMaxAnisotropy() {
+		if (this.maxAnisotropy !== null) return this.maxAnisotropy
 
-		if ( this.maxAnisotropy !== null ) return this.maxAnisotropy;
+		const gl = this.backend.gl
+		const extensions = this.backend.extensions
 
-		const gl = this.backend.gl;
-		const extensions = this.backend.extensions;
+		if (extensions.has('EXT_texture_filter_anisotropic') === true) {
+			const extension = extensions.get('EXT_texture_filter_anisotropic')
 
-		if ( extensions.has( 'EXT_texture_filter_anisotropic' ) === true ) {
-
-			const extension = extensions.get( 'EXT_texture_filter_anisotropic' );
-
-			this.maxAnisotropy = gl.getParameter( extension.MAX_TEXTURE_MAX_ANISOTROPY_EXT );
-
+			this.maxAnisotropy = gl.getParameter(
+				extension.MAX_TEXTURE_MAX_ANISOTROPY_EXT
+			)
 		} else {
-
-			this.maxAnisotropy = 0;
-
+			this.maxAnisotropy = 0
 		}
 
-		return this.maxAnisotropy;
-
+		return this.maxAnisotropy
 	}
-
 }
 
-export default WebGLCapabilities;
+export default WebGLCapabilities

@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 
 #ifdef USE_IRIDESCENCEMAP
 
@@ -11,4 +11,4 @@ export default /* glsl */`
 	uniform sampler2D iridescenceThicknessMap;
 
 #endif
-`;
+`

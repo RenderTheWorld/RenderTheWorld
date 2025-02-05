@@ -1,21 +1,17 @@
-import { BaseNodeEditor } from '../BaseNodeEditor.js';
-import { createElementFromJSON } from '../NodeEditorUtils.js';
+import { BaseNodeEditor } from '../BaseNodeEditor.js'
+import { createElementFromJSON } from '../NodeEditorUtils.js'
 
 export class Vector3Editor extends BaseNodeEditor {
-
 	constructor() {
-
-		const { element, inputNode } = createElementFromJSON( {
+		const { element, inputNode } = createElementFromJSON({
 			inputType: 'vec3',
 			inputConnection: false
-		} );
+		})
 
-		super( 'Vector 3', inputNode, 325 );
+		super('Vector 3', inputNode, 325)
 
-		element.addEventListener( 'changeInput', () => this.invalidate() );
+		element.addEventListener('changeInput', () => this.invalidate())
 
-		this.add( element );
-
+		this.add(element)
 	}
-
 }

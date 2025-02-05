@@ -1,204 +1,173 @@
-import { Vector2 } from './Vector2.js';
+import { Vector2 } from './Vector2.js'
 
-const _vector = /*@__PURE__*/ new Vector2();
+const _vector = /*@__PURE__*/ new Vector2()
 
 class Box2 {
+	constructor(
+		min = new Vector2(+Infinity, +Infinity),
+		max = new Vector2(-Infinity, -Infinity)
+	) {
+		this.isBox2 = true
 
-	constructor( min = new Vector2( + Infinity, + Infinity ), max = new Vector2( - Infinity, - Infinity ) ) {
-
-		this.isBox2 = true;
-
-		this.min = min;
-		this.max = max;
-
+		this.min = min
+		this.max = max
 	}
 
-	set( min, max ) {
+	set(min, max) {
+		this.min.copy(min)
+		this.max.copy(max)
 
-		this.min.copy( min );
-		this.max.copy( max );
-
-		return this;
-
+		return this
 	}
 
-	setFromPoints( points ) {
+	setFromPoints(points) {
+		this.makeEmpty()
 
-		this.makeEmpty();
-
-		for ( let i = 0, il = points.length; i < il; i ++ ) {
-
-			this.expandByPoint( points[ i ] );
-
+		for (let i = 0, il = points.length; i < il; i++) {
+			this.expandByPoint(points[i])
 		}
 
-		return this;
-
+		return this
 	}
 
-	setFromCenterAndSize( center, size ) {
+	setFromCenterAndSize(center, size) {
+		const halfSize = _vector.copy(size).multiplyScalar(0.5)
+		this.min.copy(center).sub(halfSize)
+		this.max.copy(center).add(halfSize)
 
-		const halfSize = _vector.copy( size ).multiplyScalar( 0.5 );
-		this.min.copy( center ).sub( halfSize );
-		this.max.copy( center ).add( halfSize );
-
-		return this;
-
+		return this
 	}
 
 	clone() {
-
-		return new this.constructor().copy( this );
-
+		return new this.constructor().copy(this)
 	}
 
-	copy( box ) {
+	copy(box) {
+		this.min.copy(box.min)
+		this.max.copy(box.max)
 
-		this.min.copy( box.min );
-		this.max.copy( box.max );
-
-		return this;
-
+		return this
 	}
 
 	makeEmpty() {
+		this.min.x = this.min.y = +Infinity
+		this.max.x = this.max.y = -Infinity
 
-		this.min.x = this.min.y = + Infinity;
-		this.max.x = this.max.y = - Infinity;
-
-		return this;
-
+		return this
 	}
 
 	isEmpty() {
-
 		// this is a more robust check for empty than ( volume <= 0 ) because volume can get positive with two negative axes
 
-		return ( this.max.x < this.min.x ) || ( this.max.y < this.min.y );
-
+		return this.max.x < this.min.x || this.max.y < this.min.y
 	}
 
-	getCenter( target ) {
-
-		return this.isEmpty() ? target.set( 0, 0 ) : target.addVectors( this.min, this.max ).multiplyScalar( 0.5 );
-
+	getCenter(target) {
+		return this.isEmpty()
+			? target.set(0, 0)
+			: target.addVectors(this.min, this.max).multiplyScalar(0.5)
 	}
 
-	getSize( target ) {
-
-		return this.isEmpty() ? target.set( 0, 0 ) : target.subVectors( this.max, this.min );
-
+	getSize(target) {
+		return this.isEmpty()
+			? target.set(0, 0)
+			: target.subVectors(this.max, this.min)
 	}
 
-	expandByPoint( point ) {
+	expandByPoint(point) {
+		this.min.min(point)
+		this.max.max(point)
 
-		this.min.min( point );
-		this.max.max( point );
-
-		return this;
-
+		return this
 	}
 
-	expandByVector( vector ) {
+	expandByVector(vector) {
+		this.min.sub(vector)
+		this.max.add(vector)
 
-		this.min.sub( vector );
-		this.max.add( vector );
-
-		return this;
-
+		return this
 	}
 
-	expandByScalar( scalar ) {
+	expandByScalar(scalar) {
+		this.min.addScalar(-scalar)
+		this.max.addScalar(scalar)
 
-		this.min.addScalar( - scalar );
-		this.max.addScalar( scalar );
-
-		return this;
-
+		return this
 	}
 
-	containsPoint( point ) {
-
-		return point.x >= this.min.x && point.x <= this.max.x &&
-			point.y >= this.min.y && point.y <= this.max.y;
-
+	containsPoint(point) {
+		return (
+			point.x >= this.min.x &&
+			point.x <= this.max.x &&
+			point.y >= this.min.y &&
+			point.y <= this.max.y
+		)
 	}
 
-	containsBox( box ) {
-
-		return this.min.x <= box.min.x && box.max.x <= this.max.x &&
-			this.min.y <= box.min.y && box.max.y <= this.max.y;
-
+	containsBox(box) {
+		return (
+			this.min.x <= box.min.x &&
+			box.max.x <= this.max.x &&
+			this.min.y <= box.min.y &&
+			box.max.y <= this.max.y
+		)
 	}
 
-	getParameter( point, target ) {
-
+	getParameter(point, target) {
 		// This can potentially have a divide by zero if the box
 		// has a size dimension of 0.
 
 		return target.set(
-			( point.x - this.min.x ) / ( this.max.x - this.min.x ),
-			( point.y - this.min.y ) / ( this.max.y - this.min.y )
-		);
-
+			(point.x - this.min.x) / (this.max.x - this.min.x),
+			(point.y - this.min.y) / (this.max.y - this.min.y)
+		)
 	}
 
-	intersectsBox( box ) {
-
+	intersectsBox(box) {
 		// using 4 splitting planes to rule out intersections
 
-		return box.max.x >= this.min.x && box.min.x <= this.max.x &&
-			box.max.y >= this.min.y && box.min.y <= this.max.y;
-
+		return (
+			box.max.x >= this.min.x &&
+			box.min.x <= this.max.x &&
+			box.max.y >= this.min.y &&
+			box.min.y <= this.max.y
+		)
 	}
 
-	clampPoint( point, target ) {
-
-		return target.copy( point ).clamp( this.min, this.max );
-
+	clampPoint(point, target) {
+		return target.copy(point).clamp(this.min, this.max)
 	}
 
-	distanceToPoint( point ) {
-
-		return this.clampPoint( point, _vector ).distanceTo( point );
-
+	distanceToPoint(point) {
+		return this.clampPoint(point, _vector).distanceTo(point)
 	}
 
-	intersect( box ) {
+	intersect(box) {
+		this.min.max(box.min)
+		this.max.min(box.max)
 
-		this.min.max( box.min );
-		this.max.min( box.max );
+		if (this.isEmpty()) this.makeEmpty()
 
-		if ( this.isEmpty() ) this.makeEmpty();
-
-		return this;
-
+		return this
 	}
 
-	union( box ) {
+	union(box) {
+		this.min.min(box.min)
+		this.max.max(box.max)
 
-		this.min.min( box.min );
-		this.max.max( box.max );
-
-		return this;
-
+		return this
 	}
 
-	translate( offset ) {
+	translate(offset) {
+		this.min.add(offset)
+		this.max.add(offset)
 
-		this.min.add( offset );
-		this.max.add( offset );
-
-		return this;
-
+		return this
 	}
 
-	equals( box ) {
-
-		return box.min.equals( this.min ) && box.max.equals( this.max );
-
+	equals(box) {
+		return box.min.equals(this.min) && box.max.equals(this.max)
 	}
-
 }
 
-export { Box2 };
+export { Box2 }

@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 #ifndef saturate
 // <common> may have defined saturate() already
 #define saturate( a ) clamp( a, 0.0, 1.0 )
@@ -197,4 +197,4 @@ vec3 NeutralToneMapping( vec3 color ) {
 }
 
 vec3 CustomToneMapping( vec3 color ) { return color; }
-`;
+`

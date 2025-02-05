@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 #ifdef USE_TRANSMISSION
 
 	material.transmission = transmission;
@@ -33,4 +33,4 @@ export default /* glsl */`
 	totalDiffuse = mix( totalDiffuse, transmitted.rgb, material.transmission );
 
 #endif
-`;
+`

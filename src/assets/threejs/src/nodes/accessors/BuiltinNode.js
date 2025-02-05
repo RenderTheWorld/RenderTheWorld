@@ -1,5 +1,5 @@
-import Node from '../core/Node.js';
-import { nodeProxy } from '../tsl/TSLBase.js';
+import Node from '../core/Node.js'
+import { nodeProxy } from '../tsl/TSLBase.js'
 
 /**
  * The node allows to set values for built-in shader variables. That is
@@ -8,22 +8,20 @@ import { nodeProxy } from '../tsl/TSLBase.js';
  * @augments Node
  */
 class BuiltinNode extends Node {
-
 	/**
 	 * Constructs a new builtin node.
 	 *
 	 * @param {String} name - The name of the built-in shader variable.
 	 */
-	constructor( name ) {
-
-		super( 'float' );
+	constructor(name) {
+		super('float')
 
 		/**
 		 * The name of the built-in shader variable.
 		 *
 		 * @type {String}
 		 */
-		this.name = name;
+		this.name = name
 
 		/**
 		 * This flag can be used for type testing.
@@ -32,8 +30,7 @@ class BuiltinNode extends Node {
 		 * @readonly
 		 * @default true
 		 */
-		this.isBuiltinNode = true;
-
+		this.isBuiltinNode = true
 	}
 
 	/**
@@ -42,15 +39,12 @@ class BuiltinNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The generated code snippet.
 	 */
-	generate( /* builder */ ) {
-
-		return this.name;
-
+	generate(/* builder */) {
+		return this.name
 	}
-
 }
 
-export default BuiltinNode;
+export default BuiltinNode
 
 /**
  * TSL function for creating a builtin node.
@@ -59,4 +53,4 @@ export default BuiltinNode;
  * @param {String} name - The name of the built-in shader variable.
  * @returns {BuiltinNode}
  */
-export const builtin = nodeProxy( BuiltinNode );
+export const builtin = nodeProxy(BuiltinNode)

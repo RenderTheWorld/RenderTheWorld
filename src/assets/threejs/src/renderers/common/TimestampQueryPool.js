@@ -4,21 +4,19 @@
  * @abstract
  */
 class TimestampQueryPool {
-
 	/**
 	 * Creates a new timestamp query pool.
 	 *
 	 * @param {Number} [maxQueries=256] - Maximum number of queries this pool can hold.
 	 */
-	constructor( maxQueries = 256 ) {
-
+	constructor(maxQueries = 256) {
 		/**
 		 * Whether to track timestamps or not.
 		 *
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.trackTimestamp = true;
+		this.trackTimestamp = true
 
 		/**
 		 * Maximum number of queries this pool can hold.
@@ -26,7 +24,7 @@ class TimestampQueryPool {
 		 * @type {Number}
 		 * @default 256
 		 */
-		this.maxQueries = maxQueries;
+		this.maxQueries = maxQueries
 
 		/**
 		 * How many queries allocated so far.
@@ -34,14 +32,14 @@ class TimestampQueryPool {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this.currentQueryIndex = 0;
+		this.currentQueryIndex = 0
 
 		/**
 		 * Tracks offsets for different contexts.
 		 *
 		 * @type {Map}
 		 */
-		this.queryOffsets = new Map();
+		this.queryOffsets = new Map()
 
 		/**
 		 * Whether the pool has been disposed or not.
@@ -49,7 +47,7 @@ class TimestampQueryPool {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.isDisposed = false;
+		this.isDisposed = false
 
 		/**
 		 * TODO
@@ -57,7 +55,7 @@ class TimestampQueryPool {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this.lastValue = 0;
+		this.lastValue = 0
 
 		/**
 		 * TODO
@@ -65,8 +63,7 @@ class TimestampQueryPool {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.pendingResolve = false;
-
+		this.pendingResolve = false
 	}
 
 	/**
@@ -75,7 +72,7 @@ class TimestampQueryPool {
 	 * @abstract
 	 * @param {Object} renderContext - The render context to allocate queries for.
 	 */
-	allocateQueriesForContext( /* renderContext */ ) {}
+	allocateQueriesForContext(/* renderContext */) {}
 
 	/**
 	 * Resolve all timestamps and return data (or process them).
@@ -92,7 +89,6 @@ class TimestampQueryPool {
 	 * @abstract
 	 */
 	dispose() {}
-
 }
 
-export default TimestampQueryPool;
+export default TimestampQueryPool

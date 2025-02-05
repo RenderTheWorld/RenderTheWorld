@@ -1,5 +1,5 @@
-import NodeParser from '../core/NodeParser.js';
-import GLSLNodeFunction from './GLSLNodeFunction.js';
+import NodeParser from '../core/NodeParser.js'
+import GLSLNodeFunction from './GLSLNodeFunction.js'
 
 /**
  * A GLSL node parser.
@@ -7,19 +7,15 @@ import GLSLNodeFunction from './GLSLNodeFunction.js';
  * @augments NodeParser
  */
 class GLSLNodeParser extends NodeParser {
-
 	/**
 	 * The method parses the given GLSL code an returns a node function.
 	 *
 	 * @param {String} source - The GLSL code.
 	 * @return {GLSLNodeFunction} A node function.
 	 */
-	parseFunction( source ) {
-
-		return new GLSLNodeFunction( source );
-
+	parseFunction(source) {
+		return new GLSLNodeFunction(source)
 	}
-
 }
 
-export default GLSLNodeParser;
+export default GLSLNodeParser

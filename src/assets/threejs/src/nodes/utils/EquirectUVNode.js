@@ -1,6 +1,6 @@
-import TempNode from '../core/TempNode.js';
-import { positionWorldDirection } from '../accessors/Position.js';
-import { nodeProxy, vec2 } from '../tsl/TSLBase.js';
+import TempNode from '../core/TempNode.js'
+import { positionWorldDirection } from '../accessors/Position.js'
+import { nodeProxy, vec2 } from '../tsl/TSLBase.js'
 
 /**
  * Can be used to compute texture coordinates for projecting an
@@ -14,11 +14,8 @@ import { nodeProxy, vec2 } from '../tsl/TSLBase.js';
  * @augments TempNode
  */
 class EquirectUVNode extends TempNode {
-
 	static get type() {
-
-		return 'EquirectUVNode';
-
+		return 'EquirectUVNode'
 	}
 
 	/**
@@ -26,33 +23,35 @@ class EquirectUVNode extends TempNode {
 	 *
 	 * @param {Node<vec3>} [dirNode=positionWorldDirection] - A direction vector for sampling which is by default `positionWorldDirection`.
 	 */
-	constructor( dirNode = positionWorldDirection ) {
-
-		super( 'vec2' );
+	constructor(dirNode = positionWorldDirection) {
+		super('vec2')
 
 		/**
 		 * A direction vector for sampling why is by default `positionWorldDirection`.
 		 *
 		 * @type {Node<vec3>}
 		 */
-		this.dirNode = dirNode;
-
+		this.dirNode = dirNode
 	}
 
 	setup() {
+		const dir = this.dirNode
 
-		const dir = this.dirNode;
+		const u = dir.z
+			.atan(dir.x)
+			.mul(1 / (Math.PI * 2))
+			.add(0.5)
+		const v = dir.y
+			.clamp(-1.0, 1.0)
+			.asin()
+			.mul(1 / Math.PI)
+			.add(0.5)
 
-		const u = dir.z.atan( dir.x ).mul( 1 / ( Math.PI * 2 ) ).add( 0.5 );
-		const v = dir.y.clamp( - 1.0, 1.0 ).asin().mul( 1 / Math.PI ).add( 0.5 );
-
-		return vec2( u, v );
-
+		return vec2(u, v)
 	}
-
 }
 
-export default EquirectUVNode;
+export default EquirectUVNode
 
 /**
  * TSL function for creating an equirect uv node.
@@ -61,4 +60,4 @@ export default EquirectUVNode;
  * @param {Node<vec3>} [dirNode=positionWorldDirection] - A direction vector for sampling which is by default `positionWorldDirection`.
  * @returns {EquirectUVNode}
  */
-export const equirectUV = /*@__PURE__*/ nodeProxy( EquirectUVNode );
+export const equirectUV = /*@__PURE__*/ nodeProxy(EquirectUVNode)

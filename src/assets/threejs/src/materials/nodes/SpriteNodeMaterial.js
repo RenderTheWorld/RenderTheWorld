@@ -1,15 +1,18 @@
-import NodeMaterial from './NodeMaterial.js';
-import { cameraProjectionMatrix } from '../../nodes/accessors/Camera.js';
-import { materialRotation } from '../../nodes/accessors/MaterialNode.js';
-import { modelViewMatrix, modelWorldMatrix } from '../../nodes/accessors/ModelNode.js';
-import { positionGeometry } from '../../nodes/accessors/Position.js';
-import { rotate } from '../../nodes/utils/RotateNode.js';
-import { float, vec2, vec3, vec4 } from '../../nodes/tsl/TSLBase.js';
+import NodeMaterial from './NodeMaterial.js'
+import { cameraProjectionMatrix } from '../../nodes/accessors/Camera.js'
+import { materialRotation } from '../../nodes/accessors/MaterialNode.js'
+import {
+	modelViewMatrix,
+	modelWorldMatrix
+} from '../../nodes/accessors/ModelNode.js'
+import { positionGeometry } from '../../nodes/accessors/Position.js'
+import { rotate } from '../../nodes/utils/RotateNode.js'
+import { float, vec2, vec3, vec4 } from '../../nodes/tsl/TSLBase.js'
 
-import { SpriteMaterial } from '../SpriteMaterial.js';
-import { reference } from '../../nodes/accessors/ReferenceBaseNode.js';
+import { SpriteMaterial } from '../SpriteMaterial.js'
+import { reference } from '../../nodes/accessors/ReferenceBaseNode.js'
 
-const _defaultValues = /*@__PURE__*/ new SpriteMaterial();
+const _defaultValues = /*@__PURE__*/ new SpriteMaterial()
 
 /**
  * Node material version of `SpriteMaterial`.
@@ -17,11 +20,8 @@ const _defaultValues = /*@__PURE__*/ new SpriteMaterial();
  * @augments NodeMaterial
  */
 class SpriteNodeMaterial extends NodeMaterial {
-
 	static get type() {
-
-		return 'SpriteNodeMaterial';
-
+		return 'SpriteNodeMaterial'
 	}
 
 	/**
@@ -29,9 +29,8 @@ class SpriteNodeMaterial extends NodeMaterial {
 	 *
 	 * @param {Object?} parameters - The configuration parameter.
 	 */
-	constructor( parameters ) {
-
-		super();
+	constructor(parameters) {
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -40,9 +39,9 @@ class SpriteNodeMaterial extends NodeMaterial {
 		 * @readonly
 		 * @default true
 		 */
-		this.isSpriteNodeMaterial = true;
+		this.isSpriteNodeMaterial = true
 
-		this._useSizeAttenuation = true;
+		this._useSizeAttenuation = true
 
 		/**
 		 * This property makes it possible to define the position of the sprite with a
@@ -61,7 +60,7 @@ class SpriteNodeMaterial extends NodeMaterial {
 		 * @type {Node<vec2>?}
 		 * @default null
 		 */
-		this.positionNode = null;
+		this.positionNode = null
 
 		/**
 		 * The rotation of sprite materials is by default inferred from the `rotation`,
@@ -74,7 +73,7 @@ class SpriteNodeMaterial extends NodeMaterial {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.rotationNode = null;
+		this.rotationNode = null
 
 		/**
 		 * This node property provides an additional way to scale sprites next to
@@ -84,7 +83,7 @@ class SpriteNodeMaterial extends NodeMaterial {
 		 * @type {Node<vec2>?}
 		 * @default null
 		 */
-		this.scaleNode = null;
+		this.scaleNode = null
 
 		/**
 		 * In Sprites, the transparent property is enabled by default.
@@ -92,12 +91,11 @@ class SpriteNodeMaterial extends NodeMaterial {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.transparent = true;
+		this.transparent = true
 
-		this.setDefaultValues( _defaultValues );
+		this.setDefaultValues(_defaultValues)
 
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
 	/**
@@ -107,67 +105,58 @@ class SpriteNodeMaterial extends NodeMaterial {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Node<vec3>} The position in view space.
 	 */
-	setupPositionView( builder ) {
+	setupPositionView(builder) {
+		const { object, camera } = builder
 
-		const { object, camera } = builder;
+		const sizeAttenuation = this.sizeAttenuation
 
-		const sizeAttenuation = this.sizeAttenuation;
+		const { positionNode, rotationNode, scaleNode } = this
 
-		const { positionNode, rotationNode, scaleNode } = this;
+		const mvPosition = modelViewMatrix.mul(vec3(positionNode || 0))
 
-		const mvPosition = modelViewMatrix.mul( vec3( positionNode || 0 ) );
+		let scale = vec2(
+			modelWorldMatrix[0].xyz.length(),
+			modelWorldMatrix[1].xyz.length()
+		)
 
-		let scale = vec2( modelWorldMatrix[ 0 ].xyz.length(), modelWorldMatrix[ 1 ].xyz.length() );
-
-		if ( scaleNode !== null ) {
-
-			scale = scale.mul( float( scaleNode ) );
-
+		if (scaleNode !== null) {
+			scale = scale.mul(float(scaleNode))
 		}
 
-		if ( sizeAttenuation === false ) {
-
-			if ( camera.isPerspectiveCamera ) {
-
-				scale = scale.mul( mvPosition.z.negate() );
-
+		if (sizeAttenuation === false) {
+			if (camera.isPerspectiveCamera) {
+				scale = scale.mul(mvPosition.z.negate())
 			} else {
-
-				const orthoScale = float( 2.0 ).div( cameraProjectionMatrix.element( 1 ).element( 1 ) );
-				scale = scale.mul( orthoScale.mul( 2 ) );
-
+				const orthoScale = float(2.0).div(
+					cameraProjectionMatrix.element(1).element(1)
+				)
+				scale = scale.mul(orthoScale.mul(2))
 			}
-
 		}
 
-		let alignedPosition = positionGeometry.xy;
+		let alignedPosition = positionGeometry.xy
 
-		if ( object.center && object.center.isVector2 === true ) {
+		if (object.center && object.center.isVector2 === true) {
+			const center = reference('center', 'vec2', object)
 
-			const center = reference( 'center', 'vec2', object );
-
-			alignedPosition = alignedPosition.sub( center.sub( 0.5 ) );
-
+			alignedPosition = alignedPosition.sub(center.sub(0.5))
 		}
 
-		alignedPosition = alignedPosition.mul( scale );
+		alignedPosition = alignedPosition.mul(scale)
 
-		const rotation = float( rotationNode || materialRotation );
+		const rotation = float(rotationNode || materialRotation)
 
-		const rotatedPosition = rotate( alignedPosition, rotation );
+		const rotatedPosition = rotate(alignedPosition, rotation)
 
-		return vec4( mvPosition.xy.add( rotatedPosition ), mvPosition.zw );
-
+		return vec4(mvPosition.xy.add(rotatedPosition), mvPosition.zw)
 	}
 
-	copy( source ) {
+	copy(source) {
+		this.positionNode = source.positionNode
+		this.rotationNode = source.rotationNode
+		this.scaleNode = source.scaleNode
 
-		this.positionNode = source.positionNode;
-		this.rotationNode = source.rotationNode;
-		this.scaleNode = source.scaleNode;
-
-		return super.copy( source );
-
+		return super.copy(source)
 	}
 
 	/**
@@ -177,22 +166,15 @@ class SpriteNodeMaterial extends NodeMaterial {
 	 * @default true
 	 */
 	get sizeAttenuation() {
-
-		return this._useSizeAttenuation;
-
+		return this._useSizeAttenuation
 	}
 
-	set sizeAttenuation( value ) {
-
-		if ( this._useSizeAttenuation !== value ) {
-
-			this._useSizeAttenuation = value;
-			this.needsUpdate = true;
-
+	set sizeAttenuation(value) {
+		if (this._useSizeAttenuation !== value) {
+			this._useSizeAttenuation = value
+			this.needsUpdate = true
 		}
-
 	}
-
 }
 
-export default SpriteNodeMaterial;
+export default SpriteNodeMaterial

@@ -1,6 +1,5 @@
-
-import Node from './Node.js';
-import { getLengthFromType } from './NodeUtils.js';
+import Node from './Node.js'
+import { getLengthFromType } from './NodeUtils.js'
 
 /**
  * Generates a layout for struct members.
@@ -10,20 +9,14 @@ import { getLengthFromType } from './NodeUtils.js';
  * @param {Object.<string, string|Object>} members - An object where keys are member names and values are either types (as strings) or objects with type and atomic properties.
  * @returns {Array.<{name: string, type: string, atomic: boolean}>} An array of member layouts.
  */
-function getMembersLayout( members ) {
-
-	return Object.entries( members ).map( ( [ name, value ] ) => {
-
-		if ( typeof value === 'string' ) {
-
-			return { name, type: value, atomic: false };
-
+function getMembersLayout(members) {
+	return Object.entries(members).map(([name, value]) => {
+		if (typeof value === 'string') {
+			return { name, type: value, atomic: false }
 		}
 
-		return { name, type: value.type, atomic: value.atomic || false };
-
-	} );
-
+		return { name, type: value.type, atomic: value.atomic || false }
+	})
 }
 
 /**
@@ -35,11 +28,8 @@ function getMembersLayout( members ) {
  * @augments Node
  */
 class StructTypeNode extends Node {
-
 	static get type() {
-
-		return 'StructTypeNode';
-
+		return 'StructTypeNode'
 	}
 
 	/**
@@ -48,16 +38,15 @@ class StructTypeNode extends Node {
 	 * @param {Object} membersLayout - The layout of the members for the struct.
 	 * @param {string} [name=null] - The optional name of the struct.
 	 */
-	constructor( membersLayout, name = null ) {
-
-		super( 'struct' );
+	constructor(membersLayout, name = null) {
+		super('struct')
 
 		/**
 		 * The layout of the members for the struct
 		 *
 		 * @type {Array.<{name: string, type: string, atomic: boolean}>}
 		 */
-		this.membersLayout = getMembersLayout( membersLayout );
+		this.membersLayout = getMembersLayout(membersLayout)
 
 		/**
 		 * The name of the struct.
@@ -65,7 +54,7 @@ class StructTypeNode extends Node {
 		 * @type {String}
 		 * @default null
 		 */
-		this.name = name;
+		this.name = name
 
 		/**
 		 * This flag can be used for type testing.
@@ -74,8 +63,7 @@ class StructTypeNode extends Node {
 		 * @readonly
 		 * @default true
 		 */
-		this.isStructLayoutNode = true;
-
+		this.isStructLayoutNode = true
 	}
 
 	/**
@@ -85,47 +73,38 @@ class StructTypeNode extends Node {
 	 * @returns {Number} The length of the struct.
 	 */
 	getLength() {
+		let length = 0
 
-		let length = 0;
-
-		for ( const member of this.membersLayout ) {
-
-			length += getLengthFromType( member.type );
-
+		for (const member of this.membersLayout) {
+			length += getLengthFromType(member.type)
 		}
 
-		return length;
-
+		return length
 	}
 
-	getMemberType( builder, name ) {
+	getMemberType(builder, name) {
+		const member = this.membersLayout.find(m => m.name === name)
 
-		const member = this.membersLayout.find( m => m.name === name );
-
-		return member ? member.type : 'void';
-
+		return member ? member.type : 'void'
 	}
 
-	getNodeType( builder ) {
+	getNodeType(builder) {
+		const structType = builder.getStructTypeFromNode(
+			this,
+			this.membersLayout,
+			this.name
+		)
 
-		const structType = builder.getStructTypeFromNode( this, this.membersLayout, this.name );
-
-		return structType.name;
-
+		return structType.name
 	}
 
-	setup( builder ) {
-
-		builder.addInclude( this );
-
+	setup(builder) {
+		builder.addInclude(this)
 	}
 
-	generate( builder ) {
-
-		return this.getNodeType( builder );
-
+	generate(builder) {
+		return this.getNodeType(builder)
 	}
-
 }
 
-export default StructTypeNode;
+export default StructTypeNode

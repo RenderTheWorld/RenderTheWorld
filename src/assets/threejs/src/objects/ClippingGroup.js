@@ -1,4 +1,4 @@
-import { Group } from './Group.js';
+import { Group } from './Group.js'
 
 /**
  * In earlier three.js versions, clipping was defined globally
@@ -13,13 +13,11 @@ import { Group } from './Group.js';
  * @augments Group
  */
 class ClippingGroup extends Group {
-
 	/**
 	 * Constructs a new clipping group.
 	 */
 	constructor() {
-
-		super();
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -28,14 +26,14 @@ class ClippingGroup extends Group {
 		 * @readonly
 		 * @default true
 		 */
-		this.isClippingGroup = true;
+		this.isClippingGroup = true
 
 		/**
 		 * An array with clipping planes.
 		 *
 		 * @type {Array<Plane>}
 		 */
-		this.clippingPlanes = [];
+		this.clippingPlanes = []
 
 		/**
 		 * Whether clipping should be enabled or not.
@@ -43,7 +41,7 @@ class ClippingGroup extends Group {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.enabled = true;
+		this.enabled = true
 
 		/**
 		 * Whether the intersection of the clipping planes is used to clip objects, rather than their union.
@@ -51,7 +49,7 @@ class ClippingGroup extends Group {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.clipIntersection = false;
+		this.clipIntersection = false
 
 		/**
 		 * Whether shadows should be clipped or not.
@@ -59,10 +57,8 @@ class ClippingGroup extends Group {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.clipShadows = false;
-
+		this.clipShadows = false
 	}
-
 }
 
-export { ClippingGroup };
+export { ClippingGroup }

@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 
 #ifdef USE_NORMALMAP_OBJECTSPACE
 
@@ -30,4 +30,4 @@ export default /* glsl */`
 	normal = perturbNormalArb( - vViewPosition, normal, dHdxy_fwd(), faceDirection );
 
 #endif
-`;
+`

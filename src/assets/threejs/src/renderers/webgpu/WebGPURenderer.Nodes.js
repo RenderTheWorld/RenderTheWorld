@@ -1,7 +1,7 @@
-import Renderer from '../common/Renderer.js';
-import WebGLBackend from '../webgl-fallback/WebGLBackend.js';
-import WebGPUBackend from './WebGPUBackend.js';
-import BasicNodeLibrary from './nodes/BasicNodeLibrary.js';
+import Renderer from '../common/Renderer.js'
+import WebGLBackend from '../webgl-fallback/WebGLBackend.js'
+import WebGPUBackend from './WebGPUBackend.js'
+import BasicNodeLibrary from './nodes/BasicNodeLibrary.js'
 
 /**
  * This alternative version of {@link WebGPURenderer} only supports node materials.
@@ -11,7 +11,6 @@ import BasicNodeLibrary from './nodes/BasicNodeLibrary.js';
  * @augments Renderer
  */
 class WebGPURenderer extends Renderer {
-
 	/**
 	 * Constructs a new WebGPU renderer.
 	 *
@@ -27,31 +26,26 @@ class WebGPURenderer extends Renderer {
 	 * @param {Number} [parameters.colorBufferType=HalfFloatType] - Defines the type of color buffers. The default `HalfFloatType` is recommend for best
 	 * quality. To save memory and bandwidth, `UnsignedByteType` might be used. This will reduce rendering quality though.
 	 */
-	constructor( parameters = {} ) {
+	constructor(parameters = {}) {
+		let BackendClass
 
-		let BackendClass;
-
-		if ( parameters.forceWebGL ) {
-
-			BackendClass = WebGLBackend;
-
+		if (parameters.forceWebGL) {
+			BackendClass = WebGLBackend
 		} else {
-
-			BackendClass = WebGPUBackend;
+			BackendClass = WebGPUBackend
 
 			parameters.getFallback = () => {
+				console.warn(
+					'THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend.'
+				)
 
-				console.warn( 'THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend.' );
-
-				return new WebGLBackend( parameters );
-
-			};
-
+				return new WebGLBackend(parameters)
+			}
 		}
 
-		const backend = new BackendClass( parameters );
+		const backend = new BackendClass(parameters)
 
-		super( backend, parameters );
+		super(backend, parameters)
 
 		/**
 		 * The generic default value is overwritten with the
@@ -60,7 +54,7 @@ class WebGPURenderer extends Renderer {
 		 *
 		 * @type {BasicNodeLibrary}
 		 */
-		this.library = new BasicNodeLibrary();
+		this.library = new BasicNodeLibrary()
 
 		/**
 		 * This flag can be used for type testing.
@@ -69,10 +63,8 @@ class WebGPURenderer extends Renderer {
 		 * @readonly
 		 * @default true
 		 */
-		this.isWebGPURenderer = true;
-
+		this.isWebGPURenderer = true
 	}
-
 }
 
-export default WebGPURenderer;
+export default WebGPURenderer

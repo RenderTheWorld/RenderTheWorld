@@ -1,5 +1,5 @@
-import { nodeProxy } from '../tsl/TSLBase.js';
-import ArrayElementNode from './ArrayElementNode.js';
+import { nodeProxy } from '../tsl/TSLBase.js'
+import ArrayElementNode from './ArrayElementNode.js'
 
 /**
  * This class enables element access on instances of {@link StorageBufferNode}.
@@ -13,11 +13,8 @@ import ArrayElementNode from './ArrayElementNode.js';
  * @augments ArrayElementNode
  */
 class StorageArrayElementNode extends ArrayElementNode {
-
 	static get type() {
-
-		return 'StorageArrayElementNode';
-
+		return 'StorageArrayElementNode'
 	}
 
 	/**
@@ -26,9 +23,8 @@ class StorageArrayElementNode extends ArrayElementNode {
 	 * @param {StorageBufferNode} storageBufferNode - The storage buffer node.
 	 * @param {Node} indexNode - The index node that defines the element access.
 	 */
-	constructor( storageBufferNode, indexNode ) {
-
-		super( storageBufferNode, indexNode );
+	constructor(storageBufferNode, indexNode) {
+		super(storageBufferNode, indexNode)
 
 		/**
 		 * This flag can be used for type testing.
@@ -37,8 +33,7 @@ class StorageArrayElementNode extends ArrayElementNode {
 		 * @readonly
 		 * @default true
 		 */
-		this.isStorageArrayElementNode = true;
-
+		this.isStorageArrayElementNode = true
 	}
 
 	/**
@@ -47,89 +42,67 @@ class StorageArrayElementNode extends ArrayElementNode {
 	 * @param {Node} value
 	 * @type {StorageBufferNode}
 	 */
-	set storageBufferNode( value ) {
-
-		this.node = value;
-
+	set storageBufferNode(value) {
+		this.node = value
 	}
 
 	get storageBufferNode() {
-
-		return this.node;
-
+		return this.node
 	}
 
-	getMemberType( builder, name ) {
+	getMemberType(builder, name) {
+		const structTypeNode = this.storageBufferNode.structTypeNode
 
-		const structTypeNode = this.storageBufferNode.structTypeNode;
-
-		if ( structTypeNode ) {
-
-			return structTypeNode.getMemberType( builder, name );
-
+		if (structTypeNode) {
+			return structTypeNode.getMemberType(builder, name)
 		}
 
-		return 'void';
-
+		return 'void'
 	}
 
-	setup( builder ) {
-
-		if ( builder.isAvailable( 'storageBuffer' ) === false ) {
-
-			if ( this.node.isPBO === true ) {
-
-				builder.setupPBO( this.node );
-
+	setup(builder) {
+		if (builder.isAvailable('storageBuffer') === false) {
+			if (this.node.isPBO === true) {
+				builder.setupPBO(this.node)
 			}
-
 		}
 
-		return super.setup( builder );
-
+		return super.setup(builder)
 	}
 
-	generate( builder, output ) {
+	generate(builder, output) {
+		let snippet
 
-		let snippet;
-
-		const isAssignContext = builder.context.assign;
+		const isAssignContext = builder.context.assign
 
 		//
 
-		if ( builder.isAvailable( 'storageBuffer' ) === false ) {
-
-			if ( this.node.isPBO === true && isAssignContext !== true && ( this.node.value.isInstancedBufferAttribute || builder.shaderStage !== 'compute' ) ) {
-
-				snippet = builder.generatePBO( this );
-
+		if (builder.isAvailable('storageBuffer') === false) {
+			if (
+				this.node.isPBO === true &&
+				isAssignContext !== true &&
+				(this.node.value.isInstancedBufferAttribute ||
+					builder.shaderStage !== 'compute')
+			) {
+				snippet = builder.generatePBO(this)
 			} else {
-
-				snippet = this.node.build( builder );
-
+				snippet = this.node.build(builder)
 			}
-
 		} else {
-
-			snippet = super.generate( builder );
-
+			snippet = super.generate(builder)
 		}
 
-		if ( isAssignContext !== true ) {
+		if (isAssignContext !== true) {
+			const type = this.getNodeType(builder)
 
-			const type = this.getNodeType( builder );
-
-			snippet = builder.format( snippet, type, output );
-
+			snippet = builder.format(snippet, type, output)
 		}
 
-		return snippet;
-
+		return snippet
 	}
-
 }
 
-export default StorageArrayElementNode;
+export default StorageArrayElementNode
 
 /**
  * TSL function for creating a storage element node.
@@ -139,4 +112,4 @@ export default StorageArrayElementNode;
  * @param {Node} indexNode - The index node that defines the element access.
  * @returns {StorageArrayElementNode}
  */
-export const storageElement = /*@__PURE__*/ nodeProxy( StorageArrayElementNode );
+export const storageElement = /*@__PURE__*/ nodeProxy(StorageArrayElementNode)

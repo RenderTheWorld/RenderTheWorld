@@ -1,12 +1,11 @@
-
-import Node from '../core/Node.js';
-import { nodeObject, Fn, bool, float } from '../tsl/TSLBase.js';
-import { positionView } from './Position.js';
-import { diffuseColor } from '../core/PropertyNode.js';
-import { Loop } from '../utils/LoopNode.js';
-import { smoothstep } from '../math/MathNode.js';
-import { uniformArray } from './UniformArrayNode.js';
-import { builtin } from './BuiltinNode.js';
+import Node from '../core/Node.js'
+import { nodeObject, Fn, bool, float } from '../tsl/TSLBase.js'
+import { positionView } from './Position.js'
+import { diffuseColor } from '../core/PropertyNode.js'
+import { Loop } from '../utils/LoopNode.js'
+import { smoothstep } from '../math/MathNode.js'
+import { uniformArray } from './UniformArrayNode.js'
+import { builtin } from './BuiltinNode.js'
 
 /**
  * ```
@@ -17,11 +16,8 @@ import { builtin } from './BuiltinNode.js';
  * @augments Node
  */
 class ClippingNode extends Node {
-
 	static get type() {
-
-		return 'ClippingNode';
-
+		return 'ClippingNode'
 	}
 
 	/**
@@ -30,9 +26,8 @@ class ClippingNode extends Node {
 	 * @param {('default'|'hardware'|'alphaToCoverage')} [scope='default'] - The node's scope. Similar to other nodes,
 	 * the selected scope influences the behavior of the node and what type of code is generated.
 	 */
-	constructor( scope = ClippingNode.DEFAULT ) {
-
-		super();
+	constructor(scope = ClippingNode.DEFAULT) {
+		super()
 
 		/**
 		 * The node's scope. Similar to other nodes, the selected scope influences
@@ -40,8 +35,7 @@ class ClippingNode extends Node {
 		 *
 		 * @type {('default'|'hardware'|'alphaToCoverage')}
 		 */
-		this.scope = scope;
-
+		this.scope = scope
 	}
 
 	/**
@@ -50,29 +44,21 @@ class ClippingNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Node} The result node.
 	 */
-	setup( builder ) {
+	setup(builder) {
+		super.setup(builder)
 
-		super.setup( builder );
+		const clippingContext = builder.clippingContext
+		const { intersectionPlanes, unionPlanes } = clippingContext
 
-		const clippingContext = builder.clippingContext;
-		const { intersectionPlanes, unionPlanes } = clippingContext;
+		this.hardwareClipping = builder.material.hardwareClipping
 
-		this.hardwareClipping = builder.material.hardwareClipping;
-
-		if ( this.scope === ClippingNode.ALPHA_TO_COVERAGE ) {
-
-			return this.setupAlphaToCoverage( intersectionPlanes, unionPlanes );
-
-		} else if ( this.scope === ClippingNode.HARDWARE ) {
-
-			return this.setupHardwareClipping( unionPlanes, builder );
-
+		if (this.scope === ClippingNode.ALPHA_TO_COVERAGE) {
+			return this.setupAlphaToCoverage(intersectionPlanes, unionPlanes)
+		} else if (this.scope === ClippingNode.HARDWARE) {
+			return this.setupHardwareClipping(unionPlanes, builder)
 		} else {
-
-			return this.setupDefault( intersectionPlanes, unionPlanes );
-
+			return this.setupDefault(intersectionPlanes, unionPlanes)
 		}
-
 	}
 
 	/**
@@ -82,62 +68,68 @@ class ClippingNode extends Node {
 	 * @param {Array<Vector4>} unionPlanes - The union planes.
 	 * @return {Node} The result node.
 	 */
-	setupAlphaToCoverage( intersectionPlanes, unionPlanes ) {
+	setupAlphaToCoverage(intersectionPlanes, unionPlanes) {
+		return Fn(() => {
+			const distanceToPlane = float().toVar('distanceToPlane')
+			const distanceGradient = float().toVar('distanceToGradient')
 
-		return Fn( () => {
+			const clipOpacity = float(1).toVar('clipOpacity')
 
-			const distanceToPlane = float().toVar( 'distanceToPlane' );
-			const distanceGradient = float().toVar( 'distanceToGradient' );
+			const numUnionPlanes = unionPlanes.length
 
-			const clipOpacity = float( 1 ).toVar( 'clipOpacity' );
+			if (this.hardwareClipping === false && numUnionPlanes > 0) {
+				const clippingPlanes = uniformArray(unionPlanes)
 
-			const numUnionPlanes = unionPlanes.length;
+				Loop(numUnionPlanes, ({ i }) => {
+					const plane = clippingPlanes.element(i)
 
-			if ( this.hardwareClipping === false && numUnionPlanes > 0 ) {
+					distanceToPlane.assign(
+						positionView.dot(plane.xyz).negate().add(plane.w)
+					)
+					distanceGradient.assign(distanceToPlane.fwidth().div(2.0))
 
-				const clippingPlanes = uniformArray( unionPlanes );
-
-				Loop( numUnionPlanes, ( { i } ) => {
-
-					const plane = clippingPlanes.element( i );
-
-					distanceToPlane.assign( positionView.dot( plane.xyz ).negate().add( plane.w ) );
-					distanceGradient.assign( distanceToPlane.fwidth().div( 2.0 ) );
-
-					clipOpacity.mulAssign( smoothstep( distanceGradient.negate(), distanceGradient, distanceToPlane ) );
-
-				} );
-
+					clipOpacity.mulAssign(
+						smoothstep(
+							distanceGradient.negate(),
+							distanceGradient,
+							distanceToPlane
+						)
+					)
+				})
 			}
 
-			const numIntersectionPlanes = intersectionPlanes.length;
+			const numIntersectionPlanes = intersectionPlanes.length
 
-			if ( numIntersectionPlanes > 0 ) {
+			if (numIntersectionPlanes > 0) {
+				const clippingPlanes = uniformArray(intersectionPlanes)
+				const intersectionClipOpacity = float(1).toVar(
+					'intersectionClipOpacity'
+				)
 
-				const clippingPlanes = uniformArray( intersectionPlanes );
-				const intersectionClipOpacity = float( 1 ).toVar( 'intersectionClipOpacity' );
+				Loop(numIntersectionPlanes, ({ i }) => {
+					const plane = clippingPlanes.element(i)
 
-				Loop( numIntersectionPlanes, ( { i } ) => {
+					distanceToPlane.assign(
+						positionView.dot(plane.xyz).negate().add(plane.w)
+					)
+					distanceGradient.assign(distanceToPlane.fwidth().div(2.0))
 
-					const plane = clippingPlanes.element( i );
+					intersectionClipOpacity.mulAssign(
+						smoothstep(
+							distanceGradient.negate(),
+							distanceGradient,
+							distanceToPlane
+						).oneMinus()
+					)
+				})
 
-					distanceToPlane.assign( positionView.dot( plane.xyz ).negate().add( plane.w ) );
-					distanceGradient.assign( distanceToPlane.fwidth().div( 2.0 ) );
-
-					intersectionClipOpacity.mulAssign( smoothstep( distanceGradient.negate(), distanceGradient, distanceToPlane ).oneMinus() );
-
-				} );
-
-				clipOpacity.mulAssign( intersectionClipOpacity.oneMinus() );
-
+				clipOpacity.mulAssign(intersectionClipOpacity.oneMinus())
 			}
 
-			diffuseColor.a.mulAssign( clipOpacity );
+			diffuseColor.a.mulAssign(clipOpacity)
 
-			diffuseColor.a.equal( 0.0 ).discard();
-
-		} )();
-
+			diffuseColor.a.equal(0.0).discard()
+		})()
 	}
 
 	/**
@@ -147,45 +139,35 @@ class ClippingNode extends Node {
 	 * @param {Array<Vector4>} unionPlanes - The union planes.
 	 * @return {Node} The result node.
 	 */
-	setupDefault( intersectionPlanes, unionPlanes ) {
+	setupDefault(intersectionPlanes, unionPlanes) {
+		return Fn(() => {
+			const numUnionPlanes = unionPlanes.length
 
-		return Fn( () => {
+			if (this.hardwareClipping === false && numUnionPlanes > 0) {
+				const clippingPlanes = uniformArray(unionPlanes)
 
-			const numUnionPlanes = unionPlanes.length;
-
-			if ( this.hardwareClipping === false && numUnionPlanes > 0 ) {
-
-				const clippingPlanes = uniformArray( unionPlanes );
-
-				Loop( numUnionPlanes, ( { i } ) => {
-
-					const plane = clippingPlanes.element( i );
-					positionView.dot( plane.xyz ).greaterThan( plane.w ).discard();
-
-				} );
-
+				Loop(numUnionPlanes, ({ i }) => {
+					const plane = clippingPlanes.element(i)
+					positionView.dot(plane.xyz).greaterThan(plane.w).discard()
+				})
 			}
 
-			const numIntersectionPlanes = intersectionPlanes.length;
+			const numIntersectionPlanes = intersectionPlanes.length
 
-			if ( numIntersectionPlanes > 0 ) {
+			if (numIntersectionPlanes > 0) {
+				const clippingPlanes = uniformArray(intersectionPlanes)
+				const clipped = bool(true).toVar('clipped')
 
-				const clippingPlanes = uniformArray( intersectionPlanes );
-				const clipped = bool( true ).toVar( 'clipped' );
+				Loop(numIntersectionPlanes, ({ i }) => {
+					const plane = clippingPlanes.element(i)
+					clipped.assign(
+						positionView.dot(plane.xyz).greaterThan(plane.w).and(clipped)
+					)
+				})
 
-				Loop( numIntersectionPlanes, ( { i } ) => {
-
-					const plane = clippingPlanes.element( i );
-					clipped.assign( positionView.dot( plane.xyz ).greaterThan( plane.w ).and( clipped ) );
-
-				} );
-
-				clipped.discard();
-
+				clipped.discard()
 			}
-
-		} )();
-
+		})()
 	}
 
 	/**
@@ -195,37 +177,30 @@ class ClippingNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Node} The result node.
 	 */
-	setupHardwareClipping( unionPlanes, builder ) {
+	setupHardwareClipping(unionPlanes, builder) {
+		const numUnionPlanes = unionPlanes.length
 
-		const numUnionPlanes = unionPlanes.length;
+		builder.enableHardwareClipping(numUnionPlanes)
 
-		builder.enableHardwareClipping( numUnionPlanes );
+		return Fn(() => {
+			const clippingPlanes = uniformArray(unionPlanes)
+			const hw_clip_distances = builtin(builder.getClipDistance())
 
-		return Fn( () => {
+			Loop(numUnionPlanes, ({ i }) => {
+				const plane = clippingPlanes.element(i)
 
-			const clippingPlanes = uniformArray( unionPlanes );
-			const hw_clip_distances = builtin( builder.getClipDistance() );
-
-			Loop( numUnionPlanes, ( { i } ) => {
-
-				const plane = clippingPlanes.element( i );
-
-				const distance = positionView.dot( plane.xyz ).sub( plane.w ).negate();
-				hw_clip_distances.element( i ).assign( distance );
-
-			} );
-
-		} )();
-
+				const distance = positionView.dot(plane.xyz).sub(plane.w).negate()
+				hw_clip_distances.element(i).assign(distance)
+			})
+		})()
 	}
-
 }
 
-ClippingNode.ALPHA_TO_COVERAGE = 'alphaToCoverage';
-ClippingNode.DEFAULT = 'default';
-ClippingNode.HARDWARE = 'hardware';
+ClippingNode.ALPHA_TO_COVERAGE = 'alphaToCoverage'
+ClippingNode.DEFAULT = 'default'
+ClippingNode.HARDWARE = 'hardware'
 
-export default ClippingNode;
+export default ClippingNode
 
 /**
  * TSL function for setting up the default clipping logic.
@@ -233,7 +208,7 @@ export default ClippingNode;
  * @function
  * @returns {ClippingNode}
  */
-export const clipping = () => nodeObject( new ClippingNode() );
+export const clipping = () => nodeObject(new ClippingNode())
 
 /**
  * TSL function for setting up alpha to coverage.
@@ -241,7 +216,8 @@ export const clipping = () => nodeObject( new ClippingNode() );
  * @function
  * @returns {ClippingNode}
  */
-export const clippingAlpha = () => nodeObject( new ClippingNode( ClippingNode.ALPHA_TO_COVERAGE ) );
+export const clippingAlpha = () =>
+	nodeObject(new ClippingNode(ClippingNode.ALPHA_TO_COVERAGE))
 
 /**
  * TSL function for setting up hardware-based clipping.
@@ -249,4 +225,5 @@ export const clippingAlpha = () => nodeObject( new ClippingNode( ClippingNode.AL
  * @function
  * @returns {ClippingNode}
  */
-export const hardwareClipping = () => nodeObject( new ClippingNode( ClippingNode.HARDWARE ) );
+export const hardwareClipping = () =>
+	nodeObject(new ClippingNode(ClippingNode.HARDWARE))

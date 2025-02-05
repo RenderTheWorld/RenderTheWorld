@@ -1,5 +1,5 @@
-import { nodeObject } from '../tsl/TSLBase.js';
-import PropertyNode from './PropertyNode.js';
+import { nodeObject } from '../tsl/TSLBase.js'
+import PropertyNode from './PropertyNode.js'
 
 /**
  * Special version of {@link PropertyNode} which is used for parameters.
@@ -7,11 +7,8 @@ import PropertyNode from './PropertyNode.js';
  * @augments PropertyNode
  */
 class ParameterNode extends PropertyNode {
-
 	static get type() {
-
-		return 'ParameterNode';
-
+		return 'ParameterNode'
 	}
 
 	/**
@@ -20,9 +17,8 @@ class ParameterNode extends PropertyNode {
 	 * @param {String} nodeType - The type of the node.
 	 * @param {String?} [name=null] - The name of the parameter in the shader.
 	 */
-	constructor( nodeType, name = null ) {
-
-		super( nodeType, name );
+	constructor(nodeType, name = null) {
+		super(nodeType, name)
 
 		/**
 		 * This flag can be used for type testing.
@@ -31,25 +27,19 @@ class ParameterNode extends PropertyNode {
 		 * @readonly
 		 * @default true
 		 */
-		this.isParameterNode = true;
-
+		this.isParameterNode = true
 	}
 
 	getHash() {
-
-		return this.uuid;
-
+		return this.uuid
 	}
 
 	generate() {
-
-		return this.name;
-
+		return this.name
 	}
-
 }
 
-export default ParameterNode;
+export default ParameterNode
 
 /**
  * TSL function for creating a parameter node.
@@ -59,4 +49,5 @@ export default ParameterNode;
  * @param {String?} name - The name of the parameter in the shader.
  * @returns {ParameterNode}
  */
-export const parameter = ( type, name ) => nodeObject( new ParameterNode( type, name ) );
+export const parameter = (type, name) =>
+	nodeObject(new ParameterNode(type, name))

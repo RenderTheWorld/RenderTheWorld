@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 #ifdef USE_MORPHTARGETS
 
 	#ifndef USE_INSTANCING_MORPH
@@ -23,4 +23,4 @@ export default /* glsl */`
 	}
 
 #endif
-`;
+`

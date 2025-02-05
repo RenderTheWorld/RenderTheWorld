@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 #ifdef USE_ENVMAP
 
 	uniform float reflectivity;
@@ -18,4 +18,4 @@ export default /* glsl */`
 	#endif
 
 #endif
-`;
+`

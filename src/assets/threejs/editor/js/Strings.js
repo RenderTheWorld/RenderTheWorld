@@ -1,6 +1,5 @@
-function Strings( config ) {
-
-	const language = config.getKey( 'language' );
+function Strings(config) {
+	const language = config.getKey('language')
 
 	const values = {
 		fa: {
@@ -9,10 +8,13 @@ function Strings( config ) {
 			'prompt/file/export/noMeshSelected': 'هیچ Mesh ای انتخاب نکردید',
 			'prompt/file/export/noObjectSelected': 'هیچ آبجکتی انتخاب نکردید!',
 			'prompt/script/remove': 'آیا اطمینان دارید؟',
-			'prompt/history/clear': 'هیستوری قبل و بعد (undo / redo) پاک خواهند شد آیا مطمئنید؟',
-			'prompt/history/preserve': 'The history will be preserved across sessions.\nThis can have an impact on performance when working with textures.',
+			'prompt/history/clear':
+				'هیستوری قبل و بعد (undo / redo) پاک خواهند شد آیا مطمئنید؟',
+			'prompt/history/preserve':
+				'The history will be preserved across sessions.\nThis can have an impact on performance when working with textures.',
 			'prompt/history/forbid': 'Undo/Redo disabled while scene is playing.',
-			'prompt/rendering/realistic/unsupportedMaterial': 'REALISTIC Shading: Only MeshStandardMaterial and MeshPhysicalMaterial are supported',
+			'prompt/rendering/realistic/unsupportedMaterial':
+				'REALISTIC Shading: Only MeshStandardMaterial and MeshPhysicalMaterial are supported',
 
 			'command/AddObject': 'افزودن آبجکت',
 			'command/AddScript': 'افزودن اسکریپت',
@@ -401,19 +403,20 @@ function Strings( config ) {
 			'script/title/vertexShader': 'شیدر راس',
 			'script/title/fragmentShader': 'شیدر فرگمنت',
 			'script/title/programInfo': 'خواص برنامه'
-
 		},
 		en: {
-
 			'prompt/file/open': 'Any unsaved data will be lost. Are you sure?',
 			'prompt/file/failedToOpenProject': 'Failed to open project!',
 			'prompt/file/export/noMeshSelected': 'No Mesh selected!',
 			'prompt/file/export/noObjectSelected': 'No Object selected!',
 			'prompt/script/remove': 'Are you sure?',
-			'prompt/history/clear': 'The Undo/Redo History will be cleared. Are you sure?',
-			'prompt/history/preserve': 'The history will be preserved across sessions.\nThis can have an impact on performance when working with textures.',
+			'prompt/history/clear':
+				'The Undo/Redo History will be cleared. Are you sure?',
+			'prompt/history/preserve':
+				'The history will be preserved across sessions.\nThis can have an impact on performance when working with textures.',
 			'prompt/history/forbid': 'Undo/Redo disabled while scene is playing.',
-			'prompt/rendering/realistic/unsupportedMaterial': 'REALISTIC Shading: Only MeshStandardMaterial and MeshPhysicalMaterial are supported',
+			'prompt/rendering/realistic/unsupportedMaterial':
+				'REALISTIC Shading: Only MeshStandardMaterial and MeshPhysicalMaterial are supported',
 
 			'command/AddObject': 'Add Object',
 			'command/AddScript': 'Add Script',
@@ -802,20 +805,23 @@ function Strings( config ) {
 			'script/title/vertexShader': 'Vertex Shader',
 			'script/title/fragmentShader': 'Fragment Shader',
 			'script/title/programInfo': 'Program Properties'
-
 		},
 
 		fr: {
-
-			'prompt/file/open': 'Toutes les données non enregistrées seront perdues Êtes-vous sûr ?',
-			'prompt/file/failedToOpenProject': 'Échec de l\'ouverture du projet !',
+			'prompt/file/open':
+				'Toutes les données non enregistrées seront perdues Êtes-vous sûr ?',
+			'prompt/file/failedToOpenProject': "Échec de l'ouverture du projet !",
 			'prompt/file/export/noMeshSelected': 'Aucun maillage sélectionné !',
 			'prompt/file/export/noObjectSelected': 'Aucun objet sélectionné !',
 			'prompt/script/remove': 'Es-tu sûr?',
-			'prompt/history/clear': 'L\'historique d\'annulation/rétablissement sera effacé Êtes-vous sûr ?',
-			'prompt/history/preserve': 'L\'histoire sera conservée entre les sessions.\nCela peut avoir un impact sur les performances lors de la manipulation des textures.',
-			'prompt/history/forbid': 'Les fonctions Annuler/Rétablir sont désactivées pendant la lecture de la scène.',
-			'prompt/rendering/realistic/unsupportedMaterial': 'Ombrage REALISTIC : seuls MeshStandardMaterial et MeshPhysicalMaterial sont pris en charge',
+			'prompt/history/clear':
+				"L'historique d'annulation/rétablissement sera effacé Êtes-vous sûr ?",
+			'prompt/history/preserve':
+				"L'histoire sera conservée entre les sessions.\nCela peut avoir un impact sur les performances lors de la manipulation des textures.",
+			'prompt/history/forbid':
+				'Les fonctions Annuler/Rétablir sont désactivées pendant la lecture de la scène.',
+			'prompt/rendering/realistic/unsupportedMaterial':
+				'Ombrage REALISTIC : seuls MeshStandardMaterial et MeshPhysicalMaterial sont pris en charge',
 
 			'command/AddObject': 'Ajouter un objet',
 			'command/AddScript': 'Ajouter un script',
@@ -948,7 +954,7 @@ function Strings( config ) {
 			'sidebar/object/shadowIntensity': 'Shadow Intensity',
 			'sidebar/object/shadowBias': 'Biais directionnel des ombres',
 			'sidebar/object/shadowNormalBias': 'Shadow Normal Bias',
-			'sidebar/object/shadowRadius': 'Rayon de l\'ombre',
+			'sidebar/object/shadowRadius': "Rayon de l'ombre",
 			'sidebar/object/cast': 'Projète',
 			'sidebar/object/receive': 'Reçoit',
 			'sidebar/object/visible': 'Visible',
@@ -995,7 +1001,8 @@ function Strings( config ) {
 			'sidebar/geometry/cylinder_geometry/radiusbottom': 'Rayon inférieur',
 			'sidebar/geometry/cylinder_geometry/height': 'Hauteur',
 			'sidebar/geometry/cylinder_geometry/radialsegments': 'Segments radiaux',
-			'sidebar/geometry/cylinder_geometry/heightsegments': 'Segments en hauteur',
+			'sidebar/geometry/cylinder_geometry/heightsegments':
+				'Segments en hauteur',
 			'sidebar/geometry/cylinder_geometry/openended': 'Extrémités ouvertes',
 
 			'sidebar/geometry/extrude_geometry/curveSegments': 'Segments de courbe',
@@ -1056,7 +1063,8 @@ function Strings( config ) {
 
 			'sidebar/geometry/torusKnot_geometry/radius': 'Rayon',
 			'sidebar/geometry/torusKnot_geometry/tube': 'Tube',
-			'sidebar/geometry/torusKnot_geometry/tubularsegments': 'Segments tubulaires',
+			'sidebar/geometry/torusKnot_geometry/tubularsegments':
+				'Segments tubulaires',
 			'sidebar/geometry/torusKnot_geometry/radialsegments': 'Segments radiaux',
 			'sidebar/geometry/torusKnot_geometry/p': 'P',
 			'sidebar/geometry/torusKnot_geometry/q': 'Q',
@@ -1120,10 +1128,10 @@ function Strings( config ) {
 			'sidebar/material/iridescencethicknessmap': 'Thin-Film Thickness Map',
 			'sidebar/material/sheencolormap': 'Sheen Color Map',
 			'sidebar/material/sheenroughnessmap': 'Sheen Rough. Map',
-			'sidebar/material/envmap': 'Texture d\'environnement',
-			'sidebar/material/lightmap': 'Texture d\'éclairage',
-			'sidebar/material/aomap': 'Texture d\'occlusion ambiante',
-			'sidebar/material/emissivemap': 'Texture d\'émission',
+			'sidebar/material/envmap': "Texture d'environnement",
+			'sidebar/material/lightmap': "Texture d'éclairage",
+			'sidebar/material/aomap': "Texture d'occlusion ambiante",
+			'sidebar/material/emissivemap': "Texture d'émission",
 			'sidebar/material/gradientmap': 'Texture de gradient',
 			'sidebar/material/transmissionmap': 'Transmission Map',
 			'sidebar/material/thicknessmap': 'Thickness Map',
@@ -1161,7 +1169,7 @@ function Strings( config ) {
 			'sidebar/project/app/publish': 'Publier',
 
 			'sidebar/project/image': 'Image',
-			'sidebar/project/image/samples': 'd\'échantillons',
+			'sidebar/project/image/samples': "d'échantillons",
 			'sidebar/project/video': 'Video',
 
 			'sidebar/project/shading': 'Shading',
@@ -1204,20 +1212,20 @@ function Strings( config ) {
 			'script/title/vertexShader': 'Vertex Shader',
 			'script/title/fragmentShader': 'Fragment Shader',
 			'script/title/programInfo': 'Propriétés du programme'
-
 		},
 
 		zh: {
-
 			'prompt/file/open': '您确定吗？未保存的数据将会丢失。',
 			'prompt/file/failedToOpenProject': '无法打开项目！',
 			'prompt/file/export/noMeshSelected': '未选择网格！',
 			'prompt/file/export/noObjectSelected': '未选择对象！',
 			'prompt/script/remove': '你确定吗？',
 			'prompt/history/clear': '撤销/重做历史记录将被清除。您确定吗？',
-			'prompt/history/preserve': '历史将在会话之间保留。\n这可能会影响在处理纹理时的性能。',
+			'prompt/history/preserve':
+				'历史将在会话之间保留。\n这可能会影响在处理纹理时的性能。',
 			'prompt/history/forbid': '在播放场景时，撤消/重做被禁用。',
-			'prompt/rendering/realistic/unsupportedMaterial': 'REALISTIC着色：仅支持 MeshStandardMaterial 和 MeshPhysicalMaterial',
+			'prompt/rendering/realistic/unsupportedMaterial':
+				'REALISTIC着色：仅支持 MeshStandardMaterial 和 MeshPhysicalMaterial',
 
 			'command/AddObject': '添加对象',
 			'command/AddScript': '添加脚本',
@@ -1606,20 +1614,24 @@ function Strings( config ) {
 			'script/title/vertexShader': '顶点着色器',
 			'script/title/fragmentShader': '片段着色器',
 			'script/title/programInfo': '程序属性'
-
 		},
 
 		ja: {
-
 			'prompt/file/open': '保存されていないデータは失われます。 本気ですか？',
-			'prompt/file/failedToOpenProject': 'プロジェクトを開くことができませんでした!',
+			'prompt/file/failedToOpenProject':
+				'プロジェクトを開くことができませんでした!',
 			'prompt/file/export/noMeshSelected': 'メッシュが選択されていません!',
-			'prompt/file/export/noObjectSelected': 'オブジェクトが選択されていません!',
+			'prompt/file/export/noObjectSelected':
+				'オブジェクトが選択されていません!',
 			'prompt/script/remove': '本気ですか？',
-			'prompt/history/clear': '元に戻す/やり直しの履歴が消去されます。 本気ですか？',
-			'prompt/history/preserve': '履歴はセッションをまたいで保存されます。\nこれは、テクスチャを操作する際のパフォーマンスに影響を与える可能性があります。',
-			'prompt/history/forbid': 'シーンの再生中は元に戻す/やり直しは無効になります。',
-			'prompt/rendering/realistic/unsupportedMaterial': 'REALISTIC シェーディング: MeshStandardmaterial と MeshPhysicalmaterial のみがサポートされています',
+			'prompt/history/clear':
+				'元に戻す/やり直しの履歴が消去されます。 本気ですか？',
+			'prompt/history/preserve':
+				'履歴はセッションをまたいで保存されます。\nこれは、テクスチャを操作する際のパフォーマンスに影響を与える可能性があります。',
+			'prompt/history/forbid':
+				'シーンの再生中は元に戻す/やり直しは無効になります。',
+			'prompt/rendering/realistic/unsupportedMaterial':
+				'REALISTIC シェーディング: MeshStandardmaterial と MeshPhysicalmaterial のみがサポートされています',
 
 			'command/AddObject': 'オブジェクトを追加',
 			'command/AddScript': 'スクリプトを追加',
@@ -2008,19 +2020,23 @@ function Strings( config ) {
 			'script/title/vertexShader': '頂点シェーダー',
 			'script/title/fragmentShader': 'フラグメントシェーダ',
 			'script/title/programInfo': 'プログラムのプロパティ'
-
 		},
 
 		ko: {
-			'prompt/file/open': '저장되지 않은 데이터는 손실됩니다. 진행하시겠습니까?',
+			'prompt/file/open':
+				'저장되지 않은 데이터는 손실됩니다. 진행하시겠습니까?',
 			'prompt/file/failedToOpenProject': '프로젝트를 여는 데 실패했습니다!',
 			'prompt/file/export/noMeshSelected': '메시가 선택되지 않았습니다!',
 			'prompt/file/export/noObjectSelected': '객체가 선택되지 않았습니다!',
 			'prompt/script/remove': '삭제하시겠습니까?',
-			'prompt/history/clear': '되돌리기/다시하기 기록이 지워집니다. 진행하시겠습니까?',
-			'prompt/history/preserve': '기록은 세션을 통해 저장됩니다. 이는 텍스처를 조작할 때 성능에 영향을 미칠 수 있습니다.',
-			'prompt/history/forbid': '씬을 재생하는 동안 되돌리기/다시하기는 비활성화됩니다.',
-			'prompt/rendering/realistic/unsupportedMaterial': 'REALISTIC 셰이딩: MeshStandardmaterial 및 MeshPhysicalmaterial만 지원됩니다',
+			'prompt/history/clear':
+				'되돌리기/다시하기 기록이 지워집니다. 진행하시겠습니까?',
+			'prompt/history/preserve':
+				'기록은 세션을 통해 저장됩니다. 이는 텍스처를 조작할 때 성능에 영향을 미칠 수 있습니다.',
+			'prompt/history/forbid':
+				'씬을 재생하는 동안 되돌리기/다시하기는 비활성화됩니다.',
+			'prompt/rendering/realistic/unsupportedMaterial':
+				'REALISTIC 셰이딩: MeshStandardmaterial 및 MeshPhysicalmaterial만 지원됩니다',
 
 			'command/AddObject': '객체 추가',
 			'command/AddScript': '스크립트 추가',
@@ -2410,18 +2426,13 @@ function Strings( config ) {
 			'script/title/fragmentShader': '프래그먼트 셰이더',
 			'script/title/programInfo': '프로그램 속성'
 		}
-	};
+	}
 
 	return {
-
-		getKey: function ( key ) {
-
-			return values[ language ][ key ] || '???';
-
+		getKey: function (key) {
+			return values[language][key] || '???'
 		}
-
-	};
-
+	}
 }
 
-export { Strings };
+export { Strings }

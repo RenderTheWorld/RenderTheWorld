@@ -1,5 +1,5 @@
-import { Texture } from '../../textures/Texture.js';
-import { LinearFilter } from '../../constants.js';
+import { Texture } from '../../textures/Texture.js'
+import { LinearFilter } from '../../constants.js'
 
 /**
  * This special type of texture is intended for compute shaders.
@@ -11,37 +11,35 @@ import { LinearFilter } from '../../constants.js';
  * @augments Texture
  */
 class StorageTexture extends Texture {
-
 	/**
 	 * Constructs a new storage texture.
 	 *
 	 * @param {Number} [width=1] - The storage texture's width.
 	 * @param {Number} [height=1] - The storage texture's height.
 	 */
-	constructor( width = 1, height = 1 ) {
-
-		super();
+	constructor(width = 1, height = 1) {
+		super()
 
 		/**
 		 * The image object which just represents the texture's dimension.
 		 *
 		 * @type {{width: Number, height: Number}}
 		 */
-		this.image = { width, height };
+		this.image = { width, height }
 
 		/**
 		 * The default `magFilter` for storage textures is `THREE.LinearFilter`.
 		 *
 		 * @type {Number}
 		 */
-		this.magFilter = LinearFilter;
+		this.magFilter = LinearFilter
 
 		/**
 		 * The default `minFilter` for storage textures is `THREE.LinearFilter`.
 		 *
 		 * @type {Number}
 		 */
-		this.minFilter = LinearFilter;
+		this.minFilter = LinearFilter
 
 		/**
 		 * This flag can be used for type testing.
@@ -50,10 +48,8 @@ class StorageTexture extends Texture {
 		 * @readonly
 		 * @default true
 		 */
-		this.isStorageTexture = true;
-
+		this.isStorageTexture = true
 	}
-
 }
 
-export default StorageTexture;
+export default StorageTexture

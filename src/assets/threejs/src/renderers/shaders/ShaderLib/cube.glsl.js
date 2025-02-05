@@ -1,4 +1,4 @@
-export const vertex = /* glsl */`
+export const vertex = /* glsl */ `
 varying vec3 vWorldDirection;
 
 #include <common>
@@ -13,9 +13,9 @@ void main() {
 	gl_Position.z = gl_Position.w; // set z to camera.far
 
 }
-`;
+`
 
-export const fragment = /* glsl */`
+export const fragment = /* glsl */ `
 uniform samplerCube tCube;
 uniform float tFlip;
 uniform float opacity;
@@ -33,4 +33,4 @@ void main() {
 	#include <colorspace_fragment>
 
 }
-`;
+`

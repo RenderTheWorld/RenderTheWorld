@@ -1,6 +1,6 @@
-import Node from '../core/Node.js';
-import { property } from '../core/PropertyNode.js';
-import { addMethodChaining, nodeProxy } from '../tsl/TSLCore.js';
+import Node from '../core/Node.js'
+import { property } from '../core/PropertyNode.js'
+import { addMethodChaining, nodeProxy } from '../tsl/TSLCore.js'
 
 /**
  * Represents a logical `if/else` statement. Can be used as an alternative
@@ -16,11 +16,8 @@ import { addMethodChaining, nodeProxy } from '../tsl/TSLCore.js';
  * @augments Node
  */
 class ConditionalNode extends Node {
-
 	static get type() {
-
-		return 'ConditionalNode';
-
+		return 'ConditionalNode'
 	}
 
 	/**
@@ -30,23 +27,22 @@ class ConditionalNode extends Node {
 	 * @param {Node} ifNode - The node that is evaluate when the condition ends up `true`.
 	 * @param {Node?} [elseNode=null] - The node that is evaluate when the condition ends up `false`.
 	 */
-	constructor( condNode, ifNode, elseNode = null ) {
-
-		super();
+	constructor(condNode, ifNode, elseNode = null) {
+		super()
 
 		/**
 		 * The node that defines the condition.
 		 *
 		 * @type {Node}
 		 */
-		this.condNode = condNode;
+		this.condNode = condNode
 
 		/**
 		 * The node that is evaluate when the condition ends up `true`.
 		 *
 		 * @type {Node}
 		 */
-		this.ifNode = ifNode;
+		this.ifNode = ifNode
 
 		/**
 		 * The node that is evaluate when the condition ends up `false`.
@@ -54,8 +50,7 @@ class ConditionalNode extends Node {
 		 * @type {Node?}
 		 * @default null
 		 */
-		this.elseNode = elseNode;
-
+		this.elseNode = elseNode
 	}
 
 	/**
@@ -65,136 +60,116 @@ class ConditionalNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The node type.
 	 */
-	getNodeType( builder ) {
+	getNodeType(builder) {
+		const { ifNode, elseNode } = builder.getNodeProperties(this)
 
-		const { ifNode, elseNode } = builder.getNodeProperties( this );
-
-		if ( ifNode === undefined ) {
-
+		if (ifNode === undefined) {
 			// fallback setup
 
-			this.setup( builder );
+			this.setup(builder)
 
-			return this.getNodeType( builder );
-
+			return this.getNodeType(builder)
 		}
 
-		const ifType = ifNode.getNodeType( builder );
+		const ifType = ifNode.getNodeType(builder)
 
-		if ( elseNode !== null ) {
+		if (elseNode !== null) {
+			const elseType = elseNode.getNodeType(builder)
 
-			const elseType = elseNode.getNodeType( builder );
-
-			if ( builder.getTypeLength( elseType ) > builder.getTypeLength( ifType ) ) {
-
-				return elseType;
-
+			if (builder.getTypeLength(elseType) > builder.getTypeLength(ifType)) {
+				return elseType
 			}
-
 		}
 
-		return ifType;
-
+		return ifType
 	}
 
-	setup( builder ) {
-
-		const condNode = this.condNode.cache();
-		const ifNode = this.ifNode.cache();
-		const elseNode = this.elseNode ? this.elseNode.cache() : null;
+	setup(builder) {
+		const condNode = this.condNode.cache()
+		const ifNode = this.ifNode.cache()
+		const elseNode = this.elseNode ? this.elseNode.cache() : null
 
 		//
 
-		const currentNodeBlock = builder.context.nodeBlock;
+		const currentNodeBlock = builder.context.nodeBlock
 
-		builder.getDataFromNode( ifNode ).parentNodeBlock = currentNodeBlock;
-		if ( elseNode !== null ) builder.getDataFromNode( elseNode ).parentNodeBlock = currentNodeBlock;
+		builder.getDataFromNode(ifNode).parentNodeBlock = currentNodeBlock
+		if (elseNode !== null)
+			builder.getDataFromNode(elseNode).parentNodeBlock = currentNodeBlock
 
 		//
 
-		const properties = builder.getNodeProperties( this );
-		properties.condNode = condNode;
-		properties.ifNode = ifNode.context( { nodeBlock: ifNode } );
-		properties.elseNode = elseNode ? elseNode.context( { nodeBlock: elseNode } ) : null;
-
+		const properties = builder.getNodeProperties(this)
+		properties.condNode = condNode
+		properties.ifNode = ifNode.context({ nodeBlock: ifNode })
+		properties.elseNode = elseNode
+			? elseNode.context({ nodeBlock: elseNode })
+			: null
 	}
 
-	generate( builder, output ) {
+	generate(builder, output) {
+		const type = this.getNodeType(builder)
 
-		const type = this.getNodeType( builder );
+		const nodeData = builder.getDataFromNode(this)
 
-		const nodeData = builder.getDataFromNode( this );
-
-		if ( nodeData.nodeProperty !== undefined ) {
-
-			return nodeData.nodeProperty;
-
+		if (nodeData.nodeProperty !== undefined) {
+			return nodeData.nodeProperty
 		}
 
-		const { condNode, ifNode, elseNode } = builder.getNodeProperties( this );
+		const { condNode, ifNode, elseNode } = builder.getNodeProperties(this)
 
-		const needsOutput = output !== 'void';
-		const nodeProperty = needsOutput ? property( type ).build( builder ) : '';
+		const needsOutput = output !== 'void'
+		const nodeProperty = needsOutput ? property(type).build(builder) : ''
 
-		nodeData.nodeProperty = nodeProperty;
+		nodeData.nodeProperty = nodeProperty
 
-		const nodeSnippet = condNode.build( builder, 'bool' );
+		const nodeSnippet = condNode.build(builder, 'bool')
 
-		builder.addFlowCode( `\n${ builder.tab }if ( ${ nodeSnippet } ) {\n\n` ).addFlowTab();
+		builder
+			.addFlowCode(`\n${builder.tab}if ( ${nodeSnippet} ) {\n\n`)
+			.addFlowTab()
 
-		let ifSnippet = ifNode.build( builder, type );
+		let ifSnippet = ifNode.build(builder, type)
 
-		if ( ifSnippet ) {
-
-			if ( needsOutput ) {
-
-				ifSnippet = nodeProperty + ' = ' + ifSnippet + ';';
-
+		if (ifSnippet) {
+			if (needsOutput) {
+				ifSnippet = nodeProperty + ' = ' + ifSnippet + ';'
 			} else {
-
-				ifSnippet = 'return ' + ifSnippet + ';';
-
+				ifSnippet = 'return ' + ifSnippet + ';'
 			}
-
 		}
 
-		builder.removeFlowTab().addFlowCode( builder.tab + '\t' + ifSnippet + '\n\n' + builder.tab + '}' );
+		builder
+			.removeFlowTab()
+			.addFlowCode(builder.tab + '\t' + ifSnippet + '\n\n' + builder.tab + '}')
 
-		if ( elseNode !== null ) {
+		if (elseNode !== null) {
+			builder.addFlowCode(' else {\n\n').addFlowTab()
 
-			builder.addFlowCode( ' else {\n\n' ).addFlowTab();
+			let elseSnippet = elseNode.build(builder, type)
 
-			let elseSnippet = elseNode.build( builder, type );
-
-			if ( elseSnippet ) {
-
-				if ( needsOutput ) {
-
-					elseSnippet = nodeProperty + ' = ' + elseSnippet + ';';
-
+			if (elseSnippet) {
+				if (needsOutput) {
+					elseSnippet = nodeProperty + ' = ' + elseSnippet + ';'
 				} else {
-
-					elseSnippet = 'return ' + elseSnippet + ';';
-
+					elseSnippet = 'return ' + elseSnippet + ';'
 				}
-
 			}
 
-			builder.removeFlowTab().addFlowCode( builder.tab + '\t' + elseSnippet + '\n\n' + builder.tab + '}\n\n' );
-
+			builder
+				.removeFlowTab()
+				.addFlowCode(
+					builder.tab + '\t' + elseSnippet + '\n\n' + builder.tab + '}\n\n'
+				)
 		} else {
-
-			builder.addFlowCode( '\n\n' );
-
+			builder.addFlowCode('\n\n')
 		}
 
-		return builder.format( nodeProperty, type, output );
-
+		return builder.format(nodeProperty, type, output)
 	}
-
 }
 
-export default ConditionalNode;
+export default ConditionalNode
 
 /**
  * TSL function for creating a conditional node.
@@ -205,9 +180,9 @@ export default ConditionalNode;
  * @param {Node?} [elseNode=null] - The node that is evaluate when the condition ends up `false`.
  * @returns {ConditionalNode}
  */
-export const select = /*@__PURE__*/ nodeProxy( ConditionalNode );
+export const select = /*@__PURE__*/ nodeProxy(ConditionalNode)
 
-addMethodChaining( 'select', select );
+addMethodChaining('select', select)
 
 // Deprecated
 
@@ -218,11 +193,11 @@ addMethodChaining( 'select', select );
  * @param  {...any} params
  * @returns {ConditionalNode}
  */
-export const cond = ( ...params ) => { // @deprecated, r168
+export const cond = (...params) => {
+	// @deprecated, r168
 
-	console.warn( 'TSL.ConditionalNode: cond() has been renamed to select().' );
-	return select( ...params );
+	console.warn('TSL.ConditionalNode: cond() has been renamed to select().')
+	return select(...params)
+}
 
-};
-
-addMethodChaining( 'cond', cond );
+addMethodChaining('cond', cond)

@@ -5,7 +5,6 @@
  * this purpose.
  */
 class NodeVar {
-
 	/**
 	 * Constructs a new node variable.
 	 *
@@ -14,8 +13,7 @@ class NodeVar {
 	 * @param {Boolean} [readOnly=false] - The read-only flag.
 	 * @param {Number?} [count=null] - The size.
 	 */
-	constructor( name, type, readOnly = false, count = null ) {
-
+	constructor(name, type, readOnly = false, count = null) {
 		/**
 		 * This flag can be used for type testing.
 		 *
@@ -23,38 +21,36 @@ class NodeVar {
 		 * @readonly
 		 * @default true
 		 */
-		this.isNodeVar = true;
+		this.isNodeVar = true
 
 		/**
 		 * The name of the variable.
 		 *
 		 * @type {String}
 		 */
-		this.name = name;
+		this.name = name
 
 		/**
 		 * The type of the variable.
 		 *
 		 * @type {String}
 		 */
-		this.type = type;
+		this.type = type
 
 		/**
 		 *  The read-only flag.
 		 *
 		 * @type {Boolean}
 		 */
-		this.readOnly = readOnly;
+		this.readOnly = readOnly
 
 		/**
 		 * The size.
 		 *
 		 * @type {Number?}
 		 */
-		this.count = count;
-
+		this.count = count
 	}
-
 }
 
-export default NodeVar;
+export default NodeVar

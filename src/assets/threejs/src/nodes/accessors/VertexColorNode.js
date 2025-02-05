@@ -1,6 +1,6 @@
-import AttributeNode from '../core/AttributeNode.js';
-import { nodeObject } from '../tsl/TSLBase.js';
-import { Vector4 } from '../../math/Vector4.js';
+import AttributeNode from '../core/AttributeNode.js'
+import { nodeObject } from '../tsl/TSLBase.js'
+import { Vector4 } from '../../math/Vector4.js'
 
 /**
  * An attribute node for representing vertex colors.
@@ -8,11 +8,8 @@ import { Vector4 } from '../../math/Vector4.js';
  * @augments AttributeNode
  */
 class VertexColorNode extends AttributeNode {
-
 	static get type() {
-
-		return 'VertexColorNode';
-
+		return 'VertexColorNode'
 	}
 
 	/**
@@ -20,9 +17,8 @@ class VertexColorNode extends AttributeNode {
 	 *
 	 * @param {Number} [index=0] - The attribute index.
 	 */
-	constructor( index = 0 ) {
-
-		super( null, 'vec4' );
+	constructor(index = 0) {
+		super(null, 'vec4')
 
 		/**
 		 * This flag can be used for type testing.
@@ -31,7 +27,7 @@ class VertexColorNode extends AttributeNode {
 		 * @readonly
 		 * @default true
 		 */
-		this.isVertexColorNode = true;
+		this.isVertexColorNode = true
 
 		/**
 		 * The attribute index to enable more than one sets of vertex colors.
@@ -39,8 +35,7 @@ class VertexColorNode extends AttributeNode {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this.index = index;
-
+		this.index = index
 	}
 
 	/**
@@ -49,55 +44,42 @@ class VertexColorNode extends AttributeNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The attribute name.
 	 */
-	getAttributeName( /*builder*/ ) {
+	getAttributeName(/*builder*/) {
+		const index = this.index
 
-		const index = this.index;
-
-		return 'color' + ( index > 0 ? index : '' );
-
+		return 'color' + (index > 0 ? index : '')
 	}
 
-	generate( builder ) {
+	generate(builder) {
+		const attributeName = this.getAttributeName(builder)
+		const geometryAttribute = builder.hasGeometryAttribute(attributeName)
 
-		const attributeName = this.getAttributeName( builder );
-		const geometryAttribute = builder.hasGeometryAttribute( attributeName );
+		let result
 
-		let result;
-
-		if ( geometryAttribute === true ) {
-
-			result = super.generate( builder );
-
+		if (geometryAttribute === true) {
+			result = super.generate(builder)
 		} else {
-
 			// Vertex color fallback should be white
-			result = builder.generateConst( this.nodeType, new Vector4( 1, 1, 1, 1 ) );
-
+			result = builder.generateConst(this.nodeType, new Vector4(1, 1, 1, 1))
 		}
 
-		return result;
-
+		return result
 	}
 
-	serialize( data ) {
+	serialize(data) {
+		super.serialize(data)
 
-		super.serialize( data );
-
-		data.index = this.index;
-
+		data.index = this.index
 	}
 
-	deserialize( data ) {
+	deserialize(data) {
+		super.deserialize(data)
 
-		super.deserialize( data );
-
-		this.index = data.index;
-
+		this.index = data.index
 	}
-
 }
 
-export default VertexColorNode;
+export default VertexColorNode
 
 /**
  * TSL function for creating a reference node.
@@ -106,4 +88,4 @@ export default VertexColorNode;
  * @param {Number} index - The attribute index.
  * @returns {VertexColorNode}
  */
-export const vertexColor = ( index ) => nodeObject( new VertexColorNode( index ) );
+export const vertexColor = index => nodeObject(new VertexColorNode(index))

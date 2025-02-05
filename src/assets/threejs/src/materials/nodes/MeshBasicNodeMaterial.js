@@ -1,14 +1,14 @@
-import NodeMaterial from './NodeMaterial.js';
-import { materialLightMap } from '../../nodes/accessors/MaterialNode.js';
-import BasicEnvironmentNode from '../../nodes/lighting/BasicEnvironmentNode.js';
-import BasicLightMapNode from '../../nodes/lighting/BasicLightMapNode.js';
-import BasicLightingModel from '../../nodes/functions/BasicLightingModel.js';
-import { normalView } from '../../nodes/accessors/Normal.js';
-import { diffuseColor } from '../../nodes/core/PropertyNode.js';
+import NodeMaterial from './NodeMaterial.js'
+import { materialLightMap } from '../../nodes/accessors/MaterialNode.js'
+import BasicEnvironmentNode from '../../nodes/lighting/BasicEnvironmentNode.js'
+import BasicLightMapNode from '../../nodes/lighting/BasicLightMapNode.js'
+import BasicLightingModel from '../../nodes/functions/BasicLightingModel.js'
+import { normalView } from '../../nodes/accessors/Normal.js'
+import { diffuseColor } from '../../nodes/core/PropertyNode.js'
 
-import { MeshBasicMaterial } from '../MeshBasicMaterial.js';
+import { MeshBasicMaterial } from '../MeshBasicMaterial.js'
 
-const _defaultValues = /*@__PURE__*/ new MeshBasicMaterial();
+const _defaultValues = /*@__PURE__*/ new MeshBasicMaterial()
 
 /**
  * Node material version of `MeshBasicMaterial`.
@@ -16,11 +16,8 @@ const _defaultValues = /*@__PURE__*/ new MeshBasicMaterial();
  * @augments NodeMaterial
  */
 class MeshBasicNodeMaterial extends NodeMaterial {
-
 	static get type() {
-
-		return 'MeshBasicNodeMaterial';
-
+		return 'MeshBasicNodeMaterial'
 	}
 
 	/**
@@ -28,9 +25,8 @@ class MeshBasicNodeMaterial extends NodeMaterial {
 	 *
 	 * @param {Object?} parameters - The configuration parameter.
 	 */
-	constructor( parameters ) {
-
-		super();
+	constructor(parameters) {
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -39,7 +35,7 @@ class MeshBasicNodeMaterial extends NodeMaterial {
 		 * @readonly
 		 * @default true
 		 */
-		this.isMeshBasicNodeMaterial = true;
+		this.isMeshBasicNodeMaterial = true
 
 		/**
 		 * Although the basic material is by definition unlit, we set
@@ -49,12 +45,11 @@ class MeshBasicNodeMaterial extends NodeMaterial {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.lights = true;
+		this.lights = true
 
-		this.setDefaultValues( _defaultValues );
+		this.setDefaultValues(_defaultValues)
 
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
 	/**
@@ -64,9 +59,7 @@ class MeshBasicNodeMaterial extends NodeMaterial {
 	 * @return {Node<vec3>} The normal node.
 	 */
 	setupNormal() {
-
-		return normalView; // see #28839
-
+		return normalView // see #28839
 	}
 
 	/**
@@ -76,12 +69,10 @@ class MeshBasicNodeMaterial extends NodeMaterial {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {BasicEnvironmentNode<vec3>?} The environment node.
 	 */
-	setupEnvironment( builder ) {
+	setupEnvironment(builder) {
+		const envNode = super.setupEnvironment(builder)
 
-		const envNode = super.setupEnvironment( builder );
-
-		return envNode ? new BasicEnvironmentNode( envNode ) : null;
-
+		return envNode ? new BasicEnvironmentNode(envNode) : null
 	}
 
 	/**
@@ -91,18 +82,14 @@ class MeshBasicNodeMaterial extends NodeMaterial {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {BasicLightMapNode<vec3>?} The light map node.
 	 */
-	setupLightMap( builder ) {
+	setupLightMap(builder) {
+		let node = null
 
-		let node = null;
-
-		if ( builder.material.lightMap ) {
-
-			node = new BasicLightMapNode( materialLightMap );
-
+		if (builder.material.lightMap) {
+			node = new BasicLightMapNode(materialLightMap)
 		}
 
-		return node;
-
+		return node
 	}
 
 	/**
@@ -112,9 +99,7 @@ class MeshBasicNodeMaterial extends NodeMaterial {
 	 * @return {Node<vec3>} The outgoing light node.
 	 */
 	setupOutgoingLight() {
-
-		return diffuseColor.rgb;
-
+		return diffuseColor.rgb
 	}
 
 	/**
@@ -123,11 +108,8 @@ class MeshBasicNodeMaterial extends NodeMaterial {
 	 * @return {BasicLightingModel} The lighting model.
 	 */
 	setupLightingModel() {
-
-		return new BasicLightingModel();
-
+		return new BasicLightingModel()
 	}
-
 }
 
-export default MeshBasicNodeMaterial;
+export default MeshBasicNodeMaterial

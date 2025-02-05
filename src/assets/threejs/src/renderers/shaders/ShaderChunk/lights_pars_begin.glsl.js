@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 uniform bool receiveShadow;
 uniform vec3 ambientLightColor;
 
@@ -211,4 +211,4 @@ float getSpotAttenuation( const in float coneCosine, const in float penumbraCosi
 	}
 
 #endif
-`;
+`

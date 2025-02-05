@@ -1,13 +1,16 @@
-import NodeMaterial from './NodeMaterial.js';
-import { shininess, specularColor } from '../../nodes/core/PropertyNode.js';
-import { materialShininess, materialSpecular } from '../../nodes/accessors/MaterialNode.js';
-import { float } from '../../nodes/tsl/TSLBase.js';
-import BasicEnvironmentNode from '../../nodes/lighting/BasicEnvironmentNode.js';
-import PhongLightingModel from '../../nodes/functions/PhongLightingModel.js';
+import NodeMaterial from './NodeMaterial.js'
+import { shininess, specularColor } from '../../nodes/core/PropertyNode.js'
+import {
+	materialShininess,
+	materialSpecular
+} from '../../nodes/accessors/MaterialNode.js'
+import { float } from '../../nodes/tsl/TSLBase.js'
+import BasicEnvironmentNode from '../../nodes/lighting/BasicEnvironmentNode.js'
+import PhongLightingModel from '../../nodes/functions/PhongLightingModel.js'
 
-import { MeshPhongMaterial } from '../MeshPhongMaterial.js';
+import { MeshPhongMaterial } from '../MeshPhongMaterial.js'
 
-const _defaultValues = /*@__PURE__*/ new MeshPhongMaterial();
+const _defaultValues = /*@__PURE__*/ new MeshPhongMaterial()
 
 /**
  * Node material version of `MeshPhongMaterial`.
@@ -15,11 +18,8 @@ const _defaultValues = /*@__PURE__*/ new MeshPhongMaterial();
  * @augments NodeMaterial
  */
 class MeshPhongNodeMaterial extends NodeMaterial {
-
 	static get type() {
-
-		return 'MeshPhongNodeMaterial';
-
+		return 'MeshPhongNodeMaterial'
 	}
 
 	/**
@@ -27,9 +27,8 @@ class MeshPhongNodeMaterial extends NodeMaterial {
 	 *
 	 * @param {Object?} parameters - The configuration parameter.
 	 */
-	constructor( parameters ) {
-
-		super();
+	constructor(parameters) {
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -38,7 +37,7 @@ class MeshPhongNodeMaterial extends NodeMaterial {
 		 * @readonly
 		 * @default true
 		 */
-		this.isMeshPhongNodeMaterial = true;
+		this.isMeshPhongNodeMaterial = true
 
 		/**
 		 * Set to `true` because phong materials react on lights.
@@ -46,7 +45,7 @@ class MeshPhongNodeMaterial extends NodeMaterial {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.lights = true;
+		this.lights = true
 
 		/**
 		 * The shininess of phong materials is by default inferred from the `shininess`
@@ -59,7 +58,7 @@ class MeshPhongNodeMaterial extends NodeMaterial {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.shininessNode = null;
+		this.shininessNode = null
 
 		/**
 		 * The specular color of phong materials is by default inferred from the
@@ -72,12 +71,11 @@ class MeshPhongNodeMaterial extends NodeMaterial {
 		 * @type {Node<vec3>?}
 		 * @default null
 		 */
-		this.specularNode = null;
+		this.specularNode = null
 
-		this.setDefaultValues( _defaultValues );
+		this.setDefaultValues(_defaultValues)
 
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
 	/**
@@ -87,12 +85,10 @@ class MeshPhongNodeMaterial extends NodeMaterial {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {BasicEnvironmentNode<vec3>?} The environment node.
 	 */
-	setupEnvironment( builder ) {
+	setupEnvironment(builder) {
+		const envNode = super.setupEnvironment(builder)
 
-		const envNode = super.setupEnvironment( builder );
-
-		return envNode ? new BasicEnvironmentNode( envNode ) : null;
-
+		return envNode ? new BasicEnvironmentNode(envNode) : null
 	}
 
 	/**
@@ -100,10 +96,8 @@ class MeshPhongNodeMaterial extends NodeMaterial {
 	 *
 	 * @return {PhongLightingModel} The lighting model.
 	 */
-	setupLightingModel( /*builder*/ ) {
-
-		return new PhongLightingModel();
-
+	setupLightingModel(/*builder*/) {
+		return new PhongLightingModel()
 	}
 
 	/**
@@ -111,31 +105,28 @@ class MeshPhongNodeMaterial extends NodeMaterial {
 	 *
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	setupVariants( /*builder*/ ) {
-
+	setupVariants(/*builder*/) {
 		// SHININESS
 
-		const shininessNode = ( this.shininessNode ? float( this.shininessNode ) : materialShininess ).max( 1e-4 ); // to prevent pow( 0.0, 0.0 )
+		const shininessNode = (
+			this.shininessNode ? float(this.shininessNode) : materialShininess
+		).max(1e-4) // to prevent pow( 0.0, 0.0 )
 
-		shininess.assign( shininessNode );
+		shininess.assign(shininessNode)
 
 		// SPECULAR COLOR
 
-		const specularNode = this.specularNode || materialSpecular;
+		const specularNode = this.specularNode || materialSpecular
 
-		specularColor.assign( specularNode );
-
+		specularColor.assign(specularNode)
 	}
 
-	copy( source ) {
+	copy(source) {
+		this.shininessNode = source.shininessNode
+		this.specularNode = source.specularNode
 
-		this.shininessNode = source.shininessNode;
-		this.specularNode = source.specularNode;
-
-		return super.copy( source );
-
+		return super.copy(source)
 	}
-
 }
 
-export default MeshPhongNodeMaterial;
+export default MeshPhongNodeMaterial

@@ -1,6 +1,11 @@
-import Node from './Node.js';
-import { select } from '../math/ConditionalNode.js';
-import { ShaderNode, nodeProxy, getCurrentStack, setCurrentStack } from '../tsl/TSLBase.js';
+import Node from './Node.js'
+import { select } from '../math/ConditionalNode.js'
+import {
+	ShaderNode,
+	nodeProxy,
+	getCurrentStack,
+	setCurrentStack
+} from '../tsl/TSLBase.js'
 
 /**
  * Stack is a helper for Nodes that need to produce stack-based code instead of continuous flow.
@@ -9,11 +14,8 @@ import { ShaderNode, nodeProxy, getCurrentStack, setCurrentStack } from '../tsl/
  * @augments Node
  */
 class StackNode extends Node {
-
 	static get type() {
-
-		return 'StackNode';
-
+		return 'StackNode'
 	}
 
 	/**
@@ -21,16 +23,15 @@ class StackNode extends Node {
 	 *
 	 * @param {StackNode?} [parent=null] - The parent stack node.
 	 */
-	constructor( parent = null ) {
-
-		super();
+	constructor(parent = null) {
+		super()
 
 		/**
 		 * List of nodes.
 		 *
 		 * @type {Array<Node>}
 		 */
-		this.nodes = [];
+		this.nodes = []
 
 		/**
 		 * The output node.
@@ -38,7 +39,7 @@ class StackNode extends Node {
 		 * @type {Node?}
 		 * @default null
 		 */
-		this.outputNode = null;
+		this.outputNode = null
 
 		/**
 		 * The parent stack node.
@@ -46,7 +47,7 @@ class StackNode extends Node {
 		 * @type {StackNode}
 		 * @default null
 		 */
-		this.parent = parent;
+		this.parent = parent
 
 		/**
 		 * The current conditional node.
@@ -55,7 +56,7 @@ class StackNode extends Node {
 		 * @type {ConditionalNode}
 		 * @default null
 		 */
-		this._currentCond = null;
+		this._currentCond = null
 
 		/**
 		 * This flag can be used for type testing.
@@ -64,20 +65,17 @@ class StackNode extends Node {
 		 * @readonly
 		 * @default true
 		 */
-		this.isStackNode = true;
-
+		this.isStackNode = true
 	}
 
-	getNodeType( builder ) {
-
-		return this.outputNode ? this.outputNode.getNodeType( builder ) : 'void';
-
+	getNodeType(builder) {
+		return this.outputNode ? this.outputNode.getNodeType(builder) : 'void'
 	}
 
-	getMemberType( builder, name ) {
-
-		return this.outputNode ? this.outputNode.getMemberType( builder, name ) : 'void';
-
+	getMemberType(builder, name) {
+		return this.outputNode
+			? this.outputNode.getMemberType(builder, name)
+			: 'void'
 	}
 
 	/**
@@ -86,12 +84,10 @@ class StackNode extends Node {
 	 * @param {Node} node - The node to add.
 	 * @return {StackNode} A reference to this stack node.
 	 */
-	add( node ) {
+	add(node) {
+		this.nodes.push(node)
 
-		this.nodes.push( node );
-
-		return this;
-
+		return this
 	}
 
 	/**
@@ -101,13 +97,11 @@ class StackNode extends Node {
 	 * @param {Function} method - TSL code which is executed if the condition evaluates to `true`.
 	 * @return {StackNode} A reference to this stack node.
 	 */
-	If( boolNode, method ) {
+	If(boolNode, method) {
+		const methodNode = new ShaderNode(method)
+		this._currentCond = select(boolNode, methodNode)
 
-		const methodNode = new ShaderNode( method );
-		this._currentCond = select( boolNode, methodNode );
-
-		return this.add( this._currentCond );
-
+		return this.add(this._currentCond)
 	}
 
 	/**
@@ -117,16 +111,14 @@ class StackNode extends Node {
 	 * @param {Function} method - TSL code which is executed if the condition evaluates to `true`.
 	 * @return {StackNode} A reference to this stack node.
 	 */
-	ElseIf( boolNode, method ) {
+	ElseIf(boolNode, method) {
+		const methodNode = new ShaderNode(method)
+		const ifNode = select(boolNode, methodNode)
 
-		const methodNode = new ShaderNode( method );
-		const ifNode = select( boolNode, methodNode );
+		this._currentCond.elseNode = ifNode
+		this._currentCond = ifNode
 
-		this._currentCond.elseNode = ifNode;
-		this._currentCond = ifNode;
-
-		return this;
-
+		return this
 	}
 
 	/**
@@ -135,30 +127,26 @@ class StackNode extends Node {
 	 * @param {Function} method - TSL code which is executed in the `else` case.
 	 * @return {StackNode} A reference to this stack node.
 	 */
-	Else( method ) {
+	Else(method) {
+		this._currentCond.elseNode = new ShaderNode(method)
 
-		this._currentCond.elseNode = new ShaderNode( method );
-
-		return this;
-
+		return this
 	}
 
-	build( builder, ...params ) {
+	build(builder, ...params) {
+		const previousStack = getCurrentStack()
 
-		const previousStack = getCurrentStack();
+		setCurrentStack(this)
 
-		setCurrentStack( this );
-
-		for ( const node of this.nodes ) {
-
-			node.build( builder, 'void' );
-
+		for (const node of this.nodes) {
+			node.build(builder, 'void')
 		}
 
-		setCurrentStack( previousStack );
+		setCurrentStack(previousStack)
 
-		return this.outputNode ? this.outputNode.build( builder, ...params ) : super.build( builder, ...params );
-
+		return this.outputNode
+			? this.outputNode.build(builder, ...params)
+			: super.build(builder, ...params)
 	}
 
 	// Deprecated
@@ -170,11 +158,11 @@ class StackNode extends Node {
 	 * @param  {...any} params
 	 * @returns {StackNode}
 	 */
-	else( ...params ) { // @deprecated, r168
+	else(...params) {
+		// @deprecated, r168
 
-		console.warn( 'TSL.StackNode: .else() has been renamed to .Else().' );
-		return this.Else( ...params );
-
+		console.warn('TSL.StackNode: .else() has been renamed to .Else().')
+		return this.Else(...params)
 	}
 
 	/**
@@ -183,16 +171,15 @@ class StackNode extends Node {
 	 * @param  {...any} params
 	 * @returns {StackNode}
 	 */
-	elseif( ...params ) { // @deprecated, r168
+	elseif(...params) {
+		// @deprecated, r168
 
-		console.warn( 'TSL.StackNode: .elseif() has been renamed to .ElseIf().' );
-		return this.ElseIf( ...params );
-
+		console.warn('TSL.StackNode: .elseif() has been renamed to .ElseIf().')
+		return this.ElseIf(...params)
 	}
-
 }
 
-export default StackNode;
+export default StackNode
 
 /**
  * TSL function for creating a stack node.
@@ -201,4 +188,4 @@ export default StackNode;
  * @param {StackNode?} [parent=null] - The parent stack node.
  * @returns {StackNode}
  */
-export const stack = /*@__PURE__*/ nodeProxy( StackNode );
+export const stack = /*@__PURE__*/ nodeProxy(StackNode)

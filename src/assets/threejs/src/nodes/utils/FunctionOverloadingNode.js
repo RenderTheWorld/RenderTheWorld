@@ -1,5 +1,5 @@
-import Node from '../core/Node.js';
-import { nodeProxy } from '../tsl/TSLCore.js';
+import Node from '../core/Node.js'
+import { nodeProxy } from '../tsl/TSLCore.js'
 
 /**
  * This class allows to define multiple overloaded versions
@@ -9,11 +9,8 @@ import { nodeProxy } from '../tsl/TSLCore.js';
  * @augments Node
  */
 class FunctionOverloadingNode extends Node {
-
 	static get type() {
-
-		return 'FunctionOverloadingNode';
-
+		return 'FunctionOverloadingNode'
 	}
 
 	/**
@@ -22,23 +19,22 @@ class FunctionOverloadingNode extends Node {
 	 * @param {Array<Function>} functionNodes - Array of `Fn` function definitions.
 	 * @param {...Node} parametersNodes - A list of parameter nodes.
 	 */
-	constructor( functionNodes = [], ...parametersNodes ) {
-
-		super();
+	constructor(functionNodes = [], ...parametersNodes) {
+		super()
 
 		/**
 		 * Array of `Fn` function definitions.
 		 *
 		 * @type {Array<Function>}
 		 */
-		this.functionNodes = functionNodes;
+		this.functionNodes = functionNodes
 
 		/**
 		 * A list of parameter nodes.
 		 *
 		 * @type {Array<Node>}
 		 */
-		this.parametersNodes = parametersNodes;
+		this.parametersNodes = parametersNodes
 
 		/**
 		 * The selected overloaded function call.
@@ -46,7 +42,7 @@ class FunctionOverloadingNode extends Node {
 		 * @private
 		 * @type {ShaderCallNodeInternal}
 		 */
-		this._candidateFnCall = null;
+		this._candidateFnCall = null
 
 		/**
 		 * This node is marked as global.
@@ -54,8 +50,7 @@ class FunctionOverloadingNode extends Node {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.global = true;
-
+		this.global = true
 	}
 
 	/**
@@ -66,80 +61,61 @@ class FunctionOverloadingNode extends Node {
 	 * @return {String} The node type.
 	 */
 	getNodeType() {
-
-		return this.functionNodes[ 0 ].shaderNode.layout.type;
-
+		return this.functionNodes[0].shaderNode.layout.type
 	}
 
-	setup( builder ) {
+	setup(builder) {
+		const params = this.parametersNodes
 
-		const params = this.parametersNodes;
+		let candidateFnCall = this._candidateFnCall
 
-		let candidateFnCall = this._candidateFnCall;
+		if (candidateFnCall === null) {
+			let candidateFn = null
+			let candidateScore = -1
 
-		if ( candidateFnCall === null ) {
+			for (const functionNode of this.functionNodes) {
+				const shaderNode = functionNode.shaderNode
+				const layout = shaderNode.layout
 
-			let candidateFn = null;
-			let candidateScore = - 1;
-
-			for ( const functionNode of this.functionNodes ) {
-
-				const shaderNode = functionNode.shaderNode;
-				const layout = shaderNode.layout;
-
-				if ( layout === null ) {
-
-					throw new Error( 'FunctionOverloadingNode: FunctionNode must be a layout.' );
-
+				if (layout === null) {
+					throw new Error(
+						'FunctionOverloadingNode: FunctionNode must be a layout.'
+					)
 				}
 
-				const inputs = layout.inputs;
+				const inputs = layout.inputs
 
-				if ( params.length === inputs.length ) {
+				if (params.length === inputs.length) {
+					let score = 0
 
-					let score = 0;
+					for (let i = 0; i < params.length; i++) {
+						const param = params[i]
+						const input = inputs[i]
 
-					for ( let i = 0; i < params.length; i ++ ) {
-
-						const param = params[ i ];
-						const input = inputs[ i ];
-
-						if ( param.getNodeType( builder ) === input.type ) {
-
-							score ++;
-
+						if (param.getNodeType(builder) === input.type) {
+							score++
 						} else {
-
-							score = 0;
-
+							score = 0
 						}
-
 					}
 
-					if ( score > candidateScore ) {
-
-						candidateFn = functionNode;
-						candidateScore = score;
-
+					if (score > candidateScore) {
+						candidateFn = functionNode
+						candidateScore = score
 					}
-
 				}
-
 			}
 
-			this._candidateFnCall = candidateFnCall = candidateFn( ...params );
-
+			this._candidateFnCall = candidateFnCall = candidateFn(...params)
 		}
 
-		return candidateFnCall;
-
+		return candidateFnCall
 	}
-
 }
 
-export default FunctionOverloadingNode;
+export default FunctionOverloadingNode
 
-const overloadingBaseFn = /*@__PURE__*/ nodeProxy( FunctionOverloadingNode );
+const overloadingBaseFn = /*@__PURE__*/ nodeProxy(FunctionOverloadingNode)
 
 /**
  * TSL function for creating a function overloading node.
@@ -148,4 +124,7 @@ const overloadingBaseFn = /*@__PURE__*/ nodeProxy( FunctionOverloadingNode );
  * @param {Array<Function>} functionNodes - Array of `Fn` function definitions.
  * @returns {FunctionOverloadingNode}
  */
-export const overloadingFn = ( functionNodes ) => ( ...params ) => overloadingBaseFn( functionNodes, ...params );
+export const overloadingFn =
+	functionNodes =>
+	(...params) =>
+		overloadingBaseFn(functionNodes, ...params)

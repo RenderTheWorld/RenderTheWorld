@@ -1,67 +1,58 @@
-import { UIElement, UIPanel, UIText } from './libs/ui.js';
+import { UIElement, UIPanel, UIText } from './libs/ui.js'
 
-import { SetScriptValueCommand } from './commands/SetScriptValueCommand.js';
-import { SetMaterialValueCommand } from './commands/SetMaterialValueCommand.js';
+import { SetScriptValueCommand } from './commands/SetScriptValueCommand.js'
+import { SetMaterialValueCommand } from './commands/SetMaterialValueCommand.js'
 
-function Script( editor ) {
+function Script(editor) {
+	const signals = editor.signals
+	const strings = editor.strings
 
-	const signals = editor.signals;
-	const strings = editor.strings;
+	const container = new UIPanel()
+	container.setId('script')
+	container.setPosition('absolute')
+	container.setBackgroundColor('#272822')
+	container.setDisplay('none')
 
-	const container = new UIPanel();
-	container.setId( 'script' );
-	container.setPosition( 'absolute' );
-	container.setBackgroundColor( '#272822' );
-	container.setDisplay( 'none' );
+	const header = new UIPanel()
+	header.setPadding('10px')
+	container.add(header)
 
-	const header = new UIPanel();
-	header.setPadding( '10px' );
-	container.add( header );
+	const title = new UIText().setColor('#fff')
+	header.add(title)
 
-	const title = new UIText().setColor( '#fff' );
-	header.add( title );
+	const buttonSVG = (function () {
+		const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+		svg.setAttribute('width', 32)
+		svg.setAttribute('height', 32)
+		const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+		path.setAttribute('d', 'M 12,12 L 22,22 M 22,12 12,22')
+		path.setAttribute('stroke', '#fff')
+		svg.appendChild(path)
+		return svg
+	})()
 
-	const buttonSVG = ( function () {
+	const close = new UIElement(buttonSVG)
+	close.setPosition('absolute')
+	close.setTop('3px')
+	close.setRight('1px')
+	close.setCursor('pointer')
+	close.onClick(function () {
+		container.setDisplay('none')
+	})
+	header.add(close)
 
-		const svg = document.createElementNS( 'http://www.w3.org/2000/svg', 'svg' );
-		svg.setAttribute( 'width', 32 );
-		svg.setAttribute( 'height', 32 );
-		const path = document.createElementNS( 'http://www.w3.org/2000/svg', 'path' );
-		path.setAttribute( 'd', 'M 12,12 L 22,22 M 22,12 12,22' );
-		path.setAttribute( 'stroke', '#fff' );
-		svg.appendChild( path );
-		return svg;
+	let renderer
 
-	} )();
+	signals.rendererCreated.add(function (newRenderer) {
+		renderer = newRenderer
+	})
 
-	const close = new UIElement( buttonSVG );
-	close.setPosition( 'absolute' );
-	close.setTop( '3px' );
-	close.setRight( '1px' );
-	close.setCursor( 'pointer' );
-	close.onClick( function () {
+	let delay
+	let currentMode
+	let currentScript
+	let currentObject
 
-		container.setDisplay( 'none' );
-
-	} );
-	header.add( close );
-
-
-	let renderer;
-
-	signals.rendererCreated.add( function ( newRenderer ) {
-
-		renderer = newRenderer;
-
-	} );
-
-
-	let delay;
-	let currentMode;
-	let currentScript;
-	let currentObject;
-
-	const codemirror = CodeMirror( container.dom, {
+	const codemirror = CodeMirror(container.dom, {
 		value: '',
 		lineNumbers: true,
 		matchBrackets: true,
@@ -71,433 +62,374 @@ function Script( editor ) {
 		hintOptions: {
 			completeSingle: false
 		}
-	} );
-	codemirror.setOption( 'theme', 'monokai' );
-	codemirror.on( 'change', function () {
+	})
+	codemirror.setOption('theme', 'monokai')
+	codemirror.on('change', function () {
+		if (codemirror.state.focused === false) return
 
-		if ( codemirror.state.focused === false ) return;
+		clearTimeout(delay)
+		delay = setTimeout(function () {
+			const value = codemirror.getValue()
 
-		clearTimeout( delay );
-		delay = setTimeout( function () {
+			if (!validate(value)) return
 
-			const value = codemirror.getValue();
-
-			if ( ! validate( value ) ) return;
-
-			if ( typeof ( currentScript ) === 'object' ) {
-
-				if ( value !== currentScript.source ) {
-
-					editor.execute( new SetScriptValueCommand( editor, currentObject, currentScript, 'source', value ) );
-
+			if (typeof currentScript === 'object') {
+				if (value !== currentScript.source) {
+					editor.execute(
+						new SetScriptValueCommand(
+							editor,
+							currentObject,
+							currentScript,
+							'source',
+							value
+						)
+					)
 				}
 
-				return;
-
+				return
 			}
 
-			if ( currentScript !== 'programInfo' ) return;
+			if (currentScript !== 'programInfo') return
 
-			const json = JSON.parse( value );
+			const json = JSON.parse(value)
 
-			if ( JSON.stringify( currentObject.material.defines ) !== JSON.stringify( json.defines ) ) {
-
-				const cmd = new SetMaterialValueCommand( editor, currentObject, 'defines', json.defines );
-				cmd.updatable = false;
-				editor.execute( cmd );
-
+			if (
+				JSON.stringify(currentObject.material.defines) !==
+				JSON.stringify(json.defines)
+			) {
+				const cmd = new SetMaterialValueCommand(
+					editor,
+					currentObject,
+					'defines',
+					json.defines
+				)
+				cmd.updatable = false
+				editor.execute(cmd)
 			}
 
-			if ( JSON.stringify( currentObject.material.uniforms ) !== JSON.stringify( json.uniforms ) ) {
-
-				const cmd = new SetMaterialValueCommand( editor, currentObject, 'uniforms', json.uniforms );
-				cmd.updatable = false;
-				editor.execute( cmd );
-
+			if (
+				JSON.stringify(currentObject.material.uniforms) !==
+				JSON.stringify(json.uniforms)
+			) {
+				const cmd = new SetMaterialValueCommand(
+					editor,
+					currentObject,
+					'uniforms',
+					json.uniforms
+				)
+				cmd.updatable = false
+				editor.execute(cmd)
 			}
 
-			if ( JSON.stringify( currentObject.material.attributes ) !== JSON.stringify( json.attributes ) ) {
-
-				const cmd = new SetMaterialValueCommand( editor, currentObject, 'attributes', json.attributes );
-				cmd.updatable = false;
-				editor.execute( cmd );
-
+			if (
+				JSON.stringify(currentObject.material.attributes) !==
+				JSON.stringify(json.attributes)
+			) {
+				const cmd = new SetMaterialValueCommand(
+					editor,
+					currentObject,
+					'attributes',
+					json.attributes
+				)
+				cmd.updatable = false
+				editor.execute(cmd)
 			}
-
-		}, 300 );
-
-	} );
+		}, 300)
+	})
 
 	// prevent backspace from deleting objects
-	const wrapper = codemirror.getWrapperElement();
-	wrapper.addEventListener( 'keydown', function ( event ) {
-
-		event.stopPropagation();
-
-	} );
+	const wrapper = codemirror.getWrapperElement()
+	wrapper.addEventListener('keydown', function (event) {
+		event.stopPropagation()
+	})
 
 	// validate
 
-	const errorLines = [];
-	const widgets = [];
+	const errorLines = []
+	const widgets = []
 
-	const validate = function ( string ) {
+	const validate = function (string) {
+		let valid
+		let errors = []
 
-		let valid;
-		let errors = [];
-
-		return codemirror.operation( function () {
-
-			while ( errorLines.length > 0 ) {
-
-				codemirror.removeLineClass( errorLines.shift(), 'background', 'errorLine' );
-
+		return codemirror.operation(function () {
+			while (errorLines.length > 0) {
+				codemirror.removeLineClass(
+					errorLines.shift(),
+					'background',
+					'errorLine'
+				)
 			}
 
-			while ( widgets.length > 0 ) {
-
-				codemirror.removeLineWidget( widgets.shift() );
-
+			while (widgets.length > 0) {
+				codemirror.removeLineWidget(widgets.shift())
 			}
 
 			//
 
-			switch ( currentMode ) {
-
+			switch (currentMode) {
 				case 'javascript':
-
 					try {
-
-						const syntax = esprima.parse( string, { tolerant: true } );
-						errors = syntax.errors;
-
-					} catch ( error ) {
-
-						errors.push( {
-
+						const syntax = esprima.parse(string, { tolerant: true })
+						errors = syntax.errors
+					} catch (error) {
+						errors.push({
 							lineNumber: error.lineNumber - 1,
 							message: error.message
-
-						} );
-
+						})
 					}
 
-					for ( let i = 0; i < errors.length; i ++ ) {
-
-						const error = errors[ i ];
-						error.message = error.message.replace( /Line [0-9]+: /, '' );
-
+					for (let i = 0; i < errors.length; i++) {
+						const error = errors[i]
+						error.message = error.message.replace(/Line [0-9]+: /, '')
 					}
 
-					break;
+					break
 
 				case 'json':
+					errors = []
 
-					errors = [];
+					jsonlint.parseError = function (message, info) {
+						message = message.split('\n')[3]
 
-					jsonlint.parseError = function ( message, info ) {
-
-						message = message.split( '\n' )[ 3 ];
-
-						errors.push( {
-
+						errors.push({
 							lineNumber: info.loc.first_line - 1,
 							message: message
-
-						} );
-
-					};
-
-					try {
-
-						jsonlint.parse( string );
-
-					} catch ( error ) {
-
-						// ignore failed error recovery
-
+						})
 					}
 
-					break;
+					try {
+						jsonlint.parse(string)
+					} catch (error) {
+						// ignore failed error recovery
+					}
+
+					break
 
 				case 'glsl':
+					currentObject.material[currentScript] = string
+					currentObject.material.needsUpdate = true
+					signals.materialChanged.dispatch(currentObject, 0) // TODO: Add multi-material support
 
-					currentObject.material[ currentScript ] = string;
-					currentObject.material.needsUpdate = true;
-					signals.materialChanged.dispatch( currentObject, 0 ); // TODO: Add multi-material support
+					const programs = renderer.info.programs
 
-					const programs = renderer.info.programs;
+					valid = true
+					const parseMessage = /^(?:ERROR|WARNING): \d+:(\d+): (.*)/g
 
-					valid = true;
-					const parseMessage = /^(?:ERROR|WARNING): \d+:(\d+): (.*)/g;
+					for (let i = 0, n = programs.length; i !== n; ++i) {
+						const diagnostics = programs[i].diagnostics
 
-					for ( let i = 0, n = programs.length; i !== n; ++ i ) {
+						if (
+							diagnostics === undefined ||
+							diagnostics.material !== currentObject.material
+						)
+							continue
 
-						const diagnostics = programs[ i ].diagnostics;
+						if (!diagnostics.runnable) valid = false
 
-						if ( diagnostics === undefined ||
-								diagnostics.material !== currentObject.material ) continue;
+						const shaderInfo = diagnostics[currentScript]
+						const lineOffset = shaderInfo.prefix.split(/\r\n|\r|\n/).length
 
-						if ( ! diagnostics.runnable ) valid = false;
+						while (true) {
+							const parseResult = parseMessage.exec(shaderInfo.log)
+							if (parseResult === null) break
 
-						const shaderInfo = diagnostics[ currentScript ];
-						const lineOffset = shaderInfo.prefix.split( /\r\n|\r|\n/ ).length;
-
-						while ( true ) {
-
-							const parseResult = parseMessage.exec( shaderInfo.log );
-							if ( parseResult === null ) break;
-
-							errors.push( {
-
-								lineNumber: parseResult[ 1 ] - lineOffset,
-								message: parseResult[ 2 ]
-
-							} );
-
+							errors.push({
+								lineNumber: parseResult[1] - lineOffset,
+								message: parseResult[2]
+							})
 						} // messages
 
-						break;
-
+						break
 					} // programs
-
 			} // mode switch
 
-			for ( let i = 0; i < errors.length; i ++ ) {
+			for (let i = 0; i < errors.length; i++) {
+				const error = errors[i]
 
-				const error = errors[ i ];
+				const message = document.createElement('div')
+				message.className = 'esprima-error'
+				message.textContent = error.message
 
-				const message = document.createElement( 'div' );
-				message.className = 'esprima-error';
-				message.textContent = error.message;
+				const lineNumber = Math.max(error.lineNumber, 0)
+				errorLines.push(lineNumber)
 
-				const lineNumber = Math.max( error.lineNumber, 0 );
-				errorLines.push( lineNumber );
+				codemirror.addLineClass(lineNumber, 'background', 'errorLine')
 
-				codemirror.addLineClass( lineNumber, 'background', 'errorLine' );
+				const widget = codemirror.addLineWidget(lineNumber, message)
 
-				const widget = codemirror.addLineWidget( lineNumber, message );
-
-				widgets.push( widget );
-
+				widgets.push(widget)
 			}
 
-			return valid !== undefined ? valid : errors.length === 0;
-
-		} );
-
-	};
+			return valid !== undefined ? valid : errors.length === 0
+		})
+	}
 
 	// tern js autocomplete
 
-	const server = new CodeMirror.TernServer( {
+	const server = new CodeMirror.TernServer({
 		caseInsensitive: true,
 		plugins: { threejs: null }
-	} );
+	})
 
-	codemirror.setOption( 'extraKeys', {
-		'Ctrl-Space': function ( cm ) {
-
-			server.complete( cm );
-
+	codemirror.setOption('extraKeys', {
+		'Ctrl-Space': function (cm) {
+			server.complete(cm)
 		},
-		'Ctrl-I': function ( cm ) {
-
-			server.showType( cm );
-
+		'Ctrl-I': function (cm) {
+			server.showType(cm)
 		},
-		'Ctrl-O': function ( cm ) {
-
-			server.showDocs( cm );
-
+		'Ctrl-O': function (cm) {
+			server.showDocs(cm)
 		},
-		'Alt-.': function ( cm ) {
-
-			server.jumpToDef( cm );
-
+		'Alt-.': function (cm) {
+			server.jumpToDef(cm)
 		},
-		'Alt-,': function ( cm ) {
-
-			server.jumpBack( cm );
-
+		'Alt-,': function (cm) {
+			server.jumpBack(cm)
 		},
-		'Ctrl-Q': function ( cm ) {
-
-			server.rename( cm );
-
+		'Ctrl-Q': function (cm) {
+			server.rename(cm)
 		},
-		'Ctrl-.': function ( cm ) {
-
-			server.selectName( cm );
-
+		'Ctrl-.': function (cm) {
+			server.selectName(cm)
 		}
-	} );
+	})
 
-	codemirror.on( 'cursorActivity', function ( cm ) {
+	codemirror.on('cursorActivity', function (cm) {
+		if (currentMode !== 'javascript') return
+		server.updateArgHints(cm)
+	})
 
-		if ( currentMode !== 'javascript' ) return;
-		server.updateArgHints( cm );
-
-	} );
-
-	codemirror.on( 'keypress', function ( cm, kb ) {
-
-		if ( currentMode !== 'javascript' ) return;
-		if ( /[\w\.]/.exec( kb.key ) ) {
-
-			server.complete( cm );
-
+	codemirror.on('keypress', function (cm, kb) {
+		if (currentMode !== 'javascript') return
+		if (/[\w\.]/.exec(kb.key)) {
+			server.complete(cm)
 		}
-
-	} );
-
+	})
 
 	//
 
-	signals.editorCleared.add( function () {
+	signals.editorCleared.add(function () {
+		container.setDisplay('none')
+	})
 
-		container.setDisplay( 'none' );
-
-	} );
-
-	function setTitle( object, script ) {
-
-		if ( typeof script === 'object' ) {
-
-			title.setValue( object.name + ' / ' + script.name );
-
+	function setTitle(object, script) {
+		if (typeof script === 'object') {
+			title.setValue(object.name + ' / ' + script.name)
 		} else {
-
-			switch ( script ) {
-
+			switch (script) {
 				case 'vertexShader':
-
-					title.setValue( object.material.name + ' / ' + strings.getKey( 'script/title/vertexShader' ) );
-					break;
+					title.setValue(
+						object.material.name +
+							' / ' +
+							strings.getKey('script/title/vertexShader')
+					)
+					break
 
 				case 'fragmentShader':
-
-					title.setValue( object.material.name + ' / ' + strings.getKey( 'script/title/fragmentShader' ) );
-					break;
+					title.setValue(
+						object.material.name +
+							' / ' +
+							strings.getKey('script/title/fragmentShader')
+					)
+					break
 
 				case 'programInfo':
-
-					title.setValue( object.material.name + ' / ' + strings.getKey( 'script/title/programInfo' ) );
-					break;
+					title.setValue(
+						object.material.name +
+							' / ' +
+							strings.getKey('script/title/programInfo')
+					)
+					break
 
 				default:
-
-					throw new Error( 'setTitle: Unknown script' );
-
+					throw new Error('setTitle: Unknown script')
 			}
-
 		}
-
 	}
 
-	signals.editScript.add( function ( object, script ) {
+	signals.editScript.add(function (object, script) {
+		let mode, source
 
-		let mode, source;
-
-		if ( typeof ( script ) === 'object' ) {
-
-			mode = 'javascript';
-			source = script.source;
-
+		if (typeof script === 'object') {
+			mode = 'javascript'
+			source = script.source
 		} else {
-
-			switch ( script ) {
-
+			switch (script) {
 				case 'vertexShader':
+					mode = 'glsl'
+					source = object.material.vertexShader || ''
 
-					mode = 'glsl';
-					source = object.material.vertexShader || '';
-
-					break;
+					break
 
 				case 'fragmentShader':
+					mode = 'glsl'
+					source = object.material.fragmentShader || ''
 
-					mode = 'glsl';
-					source = object.material.fragmentShader || '';
-
-					break;
+					break
 
 				case 'programInfo':
-
-					mode = 'json';
+					mode = 'json'
 					const json = {
 						defines: object.material.defines,
 						uniforms: object.material.uniforms,
 						attributes: object.material.attributes
-					};
-					source = JSON.stringify( json, null, '\t' );
+					}
+					source = JSON.stringify(json, null, '\t')
 
-					break;
+					break
 
 				default:
-
-					throw new Error( 'editScript: Unknown script' );
-
+					throw new Error('editScript: Unknown script')
 			}
-
 		}
 
-		setTitle( object, script );
+		setTitle(object, script)
 
-		currentMode = mode;
-		currentScript = script;
-		currentObject = object;
+		currentMode = mode
+		currentScript = script
+		currentObject = object
 
-		container.setDisplay( '' );
-		codemirror.setValue( source );
-		codemirror.clearHistory();
-		if ( mode === 'json' ) mode = { name: 'javascript', json: true };
-		codemirror.setOption( 'mode', mode );
+		container.setDisplay('')
+		codemirror.setValue(source)
+		codemirror.clearHistory()
+		if (mode === 'json') mode = { name: 'javascript', json: true }
+		codemirror.setOption('mode', mode)
+	})
 
-	} );
-
-	signals.scriptRemoved.add( function ( script ) {
-
-		if ( currentScript === script ) {
-
-			container.setDisplay( 'none' );
-
+	signals.scriptRemoved.add(function (script) {
+		if (currentScript === script) {
+			container.setDisplay('none')
 		}
+	})
 
-	} );
+	signals.objectChanged.add(function (object) {
+		if (object !== currentObject) return
 
-	signals.objectChanged.add( function ( object ) {
+		if (
+			['programInfo', 'vertexShader', 'fragmentShader'].includes(currentScript)
+		)
+			return
 
-		if ( object !== currentObject ) return;
+		setTitle(currentObject, currentScript)
+	})
 
-		if ( [ 'programInfo', 'vertexShader', 'fragmentShader' ].includes( currentScript ) ) return;
-
-		setTitle( currentObject, currentScript );
-
-	} );
-
-	signals.scriptChanged.add( function ( script ) {
-
-		if ( script === currentScript ) {
-
-			setTitle( currentObject, currentScript );
-
+	signals.scriptChanged.add(function (script) {
+		if (script === currentScript) {
+			setTitle(currentObject, currentScript)
 		}
+	})
 
-	} );
-
-	signals.materialChanged.add( function ( object, slot ) {
-
-		if ( object !== currentObject ) return;
+	signals.materialChanged.add(function (object, slot) {
+		if (object !== currentObject) return
 
 		// TODO: Adds multi-material support
 
-		setTitle( currentObject, currentScript );
+		setTitle(currentObject, currentScript)
+	})
 
-	} );
-
-	return container;
-
+	return container
 }
 
-export { Script };
+export { Script }

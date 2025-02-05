@@ -1,78 +1,59 @@
-import { WebGLPathTracer } from 'three-gpu-pathtracer';
+import { WebGLPathTracer } from 'three-gpu-pathtracer'
 
-function ViewportPathtracer( renderer ) {
+function ViewportPathtracer(renderer) {
+	let pathTracer = null
 
-	let pathTracer = null;
-
-	function init( scene, camera ) {
-
-		if ( pathTracer === null ) {
-
-			pathTracer = new WebGLPathTracer( renderer );
-			pathTracer.filterGlossyFactor = 0.5;
-
+	function init(scene, camera) {
+		if (pathTracer === null) {
+			pathTracer = new WebGLPathTracer(renderer)
+			pathTracer.filterGlossyFactor = 0.5
 		}
 
-		pathTracer.setScene( scene, camera );
-
+		pathTracer.setScene(scene, camera)
 	}
 
-	function setSize( /* width, height */ ) {
-
-		if ( pathTracer === null ) return;
+	function setSize(/* width, height */) {
+		if (pathTracer === null) return
 
 		// path tracer size automatically updates based on the canvas
-		pathTracer.updateCamera();
-
+		pathTracer.updateCamera()
 	}
 
-	function setBackground( /* background, blurriness */ ) {
-
-		if ( pathTracer === null ) return;
+	function setBackground(/* background, blurriness */) {
+		if (pathTracer === null) return
 
 		// update environment settings based on initialized scene fields
-		pathTracer.updateEnvironment();
-
+		pathTracer.updateEnvironment()
 	}
 
 	function updateMaterials() {
+		if (pathTracer === null) return
 
-		if ( pathTracer === null ) return;
-
-		pathTracer.updateMaterials();
-
+		pathTracer.updateMaterials()
 	}
 
-	function setEnvironment( /* environment */ ) {
+	function setEnvironment(/* environment */) {
+		if (pathTracer === null) return
 
-		if ( pathTracer === null ) return;
-
-		pathTracer.updateEnvironment();
-
+		pathTracer.updateEnvironment()
 	}
 
 	function update() {
+		if (pathTracer === null) return
 
-		if ( pathTracer === null ) return;
-
-		pathTracer.renderSample();
-
+		pathTracer.renderSample()
 	}
 
 	function reset() {
+		if (pathTracer === null) return
 
-		if ( pathTracer === null ) return;
-
-		pathTracer.updateCamera();
-
+		pathTracer.updateCamera()
 	}
 
 	function getSamples() {
+		if (pathTracer === null) return
 
-		if ( pathTracer === null ) return;
-
-		return pathTracer.samples;
-
+		return pathTracer.samples
 	}
 
 	return {
@@ -84,8 +65,7 @@ function ViewportPathtracer( renderer ) {
 		update: update,
 		reset: reset,
 		getSamples: getSamples
-	};
-
+	}
 }
 
-export { ViewportPathtracer };
+export { ViewportPathtracer }

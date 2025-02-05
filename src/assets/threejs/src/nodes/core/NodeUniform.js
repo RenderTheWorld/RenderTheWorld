@@ -5,7 +5,6 @@
  * for this purpose.
  */
 class NodeUniform {
-
 	/**
 	 * Constructs a new node uniform.
 	 *
@@ -13,8 +12,7 @@ class NodeUniform {
 	 * @param {String} type - The type of the uniform.
 	 * @param {UniformNode} node - An reference to the node.
 	 */
-	constructor( name, type, node ) {
-
+	constructor(name, type, node) {
 		/**
 		 * This flag can be used for type testing.
 		 *
@@ -22,29 +20,28 @@ class NodeUniform {
 		 * @readonly
 		 * @default true
 		 */
-		this.isNodeUniform = true;
+		this.isNodeUniform = true
 
 		/**
 		 * The name of the uniform.
 		 *
 		 * @type {String}
 		 */
-		this.name = name;
+		this.name = name
 
 		/**
 		 * The type of the uniform.
 		 *
 		 * @type {String}
 		 */
-		this.type = type;
+		this.type = type
 
 		/**
 		 * An reference to the node.
 		 *
 		 * @type {UniformNode}
 		 */
-		this.node = node.getSelf();
-
+		this.node = node.getSelf()
 	}
 
 	/**
@@ -53,15 +50,11 @@ class NodeUniform {
 	 * @type {Any}
 	 */
 	get value() {
-
-		return this.node.value;
-
+		return this.node.value
 	}
 
-	set value( val ) {
-
-		this.node.value = val;
-
+	set value(val) {
+		this.node.value = val
 	}
 
 	/**
@@ -70,9 +63,7 @@ class NodeUniform {
 	 * @type {Number}
 	 */
 	get id() {
-
-		return this.node.id;
-
+		return this.node.id
 	}
 
 	/**
@@ -81,11 +72,8 @@ class NodeUniform {
 	 * @type {UniformGroupNode}
 	 */
 	get groupNode() {
-
-		return this.node.groupNode;
-
+		return this.node.groupNode
 	}
-
 }
 
-export default NodeUniform;
+export default NodeUniform

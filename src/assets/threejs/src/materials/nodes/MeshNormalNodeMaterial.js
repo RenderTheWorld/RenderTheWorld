@@ -1,13 +1,13 @@
-import NodeMaterial from './NodeMaterial.js';
-import { diffuseColor } from '../../nodes/core/PropertyNode.js';
-import { directionToColor } from '../../nodes/utils/Packing.js';
-import { materialOpacity } from '../../nodes/accessors/MaterialNode.js';
-import { transformedNormalView } from '../../nodes/accessors/Normal.js';
-import { float, vec4 } from '../../nodes/tsl/TSLBase.js';
+import NodeMaterial from './NodeMaterial.js'
+import { diffuseColor } from '../../nodes/core/PropertyNode.js'
+import { directionToColor } from '../../nodes/utils/Packing.js'
+import { materialOpacity } from '../../nodes/accessors/MaterialNode.js'
+import { transformedNormalView } from '../../nodes/accessors/Normal.js'
+import { float, vec4 } from '../../nodes/tsl/TSLBase.js'
 
-import { MeshNormalMaterial } from '../MeshNormalMaterial.js';
+import { MeshNormalMaterial } from '../MeshNormalMaterial.js'
 
-const _defaultValues = /*@__PURE__*/ new MeshNormalMaterial();
+const _defaultValues = /*@__PURE__*/ new MeshNormalMaterial()
 
 /**
  * Node material version of `MeshNormalMaterial`.
@@ -15,11 +15,8 @@ const _defaultValues = /*@__PURE__*/ new MeshNormalMaterial();
  * @augments NodeMaterial
  */
 class MeshNormalNodeMaterial extends NodeMaterial {
-
 	static get type() {
-
-		return 'MeshNormalNodeMaterial';
-
+		return 'MeshNormalNodeMaterial'
 	}
 
 	/**
@@ -27,9 +24,8 @@ class MeshNormalNodeMaterial extends NodeMaterial {
 	 *
 	 * @param {Object?} parameters - The configuration parameter.
 	 */
-	constructor( parameters ) {
-
-		super();
+	constructor(parameters) {
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -38,12 +34,11 @@ class MeshNormalNodeMaterial extends NodeMaterial {
 		 * @readonly
 		 * @default true
 		 */
-		this.isMeshNormalNodeMaterial = true;
+		this.isMeshNormalNodeMaterial = true
 
-		this.setDefaultValues( _defaultValues );
+		this.setDefaultValues(_defaultValues)
 
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
 	/**
@@ -51,13 +46,14 @@ class MeshNormalNodeMaterial extends NodeMaterial {
 	 * based on the normal data.
 	 */
 	setupDiffuseColor() {
+		const opacityNode = this.opacityNode
+			? float(this.opacityNode)
+			: materialOpacity
 
-		const opacityNode = this.opacityNode ? float( this.opacityNode ) : materialOpacity;
-
-		diffuseColor.assign( vec4( directionToColor( transformedNormalView ), opacityNode ) );
-
+		diffuseColor.assign(
+			vec4(directionToColor(transformedNormalView), opacityNode)
+		)
 	}
-
 }
 
-export default MeshNormalNodeMaterial;
+export default MeshNormalNodeMaterial

@@ -1,20 +1,32 @@
-import NodeMaterial from './NodeMaterial.js';
-import { dashSize, gapSize, varyingProperty } from '../../nodes/core/PropertyNode.js';
-import { attribute } from '../../nodes/core/AttributeNode.js';
-import { cameraProjectionMatrix } from '../../nodes/accessors/Camera.js';
-import { materialColor, materialLineScale, materialLineDashSize, materialLineGapSize, materialLineDashOffset, materialLineWidth, materialOpacity } from '../../nodes/accessors/MaterialNode.js';
-import { modelViewMatrix } from '../../nodes/accessors/ModelNode.js';
-import { positionGeometry } from '../../nodes/accessors/Position.js';
-import { mix, smoothstep } from '../../nodes/math/MathNode.js';
-import { Fn, float, vec2, vec3, vec4, If } from '../../nodes/tsl/TSLBase.js';
-import { uv } from '../../nodes/accessors/UV.js';
-import { viewport } from '../../nodes/display/ScreenNode.js';
-import { viewportSharedTexture } from '../../nodes/display/ViewportSharedTextureNode.js';
+import NodeMaterial from './NodeMaterial.js'
+import {
+	dashSize,
+	gapSize,
+	varyingProperty
+} from '../../nodes/core/PropertyNode.js'
+import { attribute } from '../../nodes/core/AttributeNode.js'
+import { cameraProjectionMatrix } from '../../nodes/accessors/Camera.js'
+import {
+	materialColor,
+	materialLineScale,
+	materialLineDashSize,
+	materialLineGapSize,
+	materialLineDashOffset,
+	materialLineWidth,
+	materialOpacity
+} from '../../nodes/accessors/MaterialNode.js'
+import { modelViewMatrix } from '../../nodes/accessors/ModelNode.js'
+import { positionGeometry } from '../../nodes/accessors/Position.js'
+import { mix, smoothstep } from '../../nodes/math/MathNode.js'
+import { Fn, float, vec2, vec3, vec4, If } from '../../nodes/tsl/TSLBase.js'
+import { uv } from '../../nodes/accessors/UV.js'
+import { viewport } from '../../nodes/display/ScreenNode.js'
+import { viewportSharedTexture } from '../../nodes/display/ViewportSharedTextureNode.js'
 
-import { LineDashedMaterial } from '../LineDashedMaterial.js';
-import { NoBlending } from '../../constants.js';
+import { LineDashedMaterial } from '../LineDashedMaterial.js'
+import { NoBlending } from '../../constants.js'
 
-const _defaultValues = /*@__PURE__*/ new LineDashedMaterial();
+const _defaultValues = /*@__PURE__*/ new LineDashedMaterial()
 
 /**
  * This node material can be used to render lines with a size larger than one
@@ -23,11 +35,8 @@ const _defaultValues = /*@__PURE__*/ new LineDashedMaterial();
  * @augments NodeMaterial
  */
 class Line2NodeMaterial extends NodeMaterial {
-
 	static get type() {
-
-		return 'Line2NodeMaterial';
-
+		return 'Line2NodeMaterial'
 	}
 
 	/**
@@ -35,9 +44,8 @@ class Line2NodeMaterial extends NodeMaterial {
 	 *
 	 * @param {Object?} parameters - The configuration parameter.
 	 */
-	constructor( parameters = {} ) {
-
-		super();
+	constructor(parameters = {}) {
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -46,9 +54,9 @@ class Line2NodeMaterial extends NodeMaterial {
 		 * @readonly
 		 * @default true
 		 */
-		this.isLine2NodeMaterial = true;
+		this.isLine2NodeMaterial = true
 
-		this.setDefaultValues( _defaultValues );
+		this.setDefaultValues(_defaultValues)
 
 		/**
 		 * Whether vertex colors should be used or not.
@@ -56,7 +64,7 @@ class Line2NodeMaterial extends NodeMaterial {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.useColor = parameters.vertexColors;
+		this.useColor = parameters.vertexColors
 
 		/**
 		 * The dash offset.
@@ -64,7 +72,7 @@ class Line2NodeMaterial extends NodeMaterial {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this.dashOffset = 0;
+		this.dashOffset = 0
 
 		/**
 		 * The line width.
@@ -72,7 +80,7 @@ class Line2NodeMaterial extends NodeMaterial {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this.lineWidth = 1;
+		this.lineWidth = 1
 
 		/**
 		 * Defines the lines color.
@@ -80,7 +88,7 @@ class Line2NodeMaterial extends NodeMaterial {
 		 * @type {Node<vec3>?}
 		 * @default null
 		 */
-		this.lineColorNode = null;
+		this.lineColorNode = null
 
 		/**
 		 * Defines the offset.
@@ -88,7 +96,7 @@ class Line2NodeMaterial extends NodeMaterial {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.offsetNode = null;
+		this.offsetNode = null
 
 		/**
 		 * Defines the dash scale.
@@ -96,7 +104,7 @@ class Line2NodeMaterial extends NodeMaterial {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.dashScaleNode = null;
+		this.dashScaleNode = null
 
 		/**
 		 * Defines the dash size.
@@ -104,7 +112,7 @@ class Line2NodeMaterial extends NodeMaterial {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.dashSizeNode = null;
+		this.dashSizeNode = null
 
 		/**
 		 * Defines the gap size.
@@ -112,7 +120,7 @@ class Line2NodeMaterial extends NodeMaterial {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.gapSizeNode = null;
+		this.gapSizeNode = null
 
 		/**
 		 * Blending is set to `NoBlending` since transparency
@@ -121,14 +129,13 @@ class Line2NodeMaterial extends NodeMaterial {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this.blending = NoBlending;
+		this.blending = NoBlending
 
-		this._useDash = parameters.dashed;
-		this._useAlphaToCoverage = true;
-		this._useWorldUnits = false;
+		this._useDash = parameters.dashed
+		this._useAlphaToCoverage = true
+		this._useWorldUnits = false
 
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
 	/**
@@ -136,343 +143,353 @@ class Line2NodeMaterial extends NodeMaterial {
 	 *
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	setup( builder ) {
+	setup(builder) {
+		const { renderer } = builder
 
-		const { renderer } = builder;
+		const useAlphaToCoverage = this._useAlphaToCoverage
+		const useColor = this.useColor
+		const useDash = this._useDash
+		const useWorldUnits = this._useWorldUnits
 
-		const useAlphaToCoverage = this._useAlphaToCoverage;
-		const useColor = this.useColor;
-		const useDash = this._useDash;
-		const useWorldUnits = this._useWorldUnits;
+		const trimSegment = Fn(({ start, end }) => {
+			const a = cameraProjectionMatrix.element(2).element(2) // 3nd entry in 3th column
+			const b = cameraProjectionMatrix.element(3).element(2) // 3nd entry in 4th column
+			const nearEstimate = b.mul(-0.5).div(a)
 
-		const trimSegment = Fn( ( { start, end } ) => {
+			const alpha = nearEstimate.sub(start.z).div(end.z.sub(start.z))
 
-			const a = cameraProjectionMatrix.element( 2 ).element( 2 ); // 3nd entry in 3th column
-			const b = cameraProjectionMatrix.element( 3 ).element( 2 ); // 3nd entry in 4th column
-			const nearEstimate = b.mul( - 0.5 ).div( a );
-
-			const alpha = nearEstimate.sub( start.z ).div( end.z.sub( start.z ) );
-
-			return vec4( mix( start.xyz, end.xyz, alpha ), end.w );
-
-		} ).setLayout( {
+			return vec4(mix(start.xyz, end.xyz, alpha), end.w)
+		}).setLayout({
 			name: 'trimSegment',
 			type: 'vec4',
 			inputs: [
 				{ name: 'start', type: 'vec4' },
 				{ name: 'end', type: 'vec4' }
 			]
-		} );
+		})
 
-		this.vertexNode = Fn( () => {
-
-			const instanceStart = attribute( 'instanceStart' );
-			const instanceEnd = attribute( 'instanceEnd' );
+		this.vertexNode = Fn(() => {
+			const instanceStart = attribute('instanceStart')
+			const instanceEnd = attribute('instanceEnd')
 
 			// camera space
 
-			const start = vec4( modelViewMatrix.mul( vec4( instanceStart, 1.0 ) ) ).toVar( 'start' );
-			const end = vec4( modelViewMatrix.mul( vec4( instanceEnd, 1.0 ) ) ).toVar( 'end' );
+			const start = vec4(modelViewMatrix.mul(vec4(instanceStart, 1.0))).toVar(
+				'start'
+			)
+			const end = vec4(modelViewMatrix.mul(vec4(instanceEnd, 1.0))).toVar('end')
 
-			if ( useDash ) {
+			if (useDash) {
+				const dashScaleNode = this.dashScaleNode
+					? float(this.dashScaleNode)
+					: materialLineScale
+				const offsetNode = this.offsetNode
+					? float(this.offsetNode)
+					: materialLineDashOffset
 
-				const dashScaleNode = this.dashScaleNode ? float( this.dashScaleNode ) : materialLineScale;
-				const offsetNode = this.offsetNode ? float( this.offsetNode ) : materialLineDashOffset;
+				const instanceDistanceStart = attribute('instanceDistanceStart')
+				const instanceDistanceEnd = attribute('instanceDistanceEnd')
 
-				const instanceDistanceStart = attribute( 'instanceDistanceStart' );
-				const instanceDistanceEnd = attribute( 'instanceDistanceEnd' );
+				let lineDistance = positionGeometry.y
+					.lessThan(0.5)
+					.select(
+						dashScaleNode.mul(instanceDistanceStart),
+						dashScaleNode.mul(instanceDistanceEnd)
+					)
+				lineDistance = lineDistance.add(offsetNode)
 
-				let lineDistance = positionGeometry.y.lessThan( 0.5 ).select( dashScaleNode.mul( instanceDistanceStart ), dashScaleNode.mul( instanceDistanceEnd ) );
-				lineDistance = lineDistance.add( offsetNode );
-
-				varyingProperty( 'float', 'lineDistance' ).assign( lineDistance );
-
+				varyingProperty('float', 'lineDistance').assign(lineDistance)
 			}
 
-			if ( useWorldUnits ) {
-
-				varyingProperty( 'vec3', 'worldStart' ).assign( start.xyz );
-				varyingProperty( 'vec3', 'worldEnd' ).assign( end.xyz );
-
+			if (useWorldUnits) {
+				varyingProperty('vec3', 'worldStart').assign(start.xyz)
+				varyingProperty('vec3', 'worldEnd').assign(end.xyz)
 			}
 
-			const aspect = viewport.z.div( viewport.w );
+			const aspect = viewport.z.div(viewport.w)
 
 			// special case for perspective projection, and segments that terminate either in, or behind, the camera plane
 			// clearly the gpu firmware has a way of addressing this issue when projecting into ndc space
 			// but we need to perform ndc-space calculations in the shader, so we must address this issue directly
 			// perhaps there is a more elegant solution -- WestLangley
 
-			const perspective = cameraProjectionMatrix.element( 2 ).element( 3 ).equal( - 1.0 ); // 4th entry in the 3rd column
+			const perspective = cameraProjectionMatrix
+				.element(2)
+				.element(3)
+				.equal(-1.0) // 4th entry in the 3rd column
 
-			If( perspective, () => {
-
-				If( start.z.lessThan( 0.0 ).and( end.z.greaterThan( 0.0 ) ), () => {
-
-					end.assign( trimSegment( { start: start, end: end } ) );
-
-				} ).ElseIf( end.z.lessThan( 0.0 ).and( start.z.greaterThanEqual( 0.0 ) ), () => {
-
-					start.assign( trimSegment( { start: end, end: start } ) );
-
-			 	} );
-
-			} );
+			If(perspective, () => {
+				If(start.z.lessThan(0.0).and(end.z.greaterThan(0.0)), () => {
+					end.assign(trimSegment({ start: start, end: end }))
+				}).ElseIf(
+					end.z.lessThan(0.0).and(start.z.greaterThanEqual(0.0)),
+					() => {
+						start.assign(trimSegment({ start: end, end: start }))
+					}
+				)
+			})
 
 			// clip space
-			const clipStart = cameraProjectionMatrix.mul( start );
-			const clipEnd = cameraProjectionMatrix.mul( end );
+			const clipStart = cameraProjectionMatrix.mul(start)
+			const clipEnd = cameraProjectionMatrix.mul(end)
 
 			// ndc space
-			const ndcStart = clipStart.xyz.div( clipStart.w );
-			const ndcEnd = clipEnd.xyz.div( clipEnd.w );
+			const ndcStart = clipStart.xyz.div(clipStart.w)
+			const ndcEnd = clipEnd.xyz.div(clipEnd.w)
 
 			// direction
-			const dir = ndcEnd.xy.sub( ndcStart.xy ).toVar();
+			const dir = ndcEnd.xy.sub(ndcStart.xy).toVar()
 
 			// account for clip-space aspect ratio
-			dir.x.assign( dir.x.mul( aspect ) );
-			dir.assign( dir.normalize() );
+			dir.x.assign(dir.x.mul(aspect))
+			dir.assign(dir.normalize())
 
-			const clip = vec4().toVar();
+			const clip = vec4().toVar()
 
-			if ( useWorldUnits ) {
-
+			if (useWorldUnits) {
 				// get the offset direction as perpendicular to the view vector
 
-				const worldDir = end.xyz.sub( start.xyz ).normalize();
-				const tmpFwd = mix( start.xyz, end.xyz, 0.5 ).normalize();
-				const worldUp = worldDir.cross( tmpFwd ).normalize();
-				const worldFwd = worldDir.cross( worldUp );
+				const worldDir = end.xyz.sub(start.xyz).normalize()
+				const tmpFwd = mix(start.xyz, end.xyz, 0.5).normalize()
+				const worldUp = worldDir.cross(tmpFwd).normalize()
+				const worldFwd = worldDir.cross(worldUp)
 
-				const worldPos = varyingProperty( 'vec4', 'worldPos' );
+				const worldPos = varyingProperty('vec4', 'worldPos')
 
-				worldPos.assign( positionGeometry.y.lessThan( 0.5 ).select( start, end ) );
+				worldPos.assign(positionGeometry.y.lessThan(0.5).select(start, end))
 
 				// height offset
-				const hw = materialLineWidth.mul( 0.5 );
-				worldPos.addAssign( vec4( positionGeometry.x.lessThan( 0.0 ).select( worldUp.mul( hw ), worldUp.mul( hw ).negate() ), 0 ) );
+				const hw = materialLineWidth.mul(0.5)
+				worldPos.addAssign(
+					vec4(
+						positionGeometry.x
+							.lessThan(0.0)
+							.select(worldUp.mul(hw), worldUp.mul(hw).negate()),
+						0
+					)
+				)
 
 				// don't extend the line if we're rendering dashes because we
 				// won't be rendering the endcaps
-				if ( ! useDash ) {
-
+				if (!useDash) {
 					// cap extension
-					worldPos.addAssign( vec4( positionGeometry.y.lessThan( 0.5 ).select( worldDir.mul( hw ).negate(), worldDir.mul( hw ) ), 0 ) );
+					worldPos.addAssign(
+						vec4(
+							positionGeometry.y
+								.lessThan(0.5)
+								.select(worldDir.mul(hw).negate(), worldDir.mul(hw)),
+							0
+						)
+					)
 
 					// add width to the box
-					worldPos.addAssign( vec4( worldFwd.mul( hw ), 0 ) );
+					worldPos.addAssign(vec4(worldFwd.mul(hw), 0))
 
 					// endcaps
-					If( positionGeometry.y.greaterThan( 1.0 ).or( positionGeometry.y.lessThan( 0.0 ) ), () => {
-
-						worldPos.subAssign( vec4( worldFwd.mul( 2.0 ).mul( hw ), 0 ) );
-
-					} );
-
+					If(
+						positionGeometry.y
+							.greaterThan(1.0)
+							.or(positionGeometry.y.lessThan(0.0)),
+						() => {
+							worldPos.subAssign(vec4(worldFwd.mul(2.0).mul(hw), 0))
+						}
+					)
 				}
 
 				// project the worldpos
-				clip.assign( cameraProjectionMatrix.mul( worldPos ) );
+				clip.assign(cameraProjectionMatrix.mul(worldPos))
 
 				// shift the depth of the projected points so the line
 				// segments overlap neatly
-				const clipPose = vec3().toVar();
+				const clipPose = vec3().toVar()
 
-				clipPose.assign( positionGeometry.y.lessThan( 0.5 ).select( ndcStart, ndcEnd ) );
-				clip.z.assign( clipPose.z.mul( clip.w ) );
-
+				clipPose.assign(
+					positionGeometry.y.lessThan(0.5).select(ndcStart, ndcEnd)
+				)
+				clip.z.assign(clipPose.z.mul(clip.w))
 			} else {
-
-				const offset = vec2( dir.y, dir.x.negate() ).toVar( 'offset' );
+				const offset = vec2(dir.y, dir.x.negate()).toVar('offset')
 
 				// undo aspect ratio adjustment
-				dir.x.assign( dir.x.div( aspect ) );
-				offset.x.assign( offset.x.div( aspect ) );
+				dir.x.assign(dir.x.div(aspect))
+				offset.x.assign(offset.x.div(aspect))
 
 				// sign flip
-				offset.assign( positionGeometry.x.lessThan( 0.0 ).select( offset.negate(), offset ) );
+				offset.assign(
+					positionGeometry.x.lessThan(0.0).select(offset.negate(), offset)
+				)
 
 				// endcaps
-				If( positionGeometry.y.lessThan( 0.0 ), () => {
-
-					offset.assign( offset.sub( dir ) );
-
-				} ).ElseIf( positionGeometry.y.greaterThan( 1.0 ), () => {
-
-					offset.assign( offset.add( dir ) );
-
-				} );
+				If(positionGeometry.y.lessThan(0.0), () => {
+					offset.assign(offset.sub(dir))
+				}).ElseIf(positionGeometry.y.greaterThan(1.0), () => {
+					offset.assign(offset.add(dir))
+				})
 
 				// adjust for linewidth
-				offset.assign( offset.mul( materialLineWidth ) );
+				offset.assign(offset.mul(materialLineWidth))
 
 				// adjust for clip-space to screen-space conversion // maybe resolution should be based on viewport ...
-				offset.assign( offset.div( viewport.w ) );
+				offset.assign(offset.div(viewport.w))
 
 				// select end
-				clip.assign( positionGeometry.y.lessThan( 0.5 ).select( clipStart, clipEnd ) );
+				clip.assign(positionGeometry.y.lessThan(0.5).select(clipStart, clipEnd))
 
 				// back to clip space
-				offset.assign( offset.mul( clip.w ) );
+				offset.assign(offset.mul(clip.w))
 
-				clip.assign( clip.add( vec4( offset, 0, 0 ) ) );
-
+				clip.assign(clip.add(vec4(offset, 0, 0)))
 			}
 
-			return clip;
+			return clip
+		})()
 
-		} )();
+		const closestLineToLine = Fn(({ p1, p2, p3, p4 }) => {
+			const p13 = p1.sub(p3)
+			const p43 = p4.sub(p3)
 
-		const closestLineToLine = Fn( ( { p1, p2, p3, p4 } ) => {
+			const p21 = p2.sub(p1)
 
-			const p13 = p1.sub( p3 );
-			const p43 = p4.sub( p3 );
+			const d1343 = p13.dot(p43)
+			const d4321 = p43.dot(p21)
+			const d1321 = p13.dot(p21)
+			const d4343 = p43.dot(p43)
+			const d2121 = p21.dot(p21)
 
-			const p21 = p2.sub( p1 );
+			const denom = d2121.mul(d4343).sub(d4321.mul(d4321))
+			const numer = d1343.mul(d4321).sub(d1321.mul(d4343))
 
-			const d1343 = p13.dot( p43 );
-			const d4321 = p43.dot( p21 );
-			const d1321 = p13.dot( p21 );
-			const d4343 = p43.dot( p43 );
-			const d2121 = p21.dot( p21 );
+			const mua = numer.div(denom).clamp()
+			const mub = d1343.add(d4321.mul(mua)).div(d4343).clamp()
 
-			const denom = d2121.mul( d4343 ).sub( d4321.mul( d4321 ) );
-			const numer = d1343.mul( d4321 ).sub( d1321.mul( d4343 ) );
+			return vec2(mua, mub)
+		})
 
-			const mua = numer.div( denom ).clamp();
-			const mub = d1343.add( d4321.mul( mua ) ).div( d4343 ).clamp();
+		this.colorNode = Fn(() => {
+			const vUv = uv()
 
-			return vec2( mua, mub );
+			if (useDash) {
+				const dashSizeNode = this.dashSizeNode
+					? float(this.dashSizeNode)
+					: materialLineDashSize
+				const gapSizeNode = this.gapSizeNode
+					? float(this.gapSizeNode)
+					: materialLineGapSize
 
-		} );
+				dashSize.assign(dashSizeNode)
+				gapSize.assign(gapSizeNode)
 
-		this.colorNode = Fn( () => {
+				const vLineDistance = varyingProperty('float', 'lineDistance')
 
-			const vUv = uv();
-
-			if ( useDash ) {
-
-				const dashSizeNode = this.dashSizeNode ? float( this.dashSizeNode ) : materialLineDashSize;
-				const gapSizeNode = this.gapSizeNode ? float( this.gapSizeNode ) : materialLineGapSize;
-
-				dashSize.assign( dashSizeNode );
-				gapSize.assign( gapSizeNode );
-
-				const vLineDistance = varyingProperty( 'float', 'lineDistance' );
-
-				vUv.y.lessThan( - 1.0 ).or( vUv.y.greaterThan( 1.0 ) ).discard(); // discard endcaps
-				vLineDistance.mod( dashSize.add( gapSize ) ).greaterThan( dashSize ).discard(); // todo - FIX
-
+				vUv.y.lessThan(-1.0).or(vUv.y.greaterThan(1.0)).discard() // discard endcaps
+				vLineDistance.mod(dashSize.add(gapSize)).greaterThan(dashSize).discard() // todo - FIX
 			}
 
-			const alpha = float( 1 ).toVar( 'alpha' );
+			const alpha = float(1).toVar('alpha')
 
-			if ( useWorldUnits ) {
-
-				const worldStart = varyingProperty( 'vec3', 'worldStart' );
-				const worldEnd = varyingProperty( 'vec3', 'worldEnd' );
+			if (useWorldUnits) {
+				const worldStart = varyingProperty('vec3', 'worldStart')
+				const worldEnd = varyingProperty('vec3', 'worldEnd')
 
 				// Find the closest points on the view ray and the line segment
-				const rayEnd = varyingProperty( 'vec4', 'worldPos' ).xyz.normalize().mul( 1e5 );
-				const lineDir = worldEnd.sub( worldStart );
-				const params = closestLineToLine( { p1: worldStart, p2: worldEnd, p3: vec3( 0.0, 0.0, 0.0 ), p4: rayEnd } );
+				const rayEnd = varyingProperty('vec4', 'worldPos')
+					.xyz.normalize()
+					.mul(1e5)
+				const lineDir = worldEnd.sub(worldStart)
+				const params = closestLineToLine({
+					p1: worldStart,
+					p2: worldEnd,
+					p3: vec3(0.0, 0.0, 0.0),
+					p4: rayEnd
+				})
 
-				const p1 = worldStart.add( lineDir.mul( params.x ) );
-				const p2 = rayEnd.mul( params.y );
-				const delta = p1.sub( p2 );
-				const len = delta.length();
-				const norm = len.div( materialLineWidth );
+				const p1 = worldStart.add(lineDir.mul(params.x))
+				const p2 = rayEnd.mul(params.y)
+				const delta = p1.sub(p2)
+				const len = delta.length()
+				const norm = len.div(materialLineWidth)
 
-				if ( ! useDash ) {
-
-					if ( useAlphaToCoverage && renderer.samples > 1 ) {
-
-						const dnorm = norm.fwidth();
-						alpha.assign( smoothstep( dnorm.negate().add( 0.5 ), dnorm.add( 0.5 ), norm ).oneMinus() );
-
+				if (!useDash) {
+					if (useAlphaToCoverage && renderer.samples > 1) {
+						const dnorm = norm.fwidth()
+						alpha.assign(
+							smoothstep(
+								dnorm.negate().add(0.5),
+								dnorm.add(0.5),
+								norm
+							).oneMinus()
+						)
 					} else {
-
-						norm.greaterThan( 0.5 ).discard();
-
+						norm.greaterThan(0.5).discard()
 					}
-
 				}
-
 			} else {
-
 				// round endcaps
 
-				if ( useAlphaToCoverage && renderer.samples > 1 ) {
+				if (useAlphaToCoverage && renderer.samples > 1) {
+					const a = vUv.x
+					const b = vUv.y
+						.greaterThan(0.0)
+						.select(vUv.y.sub(1.0), vUv.y.add(1.0))
 
-					const a = vUv.x;
-					const b = vUv.y.greaterThan( 0.0 ).select( vUv.y.sub( 1.0 ), vUv.y.add( 1.0 ) );
+					const len2 = a.mul(a).add(b.mul(b))
 
-					const len2 = a.mul( a ).add( b.mul( b ) );
+					const dlen = float(len2.fwidth()).toVar('dlen')
 
-					const dlen = float( len2.fwidth() ).toVar( 'dlen' );
-
-					If( vUv.y.abs().greaterThan( 1.0 ), () => {
-
-						alpha.assign( smoothstep( dlen.oneMinus(), dlen.add( 1 ), len2 ).oneMinus() );
-
-					} );
-
+					If(vUv.y.abs().greaterThan(1.0), () => {
+						alpha.assign(
+							smoothstep(dlen.oneMinus(), dlen.add(1), len2).oneMinus()
+						)
+					})
 				} else {
+					If(vUv.y.abs().greaterThan(1.0), () => {
+						const a = vUv.x
+						const b = vUv.y
+							.greaterThan(0.0)
+							.select(vUv.y.sub(1.0), vUv.y.add(1.0))
+						const len2 = a.mul(a).add(b.mul(b))
 
-					If( vUv.y.abs().greaterThan( 1.0 ), () => {
-
-						const a = vUv.x;
-						const b = vUv.y.greaterThan( 0.0 ).select( vUv.y.sub( 1.0 ), vUv.y.add( 1.0 ) );
-						const len2 = a.mul( a ).add( b.mul( b ) );
-
-						len2.greaterThan( 1.0 ).discard();
-
-					} );
-
+						len2.greaterThan(1.0).discard()
+					})
 				}
-
 			}
 
-			let lineColorNode;
+			let lineColorNode
 
-			if ( this.lineColorNode ) {
-
-				lineColorNode = this.lineColorNode;
-
+			if (this.lineColorNode) {
+				lineColorNode = this.lineColorNode
 			} else {
+				if (useColor) {
+					const instanceColorStart = attribute('instanceColorStart')
+					const instanceColorEnd = attribute('instanceColorEnd')
 
-				if ( useColor ) {
+					const instanceColor = positionGeometry.y
+						.lessThan(0.5)
+						.select(instanceColorStart, instanceColorEnd)
 
-					const instanceColorStart = attribute( 'instanceColorStart' );
-					const instanceColorEnd = attribute( 'instanceColorEnd' );
-
-					const instanceColor = positionGeometry.y.lessThan( 0.5 ).select( instanceColorStart, instanceColorEnd );
-
-					lineColorNode = instanceColor.mul( materialColor );
-
+					lineColorNode = instanceColor.mul(materialColor)
 				} else {
-
-					lineColorNode = materialColor;
-
+					lineColorNode = materialColor
 				}
-
 			}
 
-			return vec4( lineColorNode, alpha );
+			return vec4(lineColorNode, alpha)
+		})()
 
-		} )();
+		if (this.transparent) {
+			const opacityNode = this.opacityNode
+				? float(this.opacityNode)
+				: materialOpacity
 
-		if ( this.transparent ) {
-
-			const opacityNode = this.opacityNode ? float( this.opacityNode ) : materialOpacity;
-
-			this.outputNode = vec4( this.colorNode.rgb.mul( opacityNode ).add( viewportSharedTexture().rgb.mul( opacityNode.oneMinus() ) ), this.colorNode.a );
-
+			this.outputNode = vec4(
+				this.colorNode.rgb
+					.mul(opacityNode)
+					.add(viewportSharedTexture().rgb.mul(opacityNode.oneMinus())),
+				this.colorNode.a
+			)
 		}
 
-		super.setup( builder );
-
+		super.setup(builder)
 	}
 
 	/**
@@ -483,20 +500,14 @@ class Line2NodeMaterial extends NodeMaterial {
 	 * @default false
 	 */
 	get worldUnits() {
-
-		return this._useWorldUnits;
-
+		return this._useWorldUnits
 	}
 
-	set worldUnits( value ) {
-
-		if ( this._useWorldUnits !== value ) {
-
-			this._useWorldUnits = value;
-			this.needsUpdate = true;
-
+	set worldUnits(value) {
+		if (this._useWorldUnits !== value) {
+			this._useWorldUnits = value
+			this.needsUpdate = true
 		}
-
 	}
 
 	/**
@@ -506,20 +517,14 @@ class Line2NodeMaterial extends NodeMaterial {
 	 * @default false
 	 */
 	get dashed() {
-
-		return this._useDash;
-
+		return this._useDash
 	}
 
-	set dashed( value ) {
-
-		if ( this._useDash !== value ) {
-
-			this._useDash = value;
-			this.needsUpdate = true;
-
+	set dashed(value) {
+		if (this._useDash !== value) {
+			this._useDash = value
+			this.needsUpdate = true
 		}
-
 	}
 
 	/**
@@ -529,22 +534,15 @@ class Line2NodeMaterial extends NodeMaterial {
 	 * @default true
 	 */
 	get alphaToCoverage() {
-
-		return this._useAlphaToCoverage;
-
+		return this._useAlphaToCoverage
 	}
 
-	set alphaToCoverage( value ) {
-
-		if ( this._useAlphaToCoverage !== value ) {
-
-			this._useAlphaToCoverage = value;
-			this.needsUpdate = true;
-
+	set alphaToCoverage(value) {
+		if (this._useAlphaToCoverage !== value) {
+			this._useAlphaToCoverage = value
+			this.needsUpdate = true
 		}
-
 	}
-
 }
 
-export default Line2NodeMaterial;
+export default Line2NodeMaterial

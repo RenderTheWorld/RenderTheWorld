@@ -1,29 +1,54 @@
-import { Material } from '../Material.js';
-import { NormalBlending } from '../../constants.js';
+import { Material } from '../Material.js'
+import { NormalBlending } from '../../constants.js'
 
-import { getNodeChildren, getCacheKey } from '../../nodes/core/NodeUtils.js';
-import { attribute } from '../../nodes/core/AttributeNode.js';
-import { output, diffuseColor, emissive, varyingProperty } from '../../nodes/core/PropertyNode.js';
-import { materialAlphaTest, materialColor, materialOpacity, materialEmissive, materialNormal, materialLightMap, materialAO } from '../../nodes/accessors/MaterialNode.js';
-import { modelViewProjection } from '../../nodes/accessors/ModelViewProjectionNode.js';
-import { normalLocal } from '../../nodes/accessors/Normal.js';
-import { instancedMesh } from '../../nodes/accessors/InstancedMeshNode.js';
-import { batch } from '../../nodes/accessors/BatchNode.js';
-import { materialReference } from '../../nodes/accessors/MaterialReferenceNode.js';
-import { positionLocal, positionView } from '../../nodes/accessors/Position.js';
-import { skinningReference } from '../../nodes/accessors/SkinningNode.js';
-import { morphReference } from '../../nodes/accessors/MorphNode.js';
-import { mix } from '../../nodes/math/MathNode.js';
-import { float, vec3, vec4 } from '../../nodes/tsl/TSLBase.js';
-import AONode from '../../nodes/lighting/AONode.js';
-import { lightingContext } from '../../nodes/lighting/LightingContextNode.js';
-import IrradianceNode from '../../nodes/lighting/IrradianceNode.js';
-import { depth, viewZToLogarithmicDepth, viewZToOrthographicDepth } from '../../nodes/display/ViewportDepthNode.js';
-import { cameraFar, cameraNear, cameraProjectionMatrix } from '../../nodes/accessors/Camera.js';
-import { clipping, clippingAlpha, hardwareClipping } from '../../nodes/accessors/ClippingNode.js';
-import NodeMaterialObserver from './manager/NodeMaterialObserver.js';
-import getAlphaHashThreshold from '../../nodes/functions/material/getAlphaHashThreshold.js';
-import { modelViewMatrix } from '../../nodes/accessors/ModelNode.js';
+import { getNodeChildren, getCacheKey } from '../../nodes/core/NodeUtils.js'
+import { attribute } from '../../nodes/core/AttributeNode.js'
+import {
+	output,
+	diffuseColor,
+	emissive,
+	varyingProperty
+} from '../../nodes/core/PropertyNode.js'
+import {
+	materialAlphaTest,
+	materialColor,
+	materialOpacity,
+	materialEmissive,
+	materialNormal,
+	materialLightMap,
+	materialAO
+} from '../../nodes/accessors/MaterialNode.js'
+import { modelViewProjection } from '../../nodes/accessors/ModelViewProjectionNode.js'
+import { normalLocal } from '../../nodes/accessors/Normal.js'
+import { instancedMesh } from '../../nodes/accessors/InstancedMeshNode.js'
+import { batch } from '../../nodes/accessors/BatchNode.js'
+import { materialReference } from '../../nodes/accessors/MaterialReferenceNode.js'
+import { positionLocal, positionView } from '../../nodes/accessors/Position.js'
+import { skinningReference } from '../../nodes/accessors/SkinningNode.js'
+import { morphReference } from '../../nodes/accessors/MorphNode.js'
+import { mix } from '../../nodes/math/MathNode.js'
+import { float, vec3, vec4 } from '../../nodes/tsl/TSLBase.js'
+import AONode from '../../nodes/lighting/AONode.js'
+import { lightingContext } from '../../nodes/lighting/LightingContextNode.js'
+import IrradianceNode from '../../nodes/lighting/IrradianceNode.js'
+import {
+	depth,
+	viewZToLogarithmicDepth,
+	viewZToOrthographicDepth
+} from '../../nodes/display/ViewportDepthNode.js'
+import {
+	cameraFar,
+	cameraNear,
+	cameraProjectionMatrix
+} from '../../nodes/accessors/Camera.js'
+import {
+	clipping,
+	clippingAlpha,
+	hardwareClipping
+} from '../../nodes/accessors/ClippingNode.js'
+import NodeMaterialObserver from './manager/NodeMaterialObserver.js'
+import getAlphaHashThreshold from '../../nodes/functions/material/getAlphaHashThreshold.js'
+import { modelViewMatrix } from '../../nodes/accessors/ModelNode.js'
 
 /**
  * Base class for all node materials.
@@ -31,11 +56,8 @@ import { modelViewMatrix } from '../../nodes/accessors/ModelNode.js';
  * @augments Material
  */
 class NodeMaterial extends Material {
-
 	static get type() {
-
-		return 'NodeMaterial';
-
+		return 'NodeMaterial'
 	}
 
 	/**
@@ -44,19 +66,18 @@ class NodeMaterial extends Material {
 	 * @type {String}
 	 */
 	get type() {
-
-		return this.constructor.type;
-
+		return this.constructor.type
 	}
 
-	set type( _value ) { /* */ }
+	set type(_value) {
+		/* */
+	}
 
 	/**
 	 * Constructs a new node material.
 	 */
 	constructor() {
-
-		super();
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -65,7 +86,7 @@ class NodeMaterial extends Material {
 		 * @readonly
 		 * @default true
 		 */
-		this.isNodeMaterial = true;
+		this.isNodeMaterial = true
 
 		/**
 		 * Whether this material is affected by fog or not.
@@ -73,7 +94,7 @@ class NodeMaterial extends Material {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.fog = true;
+		this.fog = true
 
 		/**
 		 * Whether this material is affected by lights or not.
@@ -81,7 +102,7 @@ class NodeMaterial extends Material {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.lights = false;
+		this.lights = false
 
 		/**
 		 * Whether this material uses hardware clipping or not.
@@ -91,7 +112,7 @@ class NodeMaterial extends Material {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.hardwareClipping = false;
+		this.hardwareClipping = false
 
 		/**
 		 * Node materials which set their `lights` property to `true`
@@ -109,7 +130,7 @@ class NodeMaterial extends Material {
 		 * @type {LightsNode?}
 		 * @default null
 		 */
-		this.lightsNode = null;
+		this.lightsNode = null
 
 		/**
 		 * The environment of node materials can be defined by an environment
@@ -124,7 +145,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<vec3>?}
 		 * @default null
 		 */
-		this.envNode = null;
+		this.envNode = null
 
 		/**
 		 * The lighting of node materials might be influenced by ambient occlusion.
@@ -138,7 +159,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.aoNode = null;
+		this.aoNode = null
 
 		/**
 		 * The diffuse color of node materials is by default inferred from the
@@ -159,7 +180,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<vec3>?}
 		 * @default null
 		 */
-		this.colorNode = null;
+		this.colorNode = null
 
 		/**
 		 * The normals of node materials are by default inferred from the `normalMap`/`normalScale`
@@ -172,7 +193,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<vec3>?}
 		 * @default null
 		 */
-		this.normalNode = null;
+		this.normalNode = null
 
 		/**
 		 * The opacity of node materials is by default inferred from the `opacity`
@@ -185,7 +206,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.opacityNode = null;
+		this.opacityNode = null
 
 		/**
 		 * This node can be used to to implement a variety of filter-like effects. The idea is
@@ -206,7 +227,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<vec3>?}
 		 * @default null
 		 */
-		this.backdropNode = null;
+		this.backdropNode = null
 
 		/**
 		 * This node allows to modulate the influence of `backdropNode` to the outgoing light.
@@ -214,7 +235,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.backdropAlphaNode = null;
+		this.backdropAlphaNode = null
 
 		/**
 		 * The alpha test of node materials is by default inferred from the `alphaTest`
@@ -227,7 +248,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.alphaTestNode = null;
+		this.alphaTestNode = null
 
 		/**
 		 * The local vertex positions are computed based on multiple factors like the
@@ -244,7 +265,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<vec3>?}
 		 * @default null
 		 */
-		this.positionNode = null;
+		this.positionNode = null
 
 		/**
 		 * This node property is intended for logic which modifies geometry data once or per animation step.
@@ -260,7 +281,7 @@ class NodeMaterial extends Material {
 		 * @type {Function}
 		 * @default null
 		 */
-		this.geometryNode = null;
+		this.geometryNode = null
 
 		/**
 		 * Allows to overwrite depth values in the fragment shader.
@@ -268,7 +289,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.depthNode = null;
+		this.depthNode = null
 
 		/**
 		 * Allows to overwrite the position used for shadow map rendering which
@@ -278,7 +299,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.shadowPositionNode = null;
+		this.shadowPositionNode = null
 
 		/**
 		 * This node can be used to influence how an object using this node material
@@ -295,7 +316,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<vec4>?}
 		 * @default null
 		 */
-		this.receivedShadowNode = null;
+		this.receivedShadowNode = null
 
 		/**
 		 * This node can be used to influence how an object using this node material
@@ -319,7 +340,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<vec4>?}
 		 * @default null
 		 */
-		this.castShadowNode = null;
+		this.castShadowNode = null
 
 		/**
 		 * This node can be used to define the final output of the material.
@@ -329,7 +350,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<vec4>?}
 		 * @default null
 		 */
-		this.outputNode = null;
+		this.outputNode = null
 
 		/**
 		 * MRT configuration is done on renderer or pass level. This node allows to
@@ -340,7 +361,7 @@ class NodeMaterial extends Material {
 		 * @type {MRTNode?}
 		 * @default null
 		 */
-		this.mrtNode = null;
+		this.mrtNode = null
 
 		/**
 		 * This node property can be used if you need complete freedom in implementing
@@ -350,7 +371,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<vec4>?}
 		 * @default null
 		 */
-		this.fragmentNode = null;
+		this.fragmentNode = null
 
 		/**
 		 * This node property can be used if you need complete freedom in implementing
@@ -360,8 +381,7 @@ class NodeMaterial extends Material {
 		 * @type {Node<vec4>?}
 		 * @default null
 		 */
-		this.vertexNode = null;
-
+		this.vertexNode = null
 	}
 
 	/**
@@ -371,9 +391,7 @@ class NodeMaterial extends Material {
 	 * @return {String} The custom cache key.
 	 */
 	customProgramCacheKey() {
-
-		return this.type + getCacheKey( this );
-
+		return this.type + getCacheKey(this)
 	}
 
 	/**
@@ -381,10 +399,8 @@ class NodeMaterial extends Material {
 	 *
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	build( builder ) {
-
-		this.setup( builder );
-
+	build(builder) {
+		this.setup(builder)
 	}
 
 	/**
@@ -393,10 +409,8 @@ class NodeMaterial extends Material {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {NodeMaterialObserver} The node material observer.
 	 */
-	setupObserver( builder ) {
-
-		return new NodeMaterialObserver( builder );
-
+	setupObserver(builder) {
+		return new NodeMaterialObserver(builder)
 	}
 
 	/**
@@ -404,127 +418,106 @@ class NodeMaterial extends Material {
 	 *
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	setup( builder ) {
+	setup(builder) {
+		builder.context.setupNormal = () => this.setupNormal(builder)
+		builder.context.setupPositionView = () => this.setupPositionView(builder)
+		builder.context.setupModelViewProjection = () =>
+			this.setupModelViewProjection(builder)
 
-		builder.context.setupNormal = () => this.setupNormal( builder );
-		builder.context.setupPositionView = () => this.setupPositionView( builder );
-		builder.context.setupModelViewProjection = () => this.setupModelViewProjection( builder );
-
-		const renderer = builder.renderer;
-		const renderTarget = renderer.getRenderTarget();
+		const renderer = builder.renderer
+		const renderTarget = renderer.getRenderTarget()
 
 		// < VERTEX STAGE >
 
-		builder.addStack();
+		builder.addStack()
 
-		const vertexNode = this.vertexNode || this.setupVertex( builder );
+		const vertexNode = this.vertexNode || this.setupVertex(builder)
 
-		builder.stack.outputNode = vertexNode;
+		builder.stack.outputNode = vertexNode
 
-		this.setupHardwareClipping( builder );
+		this.setupHardwareClipping(builder)
 
-		if ( this.geometryNode !== null ) {
-
-			builder.stack.outputNode = builder.stack.outputNode.bypass( this.geometryNode );
-
+		if (this.geometryNode !== null) {
+			builder.stack.outputNode = builder.stack.outputNode.bypass(
+				this.geometryNode
+			)
 		}
 
-		builder.addFlow( 'vertex', builder.removeStack() );
+		builder.addFlow('vertex', builder.removeStack())
 
 		// < FRAGMENT STAGE >
 
-		builder.addStack();
+		builder.addStack()
 
-		let resultNode;
+		let resultNode
 
-		const clippingNode = this.setupClipping( builder );
+		const clippingNode = this.setupClipping(builder)
 
-		if ( this.depthWrite === true || this.depthTest === true ) {
-
+		if (this.depthWrite === true || this.depthTest === true) {
 			// only write depth if depth buffer is configured
 
-			if ( renderTarget !== null ) {
-
-				if ( renderTarget.depthBuffer === true ) this.setupDepth( builder );
-
+			if (renderTarget !== null) {
+				if (renderTarget.depthBuffer === true) this.setupDepth(builder)
 			} else {
-
-				if ( renderer.depth === true ) this.setupDepth( builder );
-
+				if (renderer.depth === true) this.setupDepth(builder)
 			}
-
 		}
 
-		if ( this.fragmentNode === null ) {
+		if (this.fragmentNode === null) {
+			this.setupDiffuseColor(builder)
+			this.setupVariants(builder)
 
-			this.setupDiffuseColor( builder );
-			this.setupVariants( builder );
+			const outgoingLightNode = this.setupLighting(builder)
 
-			const outgoingLightNode = this.setupLighting( builder );
-
-			if ( clippingNode !== null ) builder.stack.add( clippingNode );
+			if (clippingNode !== null) builder.stack.add(clippingNode)
 
 			// force unsigned floats - useful for RenderTargets
 
-			const basicOutput = vec4( outgoingLightNode, diffuseColor.a ).max( 0 );
+			const basicOutput = vec4(outgoingLightNode, diffuseColor.a).max(0)
 
-			resultNode = this.setupOutput( builder, basicOutput );
+			resultNode = this.setupOutput(builder, basicOutput)
 
 			// OUTPUT NODE
 
-			output.assign( resultNode );
+			output.assign(resultNode)
 
 			//
 
-			if ( this.outputNode !== null ) resultNode = this.outputNode;
+			if (this.outputNode !== null) resultNode = this.outputNode
 
 			// MRT
 
-			if ( renderTarget !== null ) {
+			if (renderTarget !== null) {
+				const mrt = renderer.getMRT()
+				const materialMRT = this.mrtNode
 
-				const mrt = renderer.getMRT();
-				const materialMRT = this.mrtNode;
+				if (mrt !== null) {
+					resultNode = mrt
 
-				if ( mrt !== null ) {
-
-					resultNode = mrt;
-
-					if ( materialMRT !== null ) {
-
-						resultNode = mrt.merge( materialMRT );
-
+					if (materialMRT !== null) {
+						resultNode = mrt.merge(materialMRT)
 					}
-
-				} else if ( materialMRT !== null ) {
-
-					resultNode = materialMRT;
-
+				} else if (materialMRT !== null) {
+					resultNode = materialMRT
 				}
-
 			}
-
 		} else {
+			let fragmentNode = this.fragmentNode
 
-			let fragmentNode = this.fragmentNode;
-
-			if ( fragmentNode.isOutputStructNode !== true ) {
-
-				fragmentNode = vec4( fragmentNode );
-
+			if (fragmentNode.isOutputStructNode !== true) {
+				fragmentNode = vec4(fragmentNode)
 			}
 
-			resultNode = this.setupOutput( builder, fragmentNode );
-
+			resultNode = this.setupOutput(builder, fragmentNode)
 		}
 
-		builder.stack.outputNode = resultNode;
+		builder.stack.outputNode = resultNode
 
-		builder.addFlow( 'fragment', builder.removeStack() );
+		builder.addFlow('fragment', builder.removeStack())
 
 		// < OBSERVER >
 
-		builder.observer = this.setupObserver( builder );
-
+		builder.observer = this.setupObserver(builder)
 	}
 
 	/**
@@ -533,33 +526,25 @@ class NodeMaterial extends Material {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {ClippingNode} The clipping node.
 	 */
-	setupClipping( builder ) {
+	setupClipping(builder) {
+		if (builder.clippingContext === null) return null
 
-		if ( builder.clippingContext === null ) return null;
+		const { unionPlanes, intersectionPlanes } = builder.clippingContext
 
-		const { unionPlanes, intersectionPlanes } = builder.clippingContext;
+		let result = null
 
-		let result = null;
+		if (unionPlanes.length > 0 || intersectionPlanes.length > 0) {
+			const samples = builder.renderer.samples
 
-		if ( unionPlanes.length > 0 || intersectionPlanes.length > 0 ) {
-
-			const samples = builder.renderer.samples;
-
-			if ( this.alphaToCoverage && samples > 1 ) {
-
+			if (this.alphaToCoverage && samples > 1) {
 				// to be added to flow when the color/alpha value has been determined
-				result = clippingAlpha();
-
+				result = clippingAlpha()
 			} else {
-
-				builder.stack.add( clipping() );
-
+				builder.stack.add(clipping())
 			}
-
 		}
 
-		return result;
-
+		return result
 	}
 
 	/**
@@ -567,26 +552,26 @@ class NodeMaterial extends Material {
 	 *
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	setupHardwareClipping( builder ) {
+	setupHardwareClipping(builder) {
+		this.hardwareClipping = false
 
-		this.hardwareClipping = false;
+		if (builder.clippingContext === null) return
 
-		if ( builder.clippingContext === null ) return;
-
-		const candidateCount = builder.clippingContext.unionPlanes.length;
+		const candidateCount = builder.clippingContext.unionPlanes.length
 
 		// 8 planes supported by WebGL ANGLE_clip_cull_distance and WebGPU clip-distances
 
-		if ( candidateCount > 0 && candidateCount <= 8 && builder.isAvailable( 'clipDistance' ) ) {
+		if (
+			candidateCount > 0 &&
+			candidateCount <= 8 &&
+			builder.isAvailable('clipDistance')
+		) {
+			builder.stack.add(hardwareClipping())
 
-			builder.stack.add( hardwareClipping() );
-
-			this.hardwareClipping = true;
-
+			this.hardwareClipping = true
 		}
 
-		return;
-
+		return
 	}
 
 	/**
@@ -594,44 +579,38 @@ class NodeMaterial extends Material {
 	 *
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	setupDepth( builder ) {
-
-		const { renderer, camera } = builder;
+	setupDepth(builder) {
+		const { renderer, camera } = builder
 
 		// Depth
 
-		let depthNode = this.depthNode;
+		let depthNode = this.depthNode
 
-		if ( depthNode === null ) {
+		if (depthNode === null) {
+			const mrt = renderer.getMRT()
 
-			const mrt = renderer.getMRT();
-
-			if ( mrt && mrt.has( 'depth' ) ) {
-
-				depthNode = mrt.get( 'depth' );
-
-			} else if ( renderer.logarithmicDepthBuffer === true ) {
-
-				if ( camera.isPerspectiveCamera ) {
-
-					depthNode = viewZToLogarithmicDepth( positionView.z, cameraNear, cameraFar );
-
+			if (mrt && mrt.has('depth')) {
+				depthNode = mrt.get('depth')
+			} else if (renderer.logarithmicDepthBuffer === true) {
+				if (camera.isPerspectiveCamera) {
+					depthNode = viewZToLogarithmicDepth(
+						positionView.z,
+						cameraNear,
+						cameraFar
+					)
 				} else {
-
-					depthNode = viewZToOrthographicDepth( positionView.z, cameraNear, cameraFar );
-
+					depthNode = viewZToOrthographicDepth(
+						positionView.z,
+						cameraNear,
+						cameraFar
+					)
 				}
-
 			}
-
 		}
 
-		if ( depthNode !== null ) {
-
-			depth.assign( depthNode ).append();
-
+		if (depthNode !== null) {
+			depth.assign(depthNode).append()
 		}
-
 	}
 
 	/**
@@ -641,10 +620,8 @@ class NodeMaterial extends Material {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Node<vec3>} The position in view space.
 	 */
-	setupPositionView( /*builder*/ ) {
-
-		return modelViewMatrix.mul( positionLocal ).xyz;
-
+	setupPositionView(/*builder*/) {
+		return modelViewMatrix.mul(positionLocal).xyz
 	}
 
 	/**
@@ -653,10 +630,8 @@ class NodeMaterial extends Material {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Node<vec4>} The position in view space.
 	 */
-	setupModelViewProjection( /*builder*/ ) {
-
-		return cameraProjectionMatrix.mul( positionView );
-
+	setupModelViewProjection(/*builder*/) {
+		return cameraProjectionMatrix.mul(positionView)
 	}
 
 	/**
@@ -665,16 +640,14 @@ class NodeMaterial extends Material {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Node<vec4>} The position in clip space.
 	 */
-	setupVertex( builder ) {
+	setupVertex(builder) {
+		builder.addStack()
 
-		builder.addStack();
+		this.setupPosition(builder)
 
-		this.setupPosition( builder );
+		builder.context.vertex = builder.removeStack()
 
-		builder.context.vertex = builder.removeStack();
-
-		return modelViewProjection;
-
+		return modelViewProjection
 	}
 
 	/**
@@ -683,52 +656,52 @@ class NodeMaterial extends Material {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Node<vec3>} The position in local space.
 	 */
-	setupPosition( builder ) {
+	setupPosition(builder) {
+		const { object, geometry } = builder
 
-		const { object, geometry } = builder;
-
-		if ( geometry.morphAttributes.position || geometry.morphAttributes.normal || geometry.morphAttributes.color ) {
-
-			morphReference( object ).append();
-
+		if (
+			geometry.morphAttributes.position ||
+			geometry.morphAttributes.normal ||
+			geometry.morphAttributes.color
+		) {
+			morphReference(object).append()
 		}
 
-		if ( object.isSkinnedMesh === true ) {
-
-			skinningReference( object ).append();
-
+		if (object.isSkinnedMesh === true) {
+			skinningReference(object).append()
 		}
 
-		if ( this.displacementMap ) {
+		if (this.displacementMap) {
+			const displacementMap = materialReference('displacementMap', 'texture')
+			const displacementScale = materialReference('displacementScale', 'float')
+			const displacementBias = materialReference('displacementBias', 'float')
 
-			const displacementMap = materialReference( 'displacementMap', 'texture' );
-			const displacementScale = materialReference( 'displacementScale', 'float' );
-			const displacementBias = materialReference( 'displacementBias', 'float' );
-
-			positionLocal.addAssign( normalLocal.normalize().mul( ( displacementMap.x.mul( displacementScale ).add( displacementBias ) ) ) );
-
+			positionLocal.addAssign(
+				normalLocal
+					.normalize()
+					.mul(displacementMap.x.mul(displacementScale).add(displacementBias))
+			)
 		}
 
-		if ( object.isBatchedMesh ) {
-
-			batch( object ).append();
-
+		if (object.isBatchedMesh) {
+			batch(object).append()
 		}
 
-		if ( ( object.isInstancedMesh && object.instanceMatrix && object.instanceMatrix.isInstancedBufferAttribute === true ) ) {
-
-			instancedMesh( object ).append();
-
+		if (
+			object.isInstancedMesh &&
+			object.instanceMatrix &&
+			object.instanceMatrix.isInstancedBufferAttribute === true
+		) {
+			instancedMesh(object).append()
 		}
 
-		if ( this.positionNode !== null ) {
-
-			positionLocal.assign( this.positionNode.context( { isPositionNodeInput: true } ) );
-
+		if (this.positionNode !== null) {
+			positionLocal.assign(
+				this.positionNode.context({ isPositionNodeInput: true })
+			)
 		}
 
-		return positionLocal;
-
+		return positionLocal
 	}
 
 	/**
@@ -737,70 +710,67 @@ class NodeMaterial extends Material {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @param {BufferGeometry} geometry - The geometry.
 	 */
-	setupDiffuseColor( { object, geometry } ) {
-
-		let colorNode = this.colorNode ? vec4( this.colorNode ) : materialColor;
+	setupDiffuseColor({ object, geometry }) {
+		let colorNode = this.colorNode ? vec4(this.colorNode) : materialColor
 
 		// VERTEX COLORS
 
-		if ( this.vertexColors === true && geometry.hasAttribute( 'color' ) ) {
-
-			colorNode = vec4( colorNode.xyz.mul( attribute( 'color', 'vec3' ) ), colorNode.a );
-
+		if (this.vertexColors === true && geometry.hasAttribute('color')) {
+			colorNode = vec4(
+				colorNode.xyz.mul(attribute('color', 'vec3')),
+				colorNode.a
+			)
 		}
 
 		// Instanced colors
 
-		if ( object.instanceColor ) {
+		if (object.instanceColor) {
+			const instanceColor = varyingProperty('vec3', 'vInstanceColor')
 
-			const instanceColor = varyingProperty( 'vec3', 'vInstanceColor' );
-
-			colorNode = instanceColor.mul( colorNode );
-
+			colorNode = instanceColor.mul(colorNode)
 		}
 
-		if ( object.isBatchedMesh && object._colorsTexture ) {
+		if (object.isBatchedMesh && object._colorsTexture) {
+			const batchColor = varyingProperty('vec3', 'vBatchColor')
 
-			const batchColor = varyingProperty( 'vec3', 'vBatchColor' );
-
-			colorNode = batchColor.mul( colorNode );
-
+			colorNode = batchColor.mul(colorNode)
 		}
-
 
 		// COLOR
 
-		diffuseColor.assign( colorNode );
+		diffuseColor.assign(colorNode)
 
 		// OPACITY
 
-		const opacityNode = this.opacityNode ? float( this.opacityNode ) : materialOpacity;
-		diffuseColor.a.assign( diffuseColor.a.mul( opacityNode ) );
+		const opacityNode = this.opacityNode
+			? float(this.opacityNode)
+			: materialOpacity
+		diffuseColor.a.assign(diffuseColor.a.mul(opacityNode))
 
 		// ALPHA TEST
 
-		if ( this.alphaTestNode !== null || this.alphaTest > 0 ) {
+		if (this.alphaTestNode !== null || this.alphaTest > 0) {
+			const alphaTestNode =
+				this.alphaTestNode !== null
+					? float(this.alphaTestNode)
+					: materialAlphaTest
 
-			const alphaTestNode = this.alphaTestNode !== null ? float( this.alphaTestNode ) : materialAlphaTest;
-
-			diffuseColor.a.lessThanEqual( alphaTestNode ).discard();
-
+			diffuseColor.a.lessThanEqual(alphaTestNode).discard()
 		}
 
 		// ALPHA HASH
 
-		if ( this.alphaHash === true ) {
-
-			diffuseColor.a.lessThan( getAlphaHashThreshold( positionLocal ) ).discard();
-
+		if (this.alphaHash === true) {
+			diffuseColor.a.lessThan(getAlphaHashThreshold(positionLocal)).discard()
 		}
 
-		if ( this.transparent === false && this.blending === NormalBlending && this.alphaToCoverage === false ) {
-
-			diffuseColor.a.assign( 1.0 );
-
+		if (
+			this.transparent === false &&
+			this.blending === NormalBlending &&
+			this.alphaToCoverage === false
+		) {
+			diffuseColor.a.assign(1.0)
 		}
-
 	}
 
 	/**
@@ -810,10 +780,8 @@ class NodeMaterial extends Material {
 	 * @abstract
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	setupVariants( /*builder*/ ) {
-
+	setupVariants(/*builder*/) {
 		// Interface function.
-
 	}
 
 	/**
@@ -822,9 +790,7 @@ class NodeMaterial extends Material {
 	 * @return {Node<vec3>} The outgoing light node.
 	 */
 	setupOutgoingLight() {
-
-		return ( this.lights === true ) ? vec3( 0 ) : diffuseColor.rgb;
-
+		return this.lights === true ? vec3(0) : diffuseColor.rgb
 	}
 
 	/**
@@ -833,9 +799,7 @@ class NodeMaterial extends Material {
 	 * @return {Node<vec3>} The normal node.
 	 */
 	setupNormal() {
-
-		return this.normalNode ? vec3( this.normalNode ) : materialNormal;
-
+		return this.normalNode ? vec3(this.normalNode) : materialNormal
 	}
 
 	/**
@@ -844,22 +808,18 @@ class NodeMaterial extends Material {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Node<vec4>} The environment node.
 	 */
-	setupEnvironment( /*builder*/ ) {
+	setupEnvironment(/*builder*/) {
+		let node = null
 
-		let node = null;
-
-		if ( this.envNode ) {
-
-			node = this.envNode;
-
-		} else if ( this.envMap ) {
-
-			node = this.envMap.isCubeTexture ? materialReference( 'envMap', 'cubeTexture' ) : materialReference( 'envMap', 'texture' );
-
+		if (this.envNode) {
+			node = this.envNode
+		} else if (this.envMap) {
+			node = this.envMap.isCubeTexture
+				? materialReference('envMap', 'cubeTexture')
+				: materialReference('envMap', 'texture')
 		}
 
-		return node;
-
+		return node
 	}
 
 	/**
@@ -868,18 +828,14 @@ class NodeMaterial extends Material {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Node<vec3>} The light map node.
 	 */
-	setupLightMap( builder ) {
+	setupLightMap(builder) {
+		let node = null
 
-		let node = null;
-
-		if ( builder.material.lightMap ) {
-
-			node = new IrradianceNode( materialLightMap );
-
+		if (builder.material.lightMap) {
+			node = new IrradianceNode(materialLightMap)
 		}
 
-		return node;
-
+		return node
 	}
 
 	/**
@@ -888,46 +844,39 @@ class NodeMaterial extends Material {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {LightsNode} The lights node.
 	 */
-	setupLights( builder ) {
-
-		const materialLightsNode = [];
+	setupLights(builder) {
+		const materialLightsNode = []
 
 		//
 
-		const envNode = this.setupEnvironment( builder );
+		const envNode = this.setupEnvironment(builder)
 
-		if ( envNode && envNode.isLightingNode ) {
-
-			materialLightsNode.push( envNode );
-
+		if (envNode && envNode.isLightingNode) {
+			materialLightsNode.push(envNode)
 		}
 
-		const lightMapNode = this.setupLightMap( builder );
+		const lightMapNode = this.setupLightMap(builder)
 
-		if ( lightMapNode && lightMapNode.isLightingNode ) {
-
-			materialLightsNode.push( lightMapNode );
-
+		if (lightMapNode && lightMapNode.isLightingNode) {
+			materialLightsNode.push(lightMapNode)
 		}
 
-		if ( this.aoNode !== null || builder.material.aoMap ) {
+		if (this.aoNode !== null || builder.material.aoMap) {
+			const aoNode = this.aoNode !== null ? this.aoNode : materialAO
 
-			const aoNode = this.aoNode !== null ? this.aoNode : materialAO;
-
-			materialLightsNode.push( new AONode( aoNode ) );
-
+			materialLightsNode.push(new AONode(aoNode))
 		}
 
-		let lightsN = this.lightsNode || builder.lightsNode;
+		let lightsN = this.lightsNode || builder.lightsNode
 
-		if ( materialLightsNode.length > 0 ) {
-
-			lightsN = builder.renderer.lighting.createNode( [ ...lightsN.getLights(), ...materialLightsNode ] );
-
+		if (materialLightsNode.length > 0) {
+			lightsN = builder.renderer.lighting.createNode([
+				...lightsN.getLights(),
+				...materialLightsNode
+			])
 		}
 
-		return lightsN;
-
+		return lightsN
 	}
 
 	/**
@@ -938,10 +887,8 @@ class NodeMaterial extends Material {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {LightingModel} The lighting model.
 	 */
-	setupLightingModel( /*builder*/ ) {
-
+	setupLightingModel(/*builder*/) {
 		// Interface function.
-
 	}
 
 	/**
@@ -950,43 +897,47 @@ class NodeMaterial extends Material {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Node<vec3>} The outgoing light node.
 	 */
-	setupLighting( builder ) {
-
-		const { material } = builder;
-		const { backdropNode, backdropAlphaNode, emissiveNode } = this;
+	setupLighting(builder) {
+		const { material } = builder
+		const { backdropNode, backdropAlphaNode, emissiveNode } = this
 
 		// OUTGOING LIGHT
 
-		const lights = this.lights === true || this.lightsNode !== null;
+		const lights = this.lights === true || this.lightsNode !== null
 
-		const lightsNode = lights ? this.setupLights( builder ) : null;
+		const lightsNode = lights ? this.setupLights(builder) : null
 
-		let outgoingLightNode = this.setupOutgoingLight( builder );
+		let outgoingLightNode = this.setupOutgoingLight(builder)
 
-		if ( lightsNode && lightsNode.getScope().hasLights ) {
+		if (lightsNode && lightsNode.getScope().hasLights) {
+			const lightingModel = this.setupLightingModel(builder)
 
-			const lightingModel = this.setupLightingModel( builder );
-
-			outgoingLightNode = lightingContext( lightsNode, lightingModel, backdropNode, backdropAlphaNode );
-
-		} else if ( backdropNode !== null ) {
-
-			outgoingLightNode = vec3( backdropAlphaNode !== null ? mix( outgoingLightNode, backdropNode, backdropAlphaNode ) : backdropNode );
-
+			outgoingLightNode = lightingContext(
+				lightsNode,
+				lightingModel,
+				backdropNode,
+				backdropAlphaNode
+			)
+		} else if (backdropNode !== null) {
+			outgoingLightNode = vec3(
+				backdropAlphaNode !== null
+					? mix(outgoingLightNode, backdropNode, backdropAlphaNode)
+					: backdropNode
+			)
 		}
 
 		// EMISSIVE
 
-		if ( ( emissiveNode && emissiveNode.isNode === true ) || ( material.emissive && material.emissive.isColor === true ) ) {
+		if (
+			(emissiveNode && emissiveNode.isNode === true) ||
+			(material.emissive && material.emissive.isColor === true)
+		) {
+			emissive.assign(vec3(emissiveNode ? emissiveNode : materialEmissive))
 
-			emissive.assign( vec3( emissiveNode ? emissiveNode : materialEmissive ) );
-
-			outgoingLightNode = outgoingLightNode.add( emissive );
-
+			outgoingLightNode = outgoingLightNode.add(emissive)
 		}
 
-		return outgoingLightNode;
-
+		return outgoingLightNode
 	}
 
 	/**
@@ -996,26 +947,20 @@ class NodeMaterial extends Material {
 	 * @param {Node<vec4>} outputNode - The existing output node.
 	 * @return {Node<vec4>} The output node.
 	 */
-	setupOutput( builder, outputNode ) {
-
+	setupOutput(builder, outputNode) {
 		// FOG
 
-		if ( this.fog === true ) {
+		if (this.fog === true) {
+			const fogNode = builder.fogNode
 
-			const fogNode = builder.fogNode;
+			if (fogNode) {
+				output.assign(outputNode)
 
-			if ( fogNode ) {
-
-				output.assign( outputNode );
-
-				outputNode = vec4( fogNode );
-
+				outputNode = vec4(fogNode)
 			}
-
 		}
 
-		return outputNode;
-
+		return outputNode
 	}
 
 	/**
@@ -1025,38 +970,33 @@ class NodeMaterial extends Material {
 	 *
 	 * @param {Material} material - The material to copy properties with their values to this node material.
 	 */
-	setDefaultValues( material ) {
-
+	setDefaultValues(material) {
 		// This approach is to reuse the native refreshUniforms*
 		// and turn available the use of features like transmission and environment in core
 
-		for ( const property in material ) {
+		for (const property in material) {
+			const value = material[property]
 
-			const value = material[ property ];
+			if (this[property] === undefined) {
+				this[property] = value
 
-			if ( this[ property ] === undefined ) {
-
-				this[ property ] = value;
-
-				if ( value && value.clone ) this[ property ] = value.clone();
-
+				if (value && value.clone) this[property] = value.clone()
 			}
-
 		}
 
-		const descriptors = Object.getOwnPropertyDescriptors( material.constructor.prototype );
+		const descriptors = Object.getOwnPropertyDescriptors(
+			material.constructor.prototype
+		)
 
-		for ( const key in descriptors ) {
-
-			if ( Object.getOwnPropertyDescriptor( this.constructor.prototype, key ) === undefined &&
-			     descriptors[ key ].get !== undefined ) {
-
-				Object.defineProperty( this.constructor.prototype, key, descriptors[ key ] );
-
+		for (const key in descriptors) {
+			if (
+				Object.getOwnPropertyDescriptor(this.constructor.prototype, key) ===
+					undefined &&
+				descriptors[key].get !== undefined
+			) {
+				Object.defineProperty(this.constructor.prototype, key, descriptors[key])
 			}
-
 		}
-
 	}
 
 	/**
@@ -1065,63 +1005,51 @@ class NodeMaterial extends Material {
 	 * @param {(Object|String)?} meta - The meta information for serialization.
 	 * @return {Object} The serialized node.
 	 */
-	toJSON( meta ) {
+	toJSON(meta) {
+		const isRoot = meta === undefined || typeof meta === 'string'
 
-		const isRoot = ( meta === undefined || typeof meta === 'string' );
-
-		if ( isRoot ) {
-
+		if (isRoot) {
 			meta = {
 				textures: {},
 				images: {},
 				nodes: {}
-			};
-
+			}
 		}
 
-		const data = Material.prototype.toJSON.call( this, meta );
-		const nodeChildren = getNodeChildren( this );
+		const data = Material.prototype.toJSON.call(this, meta)
+		const nodeChildren = getNodeChildren(this)
 
-		data.inputNodes = {};
+		data.inputNodes = {}
 
-		for ( const { property, childNode } of nodeChildren ) {
-
-			data.inputNodes[ property ] = childNode.toJSON( meta ).uuid;
-
+		for (const { property, childNode } of nodeChildren) {
+			data.inputNodes[property] = childNode.toJSON(meta).uuid
 		}
 
 		// TODO: Copied from Object3D.toJSON
 
-		function extractFromCache( cache ) {
+		function extractFromCache(cache) {
+			const values = []
 
-			const values = [];
-
-			for ( const key in cache ) {
-
-				const data = cache[ key ];
-				delete data.metadata;
-				values.push( data );
-
+			for (const key in cache) {
+				const data = cache[key]
+				delete data.metadata
+				values.push(data)
 			}
 
-			return values;
-
+			return values
 		}
 
-		if ( isRoot ) {
+		if (isRoot) {
+			const textures = extractFromCache(meta.textures)
+			const images = extractFromCache(meta.images)
+			const nodes = extractFromCache(meta.nodes)
 
-			const textures = extractFromCache( meta.textures );
-			const images = extractFromCache( meta.images );
-			const nodes = extractFromCache( meta.nodes );
-
-			if ( textures.length > 0 ) data.textures = textures;
-			if ( images.length > 0 ) data.images = images;
-			if ( nodes.length > 0 ) data.nodes = nodes;
-
+			if (textures.length > 0) data.textures = textures
+			if (images.length > 0) data.images = images
+			if (nodes.length > 0) data.nodes = nodes
 		}
 
-		return data;
-
+		return data
 	}
 
 	/**
@@ -1130,36 +1058,33 @@ class NodeMaterial extends Material {
 	 * @param {NodeMaterial} source - The material to copy.
 	 * @return {NodeMaterial} A reference to this node material.
 	 */
-	copy( source ) {
+	copy(source) {
+		this.lightsNode = source.lightsNode
+		this.envNode = source.envNode
 
-		this.lightsNode = source.lightsNode;
-		this.envNode = source.envNode;
+		this.colorNode = source.colorNode
+		this.normalNode = source.normalNode
+		this.opacityNode = source.opacityNode
+		this.backdropNode = source.backdropNode
+		this.backdropAlphaNode = source.backdropAlphaNode
+		this.alphaTestNode = source.alphaTestNode
 
-		this.colorNode = source.colorNode;
-		this.normalNode = source.normalNode;
-		this.opacityNode = source.opacityNode;
-		this.backdropNode = source.backdropNode;
-		this.backdropAlphaNode = source.backdropAlphaNode;
-		this.alphaTestNode = source.alphaTestNode;
+		this.positionNode = source.positionNode
+		this.geometryNode = source.geometryNode
 
-		this.positionNode = source.positionNode;
-		this.geometryNode = source.geometryNode;
+		this.depthNode = source.depthNode
+		this.shadowPositionNode = source.shadowPositionNode
+		this.receivedShadowNode = source.receivedShadowNode
+		this.castShadowNode = source.castShadowNode
 
-		this.depthNode = source.depthNode;
-		this.shadowPositionNode = source.shadowPositionNode;
-		this.receivedShadowNode = source.receivedShadowNode;
-		this.castShadowNode = source.castShadowNode;
+		this.outputNode = source.outputNode
+		this.mrtNode = source.mrtNode
 
-		this.outputNode = source.outputNode;
-		this.mrtNode = source.mrtNode;
+		this.fragmentNode = source.fragmentNode
+		this.vertexNode = source.vertexNode
 
-		this.fragmentNode = source.fragmentNode;
-		this.vertexNode = source.vertexNode;
-
-		return super.copy( source );
-
+		return super.copy(source)
 	}
-
 }
 
-export default NodeMaterial;
+export default NodeMaterial

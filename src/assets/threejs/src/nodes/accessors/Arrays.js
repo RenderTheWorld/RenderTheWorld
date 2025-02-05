@@ -1,7 +1,7 @@
-import StorageInstancedBufferAttribute from '../../renderers/common/StorageInstancedBufferAttribute.js';
-import StorageBufferAttribute from '../../renderers/common/StorageBufferAttribute.js';
-import { storage } from './StorageBufferNode.js';
-import { getLengthFromType, getTypedArrayFromType } from '../core/NodeUtils.js';
+import StorageInstancedBufferAttribute from '../../renderers/common/StorageInstancedBufferAttribute.js'
+import StorageBufferAttribute from '../../renderers/common/StorageBufferAttribute.js'
+import { storage } from './StorageBufferNode.js'
+import { getLengthFromType, getTypedArrayFromType } from '../core/NodeUtils.js'
 
 /**
  * TSL function for creating a storage buffer node with a configured `StorageBufferAttribute`.
@@ -11,28 +11,22 @@ import { getLengthFromType, getTypedArrayFromType } from '../core/NodeUtils.js';
  * @param {String|Struct} [type='float'] - The data type.
  * @returns {StorageBufferNode}
  */
-export const attributeArray = ( count, type = 'float' ) => {
+export const attributeArray = (count, type = 'float') => {
+	let itemSize, typedArray
 
-	let itemSize, typedArray;
-
-	if ( type.isStruct === true ) {
-
-		itemSize = type.layout.getLength();
-		typedArray = getTypedArrayFromType( 'float' );
-
+	if (type.isStruct === true) {
+		itemSize = type.layout.getLength()
+		typedArray = getTypedArrayFromType('float')
 	} else {
-
-		itemSize = getLengthFromType( type );
-		typedArray = getTypedArrayFromType( type );
-
+		itemSize = getLengthFromType(type)
+		typedArray = getTypedArrayFromType(type)
 	}
 
-	const buffer = new StorageBufferAttribute( count, itemSize, typedArray );
-	const node = storage( buffer, type, count );
+	const buffer = new StorageBufferAttribute(count, itemSize, typedArray)
+	const node = storage(buffer, type, count)
 
-	return node;
-
-};
+	return node
+}
 
 /**
  * TSL function for creating a storage buffer node with a configured `StorageInstancedBufferAttribute`.
@@ -42,25 +36,23 @@ export const attributeArray = ( count, type = 'float' ) => {
  * @param {String|Struct} [type='float'] - The data type.
  * @returns {StorageBufferNode}
  */
-export const instancedArray = ( count, type = 'float' ) => {
+export const instancedArray = (count, type = 'float') => {
+	let itemSize, typedArray
 
-	let itemSize, typedArray;
-
-	if ( type.isStruct === true ) {
-
-		itemSize = type.layout.getLength();
-		typedArray = getTypedArrayFromType( 'float' );
-
+	if (type.isStruct === true) {
+		itemSize = type.layout.getLength()
+		typedArray = getTypedArrayFromType('float')
 	} else {
-
-		itemSize = getLengthFromType( type );
-		typedArray = getTypedArrayFromType( type );
-
+		itemSize = getLengthFromType(type)
+		typedArray = getTypedArrayFromType(type)
 	}
 
-	const buffer = new StorageInstancedBufferAttribute( count, itemSize, typedArray );
-	const node = storage( buffer, type, count );
+	const buffer = new StorageInstancedBufferAttribute(
+		count,
+		itemSize,
+		typedArray
+	)
+	const node = storage(buffer, type, count)
 
-	return node;
-
-};
+	return node
+}

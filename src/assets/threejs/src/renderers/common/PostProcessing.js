@@ -1,7 +1,7 @@
-import NodeMaterial from '../../materials/nodes/NodeMaterial.js';
-import { vec4, renderOutput } from '../../nodes/TSL.js';
-import { LinearSRGBColorSpace, NoToneMapping } from '../../constants.js';
-import QuadMesh from '../../renderers/common/QuadMesh.js';
+import NodeMaterial from '../../materials/nodes/NodeMaterial.js'
+import { vec4, renderOutput } from '../../nodes/TSL.js'
+import { LinearSRGBColorSpace, NoToneMapping } from '../../constants.js'
+import QuadMesh from '../../renderers/common/QuadMesh.js'
 
 /**
  * This module is responsible to manage the post processing setups in apps.
@@ -16,21 +16,19 @@ import QuadMesh from '../../renderers/common/QuadMesh.js';
  * ```
  */
 class PostProcessing {
-
 	/**
 	 * Constructs a new post processing management module.
 	 *
 	 * @param {Renderer} renderer - A reference to the renderer.
 	 * @param {Node<vec4>} outputNode - An optional output node.
 	 */
-	constructor( renderer, outputNode = vec4( 0, 0, 1, 1 ) ) {
-
+	constructor(renderer, outputNode = vec4(0, 0, 1, 1)) {
 		/**
 		 * A reference to the renderer.
 		 *
 		 * @type {Renderer}
 		 */
-		this.renderer = renderer;
+		this.renderer = renderer
 
 		/**
 		 * A node which defines the final output of the post
@@ -39,7 +37,7 @@ class PostProcessing {
 		 *
 		 * @type {Node<vec4>}
 		 */
-		this.outputNode = outputNode;
+		this.outputNode = outputNode
 
 		/**
 		 * Whether the default output tone mapping and color
@@ -59,17 +57,17 @@ class PostProcessing {
 		 *
 		 * @type {Boolean}
 		 */
-		this.outputColorTransform = true;
+		this.outputColorTransform = true
 
 		/**
 		 * Must be set to `true` when the output node changes.
 		 *
 		 * @type {Node<vec4>}
 		 */
-		this.needsUpdate = true;
+		this.needsUpdate = true
 
-		const material = new NodeMaterial();
-		material.name = 'PostProcessing';
+		const material = new NodeMaterial()
+		material.name = 'PostProcessing'
 
 		/**
 		 * The full screen quad that is used to render
@@ -78,8 +76,7 @@ class PostProcessing {
 		 * @private
 		 * @type {QuadMesh}
 		 */
-		this._quadMesh = new QuadMesh( material );
-
+		this._quadMesh = new QuadMesh(material)
 	}
 
 	/**
@@ -88,35 +85,31 @@ class PostProcessing {
 	 * its animation loop (not the one from the renderer).
 	 */
 	render() {
+		this._update()
 
-		this._update();
+		const renderer = this.renderer
 
-		const renderer = this.renderer;
+		const toneMapping = renderer.toneMapping
+		const outputColorSpace = renderer.outputColorSpace
 
-		const toneMapping = renderer.toneMapping;
-		const outputColorSpace = renderer.outputColorSpace;
-
-		renderer.toneMapping = NoToneMapping;
-		renderer.outputColorSpace = LinearSRGBColorSpace;
-
-		//
-
-		this._quadMesh.render( renderer );
+		renderer.toneMapping = NoToneMapping
+		renderer.outputColorSpace = LinearSRGBColorSpace
 
 		//
 
-		renderer.toneMapping = toneMapping;
-		renderer.outputColorSpace = outputColorSpace;
+		this._quadMesh.render(renderer)
 
+		//
+
+		renderer.toneMapping = toneMapping
+		renderer.outputColorSpace = outputColorSpace
 	}
 
 	/**
 	 * Frees internal resources.
 	 */
 	dispose() {
-
-		this._quadMesh.material.dispose();
-
+		this._quadMesh.material.dispose()
 	}
 
 	/**
@@ -125,21 +118,20 @@ class PostProcessing {
 	 * @private
 	 */
 	_update() {
+		if (this.needsUpdate === true) {
+			const renderer = this.renderer
 
-		if ( this.needsUpdate === true ) {
+			const toneMapping = renderer.toneMapping
+			const outputColorSpace = renderer.outputColorSpace
 
-			const renderer = this.renderer;
+			this._quadMesh.material.fragmentNode =
+				this.outputColorTransform === true
+					? renderOutput(this.outputNode, toneMapping, outputColorSpace)
+					: this.outputNode.context({ toneMapping, outputColorSpace })
+			this._quadMesh.material.needsUpdate = true
 
-			const toneMapping = renderer.toneMapping;
-			const outputColorSpace = renderer.outputColorSpace;
-
-			this._quadMesh.material.fragmentNode = this.outputColorTransform === true ? renderOutput( this.outputNode, toneMapping, outputColorSpace ) : this.outputNode.context( { toneMapping, outputColorSpace } );
-			this._quadMesh.material.needsUpdate = true;
-
-			this.needsUpdate = false;
-
+			this.needsUpdate = false
 		}
-
 	}
 
 	/**
@@ -151,28 +143,25 @@ class PostProcessing {
 	 * @return {Promise} A Promise that resolves when the render has been finished.
 	 */
 	async renderAsync() {
+		this._update()
 
-		this._update();
+		const renderer = this.renderer
 
-		const renderer = this.renderer;
+		const toneMapping = renderer.toneMapping
+		const outputColorSpace = renderer.outputColorSpace
 
-		const toneMapping = renderer.toneMapping;
-		const outputColorSpace = renderer.outputColorSpace;
-
-		renderer.toneMapping = NoToneMapping;
-		renderer.outputColorSpace = LinearSRGBColorSpace;
-
-		//
-
-		await this._quadMesh.renderAsync( renderer );
+		renderer.toneMapping = NoToneMapping
+		renderer.outputColorSpace = LinearSRGBColorSpace
 
 		//
 
-		renderer.toneMapping = toneMapping;
-		renderer.outputColorSpace = outputColorSpace;
+		await this._quadMesh.renderAsync(renderer)
 
+		//
+
+		renderer.toneMapping = toneMapping
+		renderer.outputColorSpace = outputColorSpace
 	}
-
 }
 
-export default PostProcessing;
+export default PostProcessing

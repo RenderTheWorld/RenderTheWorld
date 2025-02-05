@@ -1,10 +1,10 @@
-import ViewportTextureNode from './ViewportTextureNode.js';
-import { nodeProxy } from '../tsl/TSLBase.js';
-import { screenUV } from './ScreenNode.js';
+import ViewportTextureNode from './ViewportTextureNode.js'
+import { nodeProxy } from '../tsl/TSLBase.js'
+import { screenUV } from './ScreenNode.js'
 
-import { FramebufferTexture } from '../../textures/FramebufferTexture.js';
+import { FramebufferTexture } from '../../textures/FramebufferTexture.js'
 
-let _sharedFramebuffer = null;
+let _sharedFramebuffer = null
 
 /**
  * `ViewportTextureNode` creates an internal texture for each node instance. This module
@@ -14,11 +14,8 @@ let _sharedFramebuffer = null;
  * @augments ViewportTextureNode
  */
 class ViewportSharedTextureNode extends ViewportTextureNode {
-
 	static get type() {
-
-		return 'ViewportSharedTextureNode';
-
+		return 'ViewportSharedTextureNode'
 	}
 
 	/**
@@ -27,27 +24,20 @@ class ViewportSharedTextureNode extends ViewportTextureNode {
 	 * @param {Node} [uvNode=screenUV] - The uv node.
 	 * @param {Node?} [levelNode=null] - The level node.
 	 */
-	constructor( uvNode = screenUV, levelNode = null ) {
-
-		if ( _sharedFramebuffer === null ) {
-
-			_sharedFramebuffer = new FramebufferTexture();
-
+	constructor(uvNode = screenUV, levelNode = null) {
+		if (_sharedFramebuffer === null) {
+			_sharedFramebuffer = new FramebufferTexture()
 		}
 
-		super( uvNode, levelNode, _sharedFramebuffer );
-
+		super(uvNode, levelNode, _sharedFramebuffer)
 	}
 
 	updateReference() {
-
-		return this;
-
+		return this
 	}
-
 }
 
-export default ViewportSharedTextureNode;
+export default ViewportSharedTextureNode
 
 /**
  * TSL function for creating a shared viewport texture node.
@@ -57,4 +47,6 @@ export default ViewportSharedTextureNode;
  * @param {Node?} [levelNode=null] - The level node.
  * @returns {ViewportSharedTextureNode}
  */
-export const viewportSharedTexture = /*@__PURE__*/ nodeProxy( ViewportSharedTextureNode );
+export const viewportSharedTexture = /*@__PURE__*/ nodeProxy(
+	ViewportSharedTextureNode
+)

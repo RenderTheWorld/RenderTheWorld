@@ -1,53 +1,43 @@
-import { UIPanel } from './libs/ui.js';
-import { APP } from './libs/app.js';
+import { UIPanel } from './libs/ui.js'
+import { APP } from './libs/app.js'
 
-function Player( editor ) {
+function Player(editor) {
+	const signals = editor.signals
 
-	const signals = editor.signals;
-
-	const container = new UIPanel();
-	container.setId( 'player' );
-	container.setPosition( 'absolute' );
-	container.setDisplay( 'none' );
+	const container = new UIPanel()
+	container.setId('player')
+	container.setPosition('absolute')
+	container.setDisplay('none')
 
 	//
 
-	const player = new APP.Player();
-	container.dom.appendChild( player.dom );
+	const player = new APP.Player()
+	container.dom.appendChild(player.dom)
 
-	window.addEventListener( 'resize', function () {
+	window.addEventListener('resize', function () {
+		player.setSize(container.dom.clientWidth, container.dom.clientHeight)
+	})
 
-		player.setSize( container.dom.clientWidth, container.dom.clientHeight );
+	signals.windowResize.add(function () {
+		player.setSize(container.dom.clientWidth, container.dom.clientHeight)
+	})
 
-	} );
+	signals.startPlayer.add(function () {
+		container.setDisplay('')
 
-	signals.windowResize.add( function () {
+		player.load(editor.toJSON())
+		player.setSize(container.dom.clientWidth, container.dom.clientHeight)
+		player.play()
+	})
 
-		player.setSize( container.dom.clientWidth, container.dom.clientHeight );
+	signals.stopPlayer.add(function () {
+		container.setDisplay('none')
 
-	} );
+		player.stop()
+		player.dispose()
+	})
 
-	signals.startPlayer.add( function () {
-
-		container.setDisplay( '' );
-
-		player.load( editor.toJSON() );
-		player.setSize( container.dom.clientWidth, container.dom.clientHeight );
-		player.play();
-
-	} );
-
-	signals.stopPlayer.add( function () {
-
-		container.setDisplay( 'none' );
-
-		player.stop();
-		player.dispose();
-
-	} );
-
-	return container;
-
+	return container
 }
 
-export { Player };
+export { Player }

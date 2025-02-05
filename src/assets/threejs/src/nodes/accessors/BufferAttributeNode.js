@@ -1,10 +1,10 @@
-import InputNode from '../core/InputNode.js';
-import { nodeObject, addMethodChaining } from '../tsl/TSLCore.js';
-import { varying } from '../core/VaryingNode.js';
+import InputNode from '../core/InputNode.js'
+import { nodeObject, addMethodChaining } from '../tsl/TSLCore.js'
+import { varying } from '../core/VaryingNode.js'
 
-import { InterleavedBufferAttribute } from '../../core/InterleavedBufferAttribute.js';
-import { InterleavedBuffer } from '../../core/InterleavedBuffer.js';
-import { StaticDrawUsage, DynamicDrawUsage } from '../../constants.js';
+import { InterleavedBufferAttribute } from '../../core/InterleavedBufferAttribute.js'
+import { InterleavedBuffer } from '../../core/InterleavedBuffer.js'
+import { StaticDrawUsage, DynamicDrawUsage } from '../../constants.js'
 
 /**
  * In earlier `three.js` versions it was only possible to define attribute data
@@ -29,11 +29,8 @@ import { StaticDrawUsage, DynamicDrawUsage } from '../../constants.js';
  * @augments InputNode
  */
 class BufferAttributeNode extends InputNode {
-
 	static get type() {
-
-		return 'BufferAttributeNode';
-
+		return 'BufferAttributeNode'
 	}
 
 	/**
@@ -44,9 +41,8 @@ class BufferAttributeNode extends InputNode {
 	 * @param {Number} [bufferStride=0] - The buffer stride.
 	 * @param {Number} [bufferOffset=0] - The buffer offset.
 	 */
-	constructor( value, bufferType = null, bufferStride = 0, bufferOffset = 0 ) {
-
-		super( value, bufferType );
+	constructor(value, bufferType = null, bufferStride = 0, bufferOffset = 0) {
+		super(value, bufferType)
 
 		/**
 		 * This flag can be used for type testing.
@@ -55,7 +51,7 @@ class BufferAttributeNode extends InputNode {
 		 * @readonly
 		 * @default true
 		 */
-		this.isBufferNode = true;
+		this.isBufferNode = true
 
 		/**
 		 * The buffer type (e.g. `'vec3'`).
@@ -63,7 +59,7 @@ class BufferAttributeNode extends InputNode {
 		 * @type {String}
 		 * @default null
 		 */
-		this.bufferType = bufferType;
+		this.bufferType = bufferType
 
 		/**
 		 * The buffer stride.
@@ -71,7 +67,7 @@ class BufferAttributeNode extends InputNode {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this.bufferStride = bufferStride;
+		this.bufferStride = bufferStride
 
 		/**
 		 * The buffer offset.
@@ -79,7 +75,7 @@ class BufferAttributeNode extends InputNode {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this.bufferOffset = bufferOffset;
+		this.bufferOffset = bufferOffset
 
 		/**
 		 * The usage property. Set this to `THREE.DynamicDrawUsage` via `.setUsage()`,
@@ -88,7 +84,7 @@ class BufferAttributeNode extends InputNode {
 		 * @type {Number}
 		 * @default StaticDrawUsage
 		 */
-		this.usage = StaticDrawUsage;
+		this.usage = StaticDrawUsage
 
 		/**
 		 * Whether the attribute is instanced or not.
@@ -96,7 +92,7 @@ class BufferAttributeNode extends InputNode {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.instanced = false;
+		this.instanced = false
 
 		/**
 		 * A reference to the buffer attribute.
@@ -104,7 +100,7 @@ class BufferAttributeNode extends InputNode {
 		 * @type {BufferAttribute?}
 		 * @default null
 		 */
-		this.attribute = null;
+		this.attribute = null
 
 		/**
 		 * `BufferAttributeNode` sets this property to `true` by default.
@@ -112,16 +108,13 @@ class BufferAttributeNode extends InputNode {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.global = true;
+		this.global = true
 
-		if ( value && value.isBufferAttribute === true ) {
-
-			this.attribute = value;
-			this.usage = value.usage;
-			this.instanced = value.isInstancedBufferAttribute;
-
+		if (value && value.isBufferAttribute === true) {
+			this.attribute = value
+			this.usage = value.usage
+			this.instanced = value.isInstancedBufferAttribute
 		}
-
 	}
 
 	/**
@@ -131,28 +124,22 @@ class BufferAttributeNode extends InputNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The hash.
 	 */
-	getHash( builder ) {
+	getHash(builder) {
+		if (this.bufferStride === 0 && this.bufferOffset === 0) {
+			let bufferData = builder.globalCache.getData(this.value)
 
-		if ( this.bufferStride === 0 && this.bufferOffset === 0 ) {
-
-			let bufferData = builder.globalCache.getData( this.value );
-
-			if ( bufferData === undefined ) {
-
+			if (bufferData === undefined) {
 				bufferData = {
 					node: this
-				};
+				}
 
-				builder.globalCache.setData( this.value, bufferData );
-
+				builder.globalCache.setData(this.value, bufferData)
 			}
 
-			return bufferData.node.uuid;
-
+			return bufferData.node.uuid
 		}
 
-		return this.uuid;
-
+		return this.uuid
 	}
 
 	/**
@@ -162,16 +149,12 @@ class BufferAttributeNode extends InputNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The node type.
 	 */
-	getNodeType( builder ) {
-
-		if ( this.bufferType === null ) {
-
-			this.bufferType = builder.getTypeFromAttribute( this.attribute );
-
+	getNodeType(builder) {
+		if (this.bufferType === null) {
+			this.bufferType = builder.getTypeFromAttribute(this.attribute)
 		}
 
-		return this.bufferType;
-
+		return this.bufferType
 	}
 
 	/**
@@ -181,24 +164,29 @@ class BufferAttributeNode extends InputNode {
 	 *
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	setup( builder ) {
+	setup(builder) {
+		if (this.attribute !== null) return
 
-		if ( this.attribute !== null ) return;
+		const type = this.getNodeType(builder)
+		const array = this.value
+		const itemSize = builder.getTypeLength(type)
+		const stride = this.bufferStride || itemSize
+		const offset = this.bufferOffset
 
-		const type = this.getNodeType( builder );
-		const array = this.value;
-		const itemSize = builder.getTypeLength( type );
-		const stride = this.bufferStride || itemSize;
-		const offset = this.bufferOffset;
+		const buffer =
+			array.isInterleavedBuffer === true
+				? array
+				: new InterleavedBuffer(array, stride)
+		const bufferAttribute = new InterleavedBufferAttribute(
+			buffer,
+			itemSize,
+			offset
+		)
 
-		const buffer = array.isInterleavedBuffer === true ? array : new InterleavedBuffer( array, stride );
-		const bufferAttribute = new InterleavedBufferAttribute( buffer, itemSize, offset );
+		buffer.setUsage(this.usage)
 
-		buffer.setUsage( this.usage );
-
-		this.attribute = bufferAttribute;
-		this.attribute.isInstancedBufferAttribute = this.instanced; // @TODO: Add a possible: InstancedInterleavedBufferAttribute
-
+		this.attribute = bufferAttribute
+		this.attribute.isInstancedBufferAttribute = this.instanced // @TODO: Add a possible: InstancedInterleavedBufferAttribute
 	}
 
 	/**
@@ -207,31 +195,25 @@ class BufferAttributeNode extends InputNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The generated code snippet.
 	 */
-	generate( builder ) {
+	generate(builder) {
+		const nodeType = this.getNodeType(builder)
 
-		const nodeType = this.getNodeType( builder );
+		const nodeAttribute = builder.getBufferAttributeFromNode(this, nodeType)
+		const propertyName = builder.getPropertyName(nodeAttribute)
 
-		const nodeAttribute = builder.getBufferAttributeFromNode( this, nodeType );
-		const propertyName = builder.getPropertyName( nodeAttribute );
+		let output = null
 
-		let output = null;
+		if (builder.shaderStage === 'vertex' || builder.shaderStage === 'compute') {
+			this.name = propertyName
 
-		if ( builder.shaderStage === 'vertex' || builder.shaderStage === 'compute' ) {
-
-			this.name = propertyName;
-
-			output = propertyName;
-
+			output = propertyName
 		} else {
+			const nodeVarying = varying(this)
 
-			const nodeVarying = varying( this );
-
-			output = nodeVarying.build( builder, nodeType );
-
+			output = nodeVarying.build(builder, nodeType)
 		}
 
-		return output;
-
+		return output
 	}
 
 	/**
@@ -240,10 +222,8 @@ class BufferAttributeNode extends InputNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The input type.
 	 */
-	getInputType( /*builder*/ ) {
-
-		return 'bufferAttribute';
-
+	getInputType(/*builder*/) {
+		return 'bufferAttribute'
 	}
 
 	/**
@@ -252,18 +232,14 @@ class BufferAttributeNode extends InputNode {
 	 * @param {Number} value - The usage to set.
 	 * @return {BufferAttributeNode} A reference to this node.
 	 */
-	setUsage( value ) {
+	setUsage(value) {
+		this.usage = value
 
-		this.usage = value;
-
-		if ( this.attribute && this.attribute.isBufferAttribute === true ) {
-
-			this.attribute.usage = value;
-
+		if (this.attribute && this.attribute.isBufferAttribute === true) {
+			this.attribute.usage = value
 		}
 
-		return this;
-
+		return this
 	}
 
 	/**
@@ -272,17 +248,14 @@ class BufferAttributeNode extends InputNode {
 	 * @param {Boolean} value - The value to set.
 	 * @return {BufferAttributeNode} A reference to this node.
 	 */
-	setInstanced( value ) {
+	setInstanced(value) {
+		this.instanced = value
 
-		this.instanced = value;
-
-		return this;
-
+		return this
 	}
-
 }
 
-export default BufferAttributeNode;
+export default BufferAttributeNode
 
 /**
  * TSL function for creating a buffer attribute node.
@@ -294,7 +267,8 @@ export default BufferAttributeNode;
  * @param {Number} [offset=0] - The buffer offset.
  * @returns {BufferAttributeNode}
  */
-export const bufferAttribute = ( array, type = null, stride = 0, offset = 0 ) => nodeObject( new BufferAttributeNode( array, type, stride, offset ) );
+export const bufferAttribute = (array, type = null, stride = 0, offset = 0) =>
+	nodeObject(new BufferAttributeNode(array, type, stride, offset))
 
 /**
  * TSL function for creating a buffer attribute node but with dynamic draw usage.
@@ -307,7 +281,12 @@ export const bufferAttribute = ( array, type = null, stride = 0, offset = 0 ) =>
  * @param {Number} [offset=0] - The buffer offset.
  * @returns {BufferAttributeNode}
  */
-export const dynamicBufferAttribute = ( array, type = null, stride = 0, offset = 0 ) => bufferAttribute( array, type, stride, offset ).setUsage( DynamicDrawUsage );
+export const dynamicBufferAttribute = (
+	array,
+	type = null,
+	stride = 0,
+	offset = 0
+) => bufferAttribute(array, type, stride, offset).setUsage(DynamicDrawUsage)
 
 /**
  * TSL function for creating a buffer attribute node but with enabled instancing
@@ -319,7 +298,12 @@ export const dynamicBufferAttribute = ( array, type = null, stride = 0, offset =
  * @param {Number} [offset=0] - The buffer offset.
  * @returns {BufferAttributeNode}
  */
-export const instancedBufferAttribute = ( array, type = null, stride = 0, offset = 0 ) => bufferAttribute( array, type, stride, offset ).setInstanced( true );
+export const instancedBufferAttribute = (
+	array,
+	type = null,
+	stride = 0,
+	offset = 0
+) => bufferAttribute(array, type, stride, offset).setInstanced(true)
 
 /**
  * TSL function for creating a buffer attribute node but with dynamic draw usage and enabled instancing
@@ -331,6 +315,13 @@ export const instancedBufferAttribute = ( array, type = null, stride = 0, offset
  * @param {Number} [offset=0] - The buffer offset.
  * @returns {BufferAttributeNode}
  */
-export const instancedDynamicBufferAttribute = ( array, type = null, stride = 0, offset = 0 ) => dynamicBufferAttribute( array, type, stride, offset ).setInstanced( true );
+export const instancedDynamicBufferAttribute = (
+	array,
+	type = null,
+	stride = 0,
+	offset = 0
+) => dynamicBufferAttribute(array, type, stride, offset).setInstanced(true)
 
-addMethodChaining( 'toAttribute', ( bufferNode ) => bufferAttribute( bufferNode.value ) );
+addMethodChaining('toAttribute', bufferNode =>
+	bufferAttribute(bufferNode.value)
+)

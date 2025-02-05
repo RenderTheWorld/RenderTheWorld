@@ -1,5 +1,5 @@
-import { HalfFloatType, UnsignedByteType } from '../../../constants.js';
-import { GPUPrimitiveTopology, GPUTextureFormat } from './WebGPUConstants.js';
+import { HalfFloatType, UnsignedByteType } from '../../../constants.js'
+import { GPUPrimitiveTopology, GPUTextureFormat } from './WebGPUConstants.js'
 
 /**
  * A WebGPU backend utility module with common helpers.
@@ -7,21 +7,18 @@ import { GPUPrimitiveTopology, GPUTextureFormat } from './WebGPUConstants.js';
  * @private
  */
 class WebGPUUtils {
-
 	/**
 	 * Constructs a new utility object.
 	 *
 	 * @param {WebGPUBackend} backend - The WebGPU backend.
 	 */
-	constructor( backend ) {
-
+	constructor(backend) {
 		/**
 		 * A reference to the WebGPU backend.
 		 *
 		 * @type {WebGPUBackend}
 		 */
-		this.backend = backend;
-
+		this.backend = backend
 	}
 
 	/**
@@ -30,26 +27,18 @@ class WebGPUUtils {
 	 * @param {RenderContext} renderContext - The render context.
 	 * @return {String} The depth/stencil GPU texture format.
 	 */
-	getCurrentDepthStencilFormat( renderContext ) {
+	getCurrentDepthStencilFormat(renderContext) {
+		let format
 
-		let format;
-
-		if ( renderContext.depthTexture !== null ) {
-
-			format = this.getTextureFormatGPU( renderContext.depthTexture );
-
-		} else if ( renderContext.depth && renderContext.stencil ) {
-
-			format = GPUTextureFormat.Depth24PlusStencil8;
-
-		} else if ( renderContext.depth ) {
-
-			format = GPUTextureFormat.Depth24Plus;
-
+		if (renderContext.depthTexture !== null) {
+			format = this.getTextureFormatGPU(renderContext.depthTexture)
+		} else if (renderContext.depth && renderContext.stencil) {
+			format = GPUTextureFormat.Depth24PlusStencil8
+		} else if (renderContext.depth) {
+			format = GPUTextureFormat.Depth24Plus
 		}
 
-		return format;
-
+		return format
 	}
 
 	/**
@@ -58,10 +47,8 @@ class WebGPUUtils {
 	 * @param {Texture} texture - The texture.
 	 * @return {String} The GPU texture format.
 	 */
-	getTextureFormatGPU( texture ) {
-
-		return this.backend.get( texture ).format;
-
+	getTextureFormatGPU(texture) {
+		return this.backend.get(texture).format
 	}
 
 	/**
@@ -70,34 +57,30 @@ class WebGPUUtils {
 	 * @param {Texture} texture - The texture.
 	 * @return {Object} The multi-sampling state.
 	 */
-	getTextureSampleData( texture ) {
+	getTextureSampleData(texture) {
+		let samples
 
-		let samples;
+		if (texture.isFramebufferTexture) {
+			samples = 1
+		} else if (texture.isDepthTexture && !texture.renderTarget) {
+			const renderer = this.backend.renderer
+			const renderTarget = renderer.getRenderTarget()
 
-		if ( texture.isFramebufferTexture ) {
-
-			samples = 1;
-
-		} else if ( texture.isDepthTexture && ! texture.renderTarget ) {
-
-			const renderer = this.backend.renderer;
-			const renderTarget = renderer.getRenderTarget();
-
-			samples = renderTarget ? renderTarget.samples : renderer.samples;
-
-		} else if ( texture.renderTarget ) {
-
-			samples = texture.renderTarget.samples;
-
+			samples = renderTarget ? renderTarget.samples : renderer.samples
+		} else if (texture.renderTarget) {
+			samples = texture.renderTarget.samples
 		}
 
-		samples = samples || 1;
+		samples = samples || 1
 
-		const isMSAA = samples > 1 && texture.renderTarget !== null && ( texture.isDepthTexture !== true && texture.isFramebufferTexture !== true );
-		const primarySamples = isMSAA ? 1 : samples;
+		const isMSAA =
+			samples > 1 &&
+			texture.renderTarget !== null &&
+			texture.isDepthTexture !== true &&
+			texture.isFramebufferTexture !== true
+		const primarySamples = isMSAA ? 1 : samples
 
-		return { samples, primarySamples, isMSAA };
-
+		return { samples, primarySamples, isMSAA }
 	}
 
 	/**
@@ -106,22 +89,16 @@ class WebGPUUtils {
 	 * @param {RenderContext} renderContext - The render context.
 	 * @return {String} The GPU texture format of the default color attachment.
 	 */
-	getCurrentColorFormat( renderContext ) {
+	getCurrentColorFormat(renderContext) {
+		let format
 
-		let format;
-
-		if ( renderContext.textures !== null ) {
-
-			format = this.getTextureFormatGPU( renderContext.textures[ 0 ] );
-
+		if (renderContext.textures !== null) {
+			format = this.getTextureFormatGPU(renderContext.textures[0])
 		} else {
-
-			format = this.getPreferredCanvasFormat(); // default context format
-
+			format = this.getPreferredCanvasFormat() // default context format
 		}
 
-		return format;
-
+		return format
 	}
 
 	/**
@@ -130,16 +107,12 @@ class WebGPUUtils {
 	 * @param {RenderContext} renderContext - The render context.
 	 * @return {String} The output color space.
 	 */
-	getCurrentColorSpace( renderContext ) {
-
-		if ( renderContext.textures !== null ) {
-
-			return renderContext.textures[ 0 ].colorSpace;
-
+	getCurrentColorSpace(renderContext) {
+		if (renderContext.textures !== null) {
+			return renderContext.textures[0].colorSpace
 		}
 
-		return this.backend.renderer.outputColorSpace;
-
+		return this.backend.renderer.outputColorSpace
 	}
 
 	/**
@@ -149,13 +122,15 @@ class WebGPUUtils {
 	 * @param {Material} material - The material.
 	 * @return {String} The GPU primitive topology.
 	 */
-	getPrimitiveTopology( object, material ) {
-
-		if ( object.isPoints ) return GPUPrimitiveTopology.PointList;
-		else if ( object.isLineSegments || ( object.isMesh && material.wireframe === true ) ) return GPUPrimitiveTopology.LineList;
-		else if ( object.isLine ) return GPUPrimitiveTopology.LineStrip;
-		else if ( object.isMesh ) return GPUPrimitiveTopology.TriangleList;
-
+	getPrimitiveTopology(object, material) {
+		if (object.isPoints) return GPUPrimitiveTopology.PointList
+		else if (
+			object.isLineSegments ||
+			(object.isMesh && material.wireframe === true)
+		)
+			return GPUPrimitiveTopology.LineList
+		else if (object.isLine) return GPUPrimitiveTopology.LineStrip
+		else if (object.isMesh) return GPUPrimitiveTopology.TriangleList
 	}
 
 	/**
@@ -166,25 +141,19 @@ class WebGPUUtils {
 	 * @param {Number} sampleCount - The input sample count.
 	 * @return {Number} The (potentially updated) output sample count.
 	 */
-	getSampleCount( sampleCount ) {
+	getSampleCount(sampleCount) {
+		let count = 1
 
-		let count = 1;
-
-		if ( sampleCount > 1 ) {
-
+		if (sampleCount > 1) {
 			// WebGPU only supports power-of-two sample counts and 2 is not a valid value
-			count = Math.pow( 2, Math.floor( Math.log2( sampleCount ) ) );
+			count = Math.pow(2, Math.floor(Math.log2(sampleCount)))
 
-			if ( count === 2 ) {
-
-				count = 4;
-
+			if (count === 2) {
+				count = 4
 			}
-
 		}
 
-		return count;
-
+		return count
 	}
 
 	/**
@@ -193,16 +162,12 @@ class WebGPUUtils {
 	 * @param {RenderContext} renderContext - The render context.
 	 * @return {Number} The sample count.
 	 */
-	getSampleCountRenderContext( renderContext ) {
-
-		if ( renderContext.textures !== null ) {
-
-			return this.getSampleCount( renderContext.sampleCount );
-
+	getSampleCountRenderContext(renderContext) {
+		if (renderContext.textures !== null) {
+			return this.getSampleCount(renderContext.sampleCount)
 		}
 
-		return this.getSampleCount( this.backend.renderer.samples );
-
+		return this.getSampleCount(this.backend.renderer.samples)
 	}
 
 	/**
@@ -214,29 +179,18 @@ class WebGPUUtils {
 	 * @return {String} The GPU texture format of the canvas.
 	 */
 	getPreferredCanvasFormat() {
+		const outputType = this.backend.parameters.outputType
 
-		const outputType = this.backend.parameters.outputType;
-
-		if ( outputType === undefined ) {
-
-			return navigator.gpu.getPreferredCanvasFormat();
-
-		} else if ( outputType === UnsignedByteType ) {
-
-			return GPUTextureFormat.BGRA8Unorm;
-
-		} else if ( outputType === HalfFloatType ) {
-
-			return GPUTextureFormat.RGBA16Float;
-
+		if (outputType === undefined) {
+			return navigator.gpu.getPreferredCanvasFormat()
+		} else if (outputType === UnsignedByteType) {
+			return GPUTextureFormat.BGRA8Unorm
+		} else if (outputType === HalfFloatType) {
+			return GPUTextureFormat.RGBA16Float
 		} else {
-
-			throw new Error( 'Unsupported outputType' );
-
+			throw new Error('Unsupported outputType')
 		}
-
 	}
-
 }
 
-export default WebGPUUtils;
+export default WebGPUUtils

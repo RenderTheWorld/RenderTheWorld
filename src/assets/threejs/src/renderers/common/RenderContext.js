@@ -1,7 +1,7 @@
-import { Vector4 } from '../../math/Vector4.js';
-import { hashArray } from '../../nodes/core/NodeUtils.js';
+import { Vector4 } from '../../math/Vector4.js'
+import { hashArray } from '../../nodes/core/NodeUtils.js'
 
-let _id = 0;
+let _id = 0
 
 /**
  * Any render or compute command is executed in a specific context that defines
@@ -12,18 +12,16 @@ let _id = 0;
  * @private
  */
 class RenderContext {
-
 	/**
 	 * Constructs a new render context.
 	 */
 	constructor() {
-
 		/**
 		 * The context's ID.
 		 *
 		 * @type {Number}
 		 */
-		this.id = _id ++;
+		this.id = _id++
 
 		/**
 		 * Whether the current active framebuffer has a color attachment.
@@ -31,7 +29,7 @@ class RenderContext {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.color = true;
+		this.color = true
 
 		/**
 		 * Whether the color attachment should be cleared or not.
@@ -39,7 +37,7 @@ class RenderContext {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.clearColor = true;
+		this.clearColor = true
 
 		/**
 		 * The clear color value.
@@ -47,7 +45,7 @@ class RenderContext {
 		 * @type {Object}
 		 * @default true
 		 */
-		this.clearColorValue = { r: 0, g: 0, b: 0, a: 1 };
+		this.clearColorValue = { r: 0, g: 0, b: 0, a: 1 }
 
 		/**
 		 * Whether the current active framebuffer has a depth attachment.
@@ -55,7 +53,7 @@ class RenderContext {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.depth = true;
+		this.depth = true
 
 		/**
 		 * Whether the depth attachment should be cleared or not.
@@ -63,7 +61,7 @@ class RenderContext {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.clearDepth = true;
+		this.clearDepth = true
 
 		/**
 		 * The clear depth value.
@@ -71,7 +69,7 @@ class RenderContext {
 		 * @type {Number}
 		 * @default 1
 		 */
-		this.clearDepthValue = 1;
+		this.clearDepthValue = 1
 
 		/**
 		 * Whether the current active framebuffer has a stencil attachment.
@@ -79,7 +77,7 @@ class RenderContext {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.stencil = false;
+		this.stencil = false
 
 		/**
 		 * Whether the stencil attachment should be cleared or not.
@@ -87,7 +85,7 @@ class RenderContext {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.clearStencil = true;
+		this.clearStencil = true
 
 		/**
 		 * The clear stencil value.
@@ -95,7 +93,7 @@ class RenderContext {
 		 * @type {Number}
 		 * @default 1
 		 */
-		this.clearStencilValue = 1;
+		this.clearStencilValue = 1
 
 		/**
 		 * By default the viewport encloses the entire framebuffer If a smaller
@@ -104,7 +102,7 @@ class RenderContext {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.viewport = false;
+		this.viewport = false
 
 		/**
 		 * The viewport value. This value is in physical pixels meaning it incorporates
@@ -113,7 +111,7 @@ class RenderContext {
 		 *
 		 * @type {Vector4}
 		 */
-		this.viewportValue = new Vector4();
+		this.viewportValue = new Vector4()
 
 		/**
 		 * When the scissor test is active and scissor rectangle smaller than the
@@ -122,14 +120,14 @@ class RenderContext {
 		 * @type {Boolean}
 		 * @default false
 		 */
-		this.scissor = false;
+		this.scissor = false
 
 		/**
 		 * The scissor rectangle.
 		 *
 		 * @type {Vector4}
 		 */
-		this.scissorValue = new Vector4();
+		this.scissorValue = new Vector4()
 
 		/**
 		 * The active render target.
@@ -137,7 +135,7 @@ class RenderContext {
 		 * @type {RenderTarget?}
 		 * @default null
 		 */
-		this.renderTarget = null;
+		this.renderTarget = null
 
 		/**
 		 * The textures of the active render target.
@@ -146,7 +144,7 @@ class RenderContext {
 		 * @type {Array<Texture>?}
 		 * @default null
 		 */
-		this.textures = null;
+		this.textures = null
 
 		/**
 		 * The depth texture of the active render target.
@@ -155,7 +153,7 @@ class RenderContext {
 		 * @type {DepthTexture?}
 		 * @default null
 		 */
-		this.depthTexture = null;
+		this.depthTexture = null
 
 		/**
 		 * The active cube face.
@@ -163,7 +161,7 @@ class RenderContext {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this.activeCubeFace = 0;
+		this.activeCubeFace = 0
 
 		/**
 		 * The active mipmap level.
@@ -171,7 +169,7 @@ class RenderContext {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this.activeMipmapLevel = 0;
+		this.activeMipmapLevel = 0
 
 		/**
 		 * The number of MSAA samples. This value is always `1` when
@@ -180,7 +178,7 @@ class RenderContext {
 		 * @type {Number}
 		 * @default 1
 		 */
-		this.sampleCount = 1;
+		this.sampleCount = 1
 
 		/**
 		 * The active render target's width in physical pixels.
@@ -188,7 +186,7 @@ class RenderContext {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this.width = 0;
+		this.width = 0
 
 		/**
 		 * The active render target's height in physical pixels.
@@ -196,7 +194,7 @@ class RenderContext {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this.height = 0;
+		this.height = 0
 
 		/**
 		 * The occlusion query count.
@@ -204,7 +202,7 @@ class RenderContext {
 		 * @type {Number}
 		 * @default 0
 		 */
-		this.occlusionQueryCount = 0;
+		this.occlusionQueryCount = 0
 
 		/**
 		 * The current clipping context.
@@ -212,7 +210,7 @@ class RenderContext {
 		 * @type {ClippingContext?}
 		 * @default null
 		 */
-		this.clippingContext = null;
+		this.clippingContext = null
 
 		/**
 		 * This flag can be used for type testing.
@@ -221,8 +219,7 @@ class RenderContext {
 		 * @readonly
 		 * @default true
 		 */
-		this.isRenderContext = true;
-
+		this.isRenderContext = true
 	}
 
 	/**
@@ -231,11 +228,8 @@ class RenderContext {
 	 * @return {Number} The cache key.
 	 */
 	getCacheKey() {
-
-		return getCacheKey( this );
-
+		return getCacheKey(this)
 	}
-
 }
 
 /**
@@ -246,20 +240,16 @@ class RenderContext {
  * @param {RenderContext} renderContext - The render context.
  * @return {Number} The cache key.
  */
-export function getCacheKey( renderContext ) {
+export function getCacheKey(renderContext) {
+	const { textures, activeCubeFace } = renderContext
 
-	const { textures, activeCubeFace } = renderContext;
+	const values = [activeCubeFace]
 
-	const values = [ activeCubeFace ];
-
-	for ( const texture of textures ) {
-
-		values.push( texture.id );
-
+	for (const texture of textures) {
+		values.push(texture.id)
 	}
 
-	return hashArray( values );
-
+	return hashArray(values)
 }
 
-export default RenderContext;
+export default RenderContext

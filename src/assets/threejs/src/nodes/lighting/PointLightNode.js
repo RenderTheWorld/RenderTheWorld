@@ -1,38 +1,42 @@
-import AnalyticLightNode from './AnalyticLightNode.js';
-import { getDistanceAttenuation } from './LightUtils.js';
-import { uniform } from '../core/UniformNode.js';
-import { lightViewPosition } from '../accessors/Lights.js';
-import { positionView } from '../accessors/Position.js';
-import { Fn } from '../tsl/TSLBase.js';
-import { renderGroup } from '../core/UniformGroupNode.js';
-import { pointShadow } from './PointShadowNode.js';
+import AnalyticLightNode from './AnalyticLightNode.js'
+import { getDistanceAttenuation } from './LightUtils.js'
+import { uniform } from '../core/UniformNode.js'
+import { lightViewPosition } from '../accessors/Lights.js'
+import { positionView } from '../accessors/Position.js'
+import { Fn } from '../tsl/TSLBase.js'
+import { renderGroup } from '../core/UniformGroupNode.js'
+import { pointShadow } from './PointShadowNode.js'
 
-export const directPointLight = Fn( ( { color, lightViewPosition, cutoffDistance, decayExponent }, builder ) => {
+export const directPointLight = Fn(
+	({ color, lightViewPosition, cutoffDistance, decayExponent }, builder) => {
+		const lightingModel = builder.context.lightingModel
 
-	const lightingModel = builder.context.lightingModel;
+		const lVector = lightViewPosition.sub(positionView) // @TODO: Add it into LightNode
 
-	const lVector = lightViewPosition.sub( positionView ); // @TODO: Add it into LightNode
+		const lightDirection = lVector.normalize()
+		const lightDistance = lVector.length()
 
-	const lightDirection = lVector.normalize();
-	const lightDistance = lVector.length();
+		const lightAttenuation = getDistanceAttenuation({
+			lightDistance,
+			cutoffDistance,
+			decayExponent
+		})
 
-	const lightAttenuation = getDistanceAttenuation( {
-		lightDistance,
-		cutoffDistance,
-		decayExponent
-	} );
+		const lightColor = color.mul(lightAttenuation)
 
-	const lightColor = color.mul( lightAttenuation );
+		const reflectedLight = builder.context.reflectedLight
 
-	const reflectedLight = builder.context.reflectedLight;
-
-	lightingModel.direct( {
-		lightDirection,
-		lightColor,
-		reflectedLight
-	}, builder.stack, builder );
-
-} );
+		lightingModel.direct(
+			{
+				lightDirection,
+				lightColor,
+				reflectedLight
+			},
+			builder.stack,
+			builder
+		)
+	}
+)
 
 /**
  * Module for representing point lights as nodes.
@@ -40,11 +44,8 @@ export const directPointLight = Fn( ( { color, lightViewPosition, cutoffDistance
  * @augments AnalyticLightNode
  */
 class PointLightNode extends AnalyticLightNode {
-
 	static get type() {
-
-		return 'PointLightNode';
-
+		return 'PointLightNode'
 	}
 
 	/**
@@ -52,24 +53,22 @@ class PointLightNode extends AnalyticLightNode {
 	 *
 	 * @param {PointLight?} [light=null] - The point light source.
 	 */
-	constructor( light = null ) {
-
-		super( light );
+	constructor(light = null) {
+		super(light)
 
 		/**
 		 * Uniform node representing the cutoff distance.
 		 *
 		 * @type {UniformNode<float>}
 		 */
-		this.cutoffDistanceNode = uniform( 0 ).setGroup( renderGroup );
+		this.cutoffDistanceNode = uniform(0).setGroup(renderGroup)
 
 		/**
 		 * Uniform node representing the decay exponent.
 		 *
 		 * @type {UniformNode<float>}
 		 */
-		this.decayExponentNode = uniform( 2 ).setGroup( renderGroup );
-
+		this.decayExponentNode = uniform(2).setGroup(renderGroup)
 	}
 
 	/**
@@ -77,15 +76,13 @@ class PointLightNode extends AnalyticLightNode {
 	 *
 	 * @param {NodeFrame} frame - A reference to the current node frame.
 	 */
-	update( frame ) {
+	update(frame) {
+		const { light } = this
 
-		const { light } = this;
+		super.update(frame)
 
-		super.update( frame );
-
-		this.cutoffDistanceNode.value = light.distance;
-		this.decayExponentNode.value = light.decay;
-
+		this.cutoffDistanceNode.value = light.distance
+		this.decayExponentNode.value = light.decay
 	}
 
 	/**
@@ -94,24 +91,19 @@ class PointLightNode extends AnalyticLightNode {
 	 * @return {PointShadowNode}
 	 */
 	setupShadowNode() {
-
-		return pointShadow( this.light );
-
+		return pointShadow(this.light)
 	}
 
-	setup( builder ) {
+	setup(builder) {
+		super.setup(builder)
 
-		super.setup( builder );
-
-		directPointLight( {
+		directPointLight({
 			color: this.colorNode,
-			lightViewPosition: lightViewPosition( this.light ),
+			lightViewPosition: lightViewPosition(this.light),
 			cutoffDistance: this.cutoffDistanceNode,
 			decayExponent: this.decayExponentNode
-		} ).append();
-
+		}).append()
 	}
-
 }
 
-export default PointLightNode;
+export default PointLightNode

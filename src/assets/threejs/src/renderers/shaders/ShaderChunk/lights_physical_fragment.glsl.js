@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 PhysicalMaterial material;
 material.diffuseColor = diffuseColor.rgb * ( 1.0 - metalnessFactor );
 
@@ -154,4 +154,4 @@ material.roughness = min( material.roughness, 1.0 );
 	material.anisotropyB = tbn[ 1 ] * anisotropyV.x - tbn[ 0 ] * anisotropyV.y;
 
 #endif
-`;
+`

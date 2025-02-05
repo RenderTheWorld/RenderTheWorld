@@ -1,9 +1,9 @@
-import { BufferGeometry } from '../../core/BufferGeometry.js';
-import { Float32BufferAttribute } from '../../core/BufferAttribute.js';
-import { Mesh } from '../../objects/Mesh.js';
-import { OrthographicCamera } from '../../cameras/OrthographicCamera.js';
+import { BufferGeometry } from '../../core/BufferGeometry.js'
+import { Float32BufferAttribute } from '../../core/BufferAttribute.js'
+import { Mesh } from '../../objects/Mesh.js'
+import { OrthographicCamera } from '../../cameras/OrthographicCamera.js'
 
-const _camera = /*@__PURE__*/ new OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+const _camera = /*@__PURE__*/ new OrthographicCamera(-1, 1, 1, -1, 0, 1)
 
 /**
  * The purpose of this special geometry is to fill the entire viewport with a single triangle.
@@ -14,27 +14,25 @@ const _camera = /*@__PURE__*/ new OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
  * @augments BufferGeometry
  */
 class QuadGeometry extends BufferGeometry {
-
 	/**
 	 * Constructs a new quad geometry.
 	 *
 	 * @param {Boolean} [flipY=false] - Whether the uv coordinates should be flipped along the vertical axis or not.
 	 */
-	constructor( flipY = false ) {
+	constructor(flipY = false) {
+		super()
 
-		super();
+		const uv = flipY === false ? [0, -1, 0, 1, 2, 1] : [0, 2, 0, 0, 2, 0]
 
-		const uv = flipY === false ? [ 0, - 1, 0, 1, 2, 1 ] : [ 0, 2, 0, 0, 2, 0 ];
-
-		this.setAttribute( 'position', new Float32BufferAttribute( [ - 1, 3, 0, - 1, - 1, 0, 3, - 1, 0 ], 3 ) );
-		this.setAttribute( 'uv', new Float32BufferAttribute( uv, 2 ) );
-
+		this.setAttribute(
+			'position',
+			new Float32BufferAttribute([-1, 3, 0, -1, -1, 0, 3, -1, 0], 3)
+		)
+		this.setAttribute('uv', new Float32BufferAttribute(uv, 2))
 	}
-
 }
 
-const _geometry = /*@__PURE__*/ new QuadGeometry();
-
+const _geometry = /*@__PURE__*/ new QuadGeometry()
 
 /**
  * This module is a helper for passes which need to render a full
@@ -46,15 +44,13 @@ const _geometry = /*@__PURE__*/ new QuadGeometry();
  * @augments Mesh
  */
 class QuadMesh extends Mesh {
-
 	/**
 	 * Constructs a new quad mesh.
 	 *
 	 * @param {Material?} [material=null] - The material to render the quad mesh with.
 	 */
-	constructor( material = null ) {
-
-		super( _geometry, material );
+	constructor(material = null) {
+		super(_geometry, material)
 
 		/**
 		 * The camera to render the quad mesh with.
@@ -62,7 +58,7 @@ class QuadMesh extends Mesh {
 		 * @type {OrthographicCamera}
 		 * @readonly
 		 */
-		this.camera = _camera;
+		this.camera = _camera
 
 		/**
 		 * This flag can be used for type testing.
@@ -71,8 +67,7 @@ class QuadMesh extends Mesh {
 		 * @readonly
 		 * @default true
 		 */
-		this.isQuadMesh = true;
-
+		this.isQuadMesh = true
 	}
 
 	/**
@@ -82,10 +77,8 @@ class QuadMesh extends Mesh {
 	 * @param {Renderer} renderer - The renderer.
 	 * @return {Promise} A Promise that resolves when the render has been finished.
 	 */
-	async renderAsync( renderer ) {
-
-		return renderer.renderAsync( this, _camera );
-
+	async renderAsync(renderer) {
+		return renderer.renderAsync(this, _camera)
 	}
 
 	/**
@@ -93,12 +86,9 @@ class QuadMesh extends Mesh {
 	 *
 	 * @param {Renderer} renderer - The renderer.
 	 */
-	render( renderer ) {
-
-		renderer.render( this, _camera );
-
+	render(renderer) {
+		renderer.render(this, _camera)
 	}
-
 }
 
-export default QuadMesh;
+export default QuadMesh

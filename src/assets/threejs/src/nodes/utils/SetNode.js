@@ -1,5 +1,5 @@
-import TempNode from '../core/TempNode.js';
-import { vectorComponents } from '../core/constants.js';
+import TempNode from '../core/TempNode.js'
+import { vectorComponents } from '../core/constants.js'
 
 /**
  * This module is part of the TSL core and usually not used in app level code.
@@ -13,11 +13,8 @@ import { vectorComponents } from '../core/constants.js';
  * @augments TempNode
  */
 class SetNode extends TempNode {
-
 	static get type() {
-
-		return 'SetNode';
-
+		return 'SetNode'
 	}
 
 	/**
@@ -27,31 +24,29 @@ class SetNode extends TempNode {
 	 * @param {String} components - The components that should be updated.
 	 * @param {Node} targetNode - The value node.
 	 */
-	constructor( sourceNode, components, targetNode ) {
-
-		super();
+	constructor(sourceNode, components, targetNode) {
+		super()
 
 		/**
 		 * The node that should be updated.
 		 *
 		 * @type {Node}
 		 */
-		this.sourceNode = sourceNode;
+		this.sourceNode = sourceNode
 
 		/**
 		 * The components that should be updated.
 		 *
 		 * @type {String}
 		 */
-		this.components = components;
+		this.components = components
 
 		/**
 		 * The value node.
 		 *
 		 * @type {Node}
 		 */
-		this.targetNode = targetNode;
-
+		this.targetNode = targetNode
 	}
 
 	/**
@@ -60,49 +55,43 @@ class SetNode extends TempNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The node type.
 	 */
-	getNodeType( builder ) {
-
-		return this.sourceNode.getNodeType( builder );
-
+	getNodeType(builder) {
+		return this.sourceNode.getNodeType(builder)
 	}
 
-	generate( builder ) {
+	generate(builder) {
+		const { sourceNode, components, targetNode } = this
 
-		const { sourceNode, components, targetNode } = this;
+		const sourceType = this.getNodeType(builder)
 
-		const sourceType = this.getNodeType( builder );
+		const componentType = builder.getComponentType(
+			targetNode.getNodeType(builder)
+		)
+		const targetType = builder.getTypeFromLength(
+			components.length,
+			componentType
+		)
 
-		const componentType = builder.getComponentType( targetNode.getNodeType( builder ) );
-		const targetType = builder.getTypeFromLength( components.length, componentType );
+		const targetSnippet = targetNode.build(builder, targetType)
+		const sourceSnippet = sourceNode.build(builder, sourceType)
 
-		const targetSnippet = targetNode.build( builder, targetType );
-		const sourceSnippet = sourceNode.build( builder, sourceType );
+		const length = builder.getTypeLength(sourceType)
+		const snippetValues = []
 
-		const length = builder.getTypeLength( sourceType );
-		const snippetValues = [];
+		for (let i = 0; i < length; i++) {
+			const component = vectorComponents[i]
 
-		for ( let i = 0; i < length; i ++ ) {
+			if (component === components[0]) {
+				snippetValues.push(targetSnippet)
 
-			const component = vectorComponents[ i ];
-
-			if ( component === components[ 0 ] ) {
-
-				snippetValues.push( targetSnippet );
-
-				i += components.length - 1;
-
+				i += components.length - 1
 			} else {
-
-				snippetValues.push( sourceSnippet + '.' + component );
-
+				snippetValues.push(sourceSnippet + '.' + component)
 			}
-
 		}
 
-		return `${ builder.getType( sourceType ) }( ${ snippetValues.join( ', ' ) } )`;
-
+		return `${builder.getType(sourceType)}( ${snippetValues.join(', ')} )`
 	}
-
 }
 
-export default SetNode;
+export default SetNode

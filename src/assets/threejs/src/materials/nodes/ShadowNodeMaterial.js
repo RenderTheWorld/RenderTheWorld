@@ -1,9 +1,9 @@
-import NodeMaterial from './NodeMaterial.js';
-import ShadowMaskModel from '../../nodes/functions/ShadowMaskModel.js';
+import NodeMaterial from './NodeMaterial.js'
+import ShadowMaskModel from '../../nodes/functions/ShadowMaskModel.js'
 
-import { ShadowMaterial } from '../ShadowMaterial.js';
+import { ShadowMaterial } from '../ShadowMaterial.js'
 
-const _defaultValues = /*@__PURE__*/ new ShadowMaterial();
+const _defaultValues = /*@__PURE__*/ new ShadowMaterial()
 
 /**
  * Node material version of `ShadowMaterial`.
@@ -11,11 +11,8 @@ const _defaultValues = /*@__PURE__*/ new ShadowMaterial();
  * @augments NodeMaterial
  */
 class ShadowNodeMaterial extends NodeMaterial {
-
 	static get type() {
-
-		return 'ShadowNodeMaterial';
-
+		return 'ShadowNodeMaterial'
 	}
 
 	/**
@@ -23,9 +20,8 @@ class ShadowNodeMaterial extends NodeMaterial {
 	 *
 	 * @param {Object?} parameters - The configuration parameter.
 	 */
-	constructor( parameters ) {
-
-		super();
+	constructor(parameters) {
+		super()
 
 		/**
 		 * This flag can be used for type testing.
@@ -34,7 +30,7 @@ class ShadowNodeMaterial extends NodeMaterial {
 		 * @readonly
 		 * @default true
 		 */
-		this.isShadowNodeMaterial = true;
+		this.isShadowNodeMaterial = true
 
 		/**
 		 * Set to `true` because so it's possible to implement
@@ -43,12 +39,11 @@ class ShadowNodeMaterial extends NodeMaterial {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.lights = true;
+		this.lights = true
 
-		this.setDefaultValues( _defaultValues );
+		this.setDefaultValues(_defaultValues)
 
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
 	/**
@@ -56,12 +51,9 @@ class ShadowNodeMaterial extends NodeMaterial {
 	 *
 	 * @return {ShadowMaskModel} The lighting model.
 	 */
-	setupLightingModel( /*builder*/ ) {
-
-		return new ShadowMaskModel();
-
+	setupLightingModel(/*builder*/) {
+		return new ShadowMaskModel()
 	}
-
 }
 
-export default ShadowNodeMaterial;
+export default ShadowNodeMaterial

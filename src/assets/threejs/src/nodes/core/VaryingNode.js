@@ -1,6 +1,6 @@
-import Node from './Node.js';
-import { NodeShaderStage } from './constants.js';
-import { addMethodChaining, nodeProxy } from '../tsl/TSLCore.js';
+import Node from './Node.js'
+import { NodeShaderStage } from './constants.js'
+import { addMethodChaining, nodeProxy } from '../tsl/TSLCore.js'
 
 /**
  * Class for representing shader varyings as nodes. Varyings are create from
@@ -13,11 +13,8 @@ import { addMethodChaining, nodeProxy } from '../tsl/TSLCore.js';
  * @augments Node
  */
 class VaryingNode extends Node {
-
 	static get type() {
-
-		return 'VaryingNode';
-
+		return 'VaryingNode'
 	}
 
 	/**
@@ -26,16 +23,15 @@ class VaryingNode extends Node {
 	 * @param {Node} node - The node for which a varying should be created.
 	 * @param {String?} name - The name of the varying in the shader.
 	 */
-	constructor( node, name = null ) {
-
-		super();
+	constructor(node, name = null) {
+		super()
 
 		/**
 		 * The node for which a varying should be created.
 		 *
 		 * @type {Node}
 		 */
-		this.node = node;
+		this.node = node
 
 		/**
 		 * The name of the varying in the shader. If no name is defined,
@@ -44,7 +40,7 @@ class VaryingNode extends Node {
 		 * @type {String?}
 		 * @default null
 		 */
-		this.name = name;
+		this.name = name
 
 		/**
 		 * This flag can be used for type testing.
@@ -53,8 +49,7 @@ class VaryingNode extends Node {
 		 * @readonly
 		 * @default true
 		 */
-		this.isVaryingNode = true;
-
+		this.isVaryingNode = true
 	}
 
 	/**
@@ -63,24 +58,18 @@ class VaryingNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Boolean} Whether this node is global or not.
 	 */
-	isGlobal( /*builder*/ ) {
-
-		return true;
-
+	isGlobal(/*builder*/) {
+		return true
 	}
 
-	getHash( builder ) {
-
-		return this.name || super.getHash( builder );
-
+	getHash(builder) {
+		return this.name || super.getHash(builder)
 	}
 
-	getNodeType( builder ) {
-
+	getNodeType(builder) {
 		// VaryingNode is auto type
 
-		return this.node.getNodeType( builder );
-
+		return this.node.getNodeType(builder)
 	}
 
 	/**
@@ -89,80 +78,82 @@ class VaryingNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {NodeVarying} The node varying from the node builder.
 	 */
-	setupVarying( builder ) {
+	setupVarying(builder) {
+		const properties = builder.getNodeProperties(this)
 
-		const properties = builder.getNodeProperties( this );
+		let varying = properties.varying
 
-		let varying = properties.varying;
+		if (varying === undefined) {
+			const name = this.name
+			const type = this.getNodeType(builder)
 
-		if ( varying === undefined ) {
-
-			const name = this.name;
-			const type = this.getNodeType( builder );
-
-			properties.varying = varying = builder.getVaryingFromNode( this, name, type );
-			properties.node = this.node;
-
+			properties.varying = varying = builder.getVaryingFromNode(
+				this,
+				name,
+				type
+			)
+			properties.node = this.node
 		}
 
 		// this property can be used to check if the varying can be optimized for a variable
-		varying.needsInterpolation || ( varying.needsInterpolation = ( builder.shaderStage === 'fragment' ) );
+		varying.needsInterpolation ||
+			(varying.needsInterpolation = builder.shaderStage === 'fragment')
 
-		return varying;
-
+		return varying
 	}
 
-	setup( builder ) {
-
-		this.setupVarying( builder );
-
+	setup(builder) {
+		this.setupVarying(builder)
 	}
 
-	analyze( builder ) {
+	analyze(builder) {
+		this.setupVarying(builder)
 
-		this.setupVarying( builder );
-
-		return this.node.analyze( builder );
-
+		return this.node.analyze(builder)
 	}
 
-	generate( builder ) {
+	generate(builder) {
+		const properties = builder.getNodeProperties(this)
+		const varying = this.setupVarying(builder)
 
-		const properties = builder.getNodeProperties( this );
-		const varying = this.setupVarying( builder );
+		const needsReassign =
+			builder.shaderStage === 'fragment' &&
+			properties.reassignPosition === true &&
+			builder.context.needsPositionReassign
 
-		const needsReassign = builder.shaderStage === 'fragment' && properties.reassignPosition === true && builder.context.needsPositionReassign;
-
-		if ( properties.propertyName === undefined || needsReassign ) {
-
-			const type = this.getNodeType( builder );
-			const propertyName = builder.getPropertyName( varying, NodeShaderStage.VERTEX );
+		if (properties.propertyName === undefined || needsReassign) {
+			const type = this.getNodeType(builder)
+			const propertyName = builder.getPropertyName(
+				varying,
+				NodeShaderStage.VERTEX
+			)
 
 			// force node run in vertex stage
-			builder.flowNodeFromShaderStage( NodeShaderStage.VERTEX, this.node, type, propertyName );
+			builder.flowNodeFromShaderStage(
+				NodeShaderStage.VERTEX,
+				this.node,
+				type,
+				propertyName
+			)
 
-			properties.propertyName = propertyName;
+			properties.propertyName = propertyName
 
-			if ( needsReassign ) {
-
+			if (needsReassign) {
 				// once reassign varying in fragment stage
-				properties.reassignPosition = false;
-
-			} else if ( properties.reassignPosition === undefined && builder.context.isPositionNodeInput ) {
-
-				properties.reassignPosition = true;
-
+				properties.reassignPosition = false
+			} else if (
+				properties.reassignPosition === undefined &&
+				builder.context.isPositionNodeInput
+			) {
+				properties.reassignPosition = true
 			}
-
 		}
 
-		return builder.getPropertyName( varying );
-
+		return builder.getPropertyName(varying)
 	}
-
 }
 
-export default VaryingNode;
+export default VaryingNode
 
 /**
  * TSL function for creating a varying node.
@@ -172,7 +163,7 @@ export default VaryingNode;
  * @param {String?} name - The name of the varying in the shader.
  * @returns {VaryingNode}
  */
-export const varying = /*@__PURE__*/ nodeProxy( VaryingNode );
+export const varying = /*@__PURE__*/ nodeProxy(VaryingNode)
 
 /**
  * Computes a node in the vertex stage.
@@ -181,23 +172,25 @@ export const varying = /*@__PURE__*/ nodeProxy( VaryingNode );
  * @param {Node} node - The node which should be executed in the vertex stage.
  * @returns {VaryingNode}
  */
-export const vertexStage = ( node ) => varying( node );
+export const vertexStage = node => varying(node)
 
-addMethodChaining( 'toVarying', varying );
-addMethodChaining( 'toVertexStage', vertexStage );
+addMethodChaining('toVarying', varying)
+addMethodChaining('toVertexStage', vertexStage)
 
 // Deprecated
 
-addMethodChaining( 'varying', ( ...params ) => { // @deprecated, r173
+addMethodChaining('varying', (...params) => {
+	// @deprecated, r173
 
-	console.warn( 'TSL.VaryingNode: .varying() has been renamed to .toVarying().' );
-	return varying( ...params );
+	console.warn('TSL.VaryingNode: .varying() has been renamed to .toVarying().')
+	return varying(...params)
+})
 
-} );
+addMethodChaining('vertexStage', (...params) => {
+	// @deprecated, r173
 
-addMethodChaining( 'vertexStage', ( ...params ) => { // @deprecated, r173
-
-	console.warn( 'TSL.VaryingNode: .vertexStage() has been renamed to .toVertexStage().' );
-	return varying( ...params );
-
-} );
+	console.warn(
+		'TSL.VaryingNode: .vertexStage() has been renamed to .toVertexStage().'
+	)
+	return varying(...params)
+})

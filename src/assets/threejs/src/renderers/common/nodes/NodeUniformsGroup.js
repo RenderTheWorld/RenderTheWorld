@@ -1,6 +1,6 @@
-import UniformsGroup from '../UniformsGroup.js';
+import UniformsGroup from '../UniformsGroup.js'
 
-let _id = 0;
+let _id = 0
 
 /**
  * A special form of uniforms group that represents
@@ -10,30 +10,28 @@ let _id = 0;
  * @augments UniformsGroup
  */
 class NodeUniformsGroup extends UniformsGroup {
-
 	/**
 	 * Constructs a new node-based uniforms group.
 	 *
 	 * @param {String} name - The group's name.
 	 * @param {UniformGroupNode} groupNode - The uniform group node.
 	 */
-	constructor( name, groupNode ) {
-
-		super( name );
+	constructor(name, groupNode) {
+		super(name)
 
 		/**
 		 * The group's ID.
 		 *
 		 * @type {Number}
 		 */
-		this.id = _id ++;
+		this.id = _id++
 
 		/**
 		 * The uniform group node.
 		 *
 		 * @type {UniformGroupNode}
 		 */
-		this.groupNode = groupNode;
+		this.groupNode = groupNode
 
 		/**
 		 * This flag can be used for type testing.
@@ -42,10 +40,8 @@ class NodeUniformsGroup extends UniformsGroup {
 		 * @readonly
 		 * @default true
 		 */
-		this.isNodeUniformsGroup = true;
-
+		this.isNodeUniformsGroup = true
 	}
-
 }
 
-export default NodeUniformsGroup;
+export default NodeUniformsGroup

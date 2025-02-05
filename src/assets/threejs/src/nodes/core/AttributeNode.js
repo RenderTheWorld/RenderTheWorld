@@ -1,5 +1,5 @@
-import Node from './Node.js';
-import { nodeObject, varying } from '../tsl/TSLBase.js';
+import Node from './Node.js'
+import { nodeObject, varying } from '../tsl/TSLBase.js'
 
 /**
  * Base class for representing shader attributes as nodes.
@@ -7,11 +7,8 @@ import { nodeObject, varying } from '../tsl/TSLBase.js';
  * @augments Node
  */
 class AttributeNode extends Node {
-
 	static get type() {
-
-		return 'AttributeNode';
-
+		return 'AttributeNode'
 	}
 
 	/**
@@ -20,9 +17,8 @@ class AttributeNode extends Node {
 	 * @param {String} attributeName - The name of the attribute.
 	 * @param {String?} nodeType - The node type.
 	 */
-	constructor( attributeName, nodeType = null ) {
-
-		super( nodeType );
+	constructor(attributeName, nodeType = null) {
+		super(nodeType)
 
 		/**
 		 * `AttributeNode` sets this property to `true` by default.
@@ -30,42 +26,31 @@ class AttributeNode extends Node {
 		 * @type {Boolean}
 		 * @default true
 		 */
-		this.global = true;
+		this.global = true
 
-		this._attributeName = attributeName;
-
+		this._attributeName = attributeName
 	}
 
-	getHash( builder ) {
-
-		return this.getAttributeName( builder );
-
+	getHash(builder) {
+		return this.getAttributeName(builder)
 	}
 
-	getNodeType( builder ) {
+	getNodeType(builder) {
+		let nodeType = this.nodeType
 
-		let nodeType = this.nodeType;
+		if (nodeType === null) {
+			const attributeName = this.getAttributeName(builder)
 
-		if ( nodeType === null ) {
+			if (builder.hasGeometryAttribute(attributeName)) {
+				const attribute = builder.geometry.getAttribute(attributeName)
 
-			const attributeName = this.getAttributeName( builder );
-
-			if ( builder.hasGeometryAttribute( attributeName ) ) {
-
-				const attribute = builder.geometry.getAttribute( attributeName );
-
-				nodeType = builder.getTypeFromAttribute( attribute );
-
+				nodeType = builder.getTypeFromAttribute(attribute)
 			} else {
-
-				nodeType = 'float';
-
+				nodeType = 'float'
 			}
-
 		}
 
-		return nodeType;
-
+		return nodeType
 	}
 
 	/**
@@ -76,12 +61,10 @@ class AttributeNode extends Node {
 	 * @param {String} attributeName - The name of the attribute.
 	 * @return {AttributeNode} A reference to this node.
 	 */
-	setAttributeName( attributeName ) {
+	setAttributeName(attributeName) {
+		this._attributeName = attributeName
 
-		this._attributeName = attributeName;
-
-		return this;
-
+		return this
 	}
 
 	/**
@@ -92,68 +75,53 @@ class AttributeNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The attribute name.
 	 */
-	getAttributeName( /*builder*/ ) {
-
-		return this._attributeName;
-
+	getAttributeName(/*builder*/) {
+		return this._attributeName
 	}
 
-	generate( builder ) {
+	generate(builder) {
+		const attributeName = this.getAttributeName(builder)
+		const nodeType = this.getNodeType(builder)
+		const geometryAttribute = builder.hasGeometryAttribute(attributeName)
 
-		const attributeName = this.getAttributeName( builder );
-		const nodeType = this.getNodeType( builder );
-		const geometryAttribute = builder.hasGeometryAttribute( attributeName );
+		if (geometryAttribute === true) {
+			const attribute = builder.geometry.getAttribute(attributeName)
+			const attributeType = builder.getTypeFromAttribute(attribute)
 
-		if ( geometryAttribute === true ) {
+			const nodeAttribute = builder.getAttribute(attributeName, attributeType)
 
-			const attribute = builder.geometry.getAttribute( attributeName );
-			const attributeType = builder.getTypeFromAttribute( attribute );
-
-			const nodeAttribute = builder.getAttribute( attributeName, attributeType );
-
-			if ( builder.shaderStage === 'vertex' ) {
-
-				return builder.format( nodeAttribute.name, attributeType, nodeType );
-
+			if (builder.shaderStage === 'vertex') {
+				return builder.format(nodeAttribute.name, attributeType, nodeType)
 			} else {
+				const nodeVarying = varying(this)
 
-				const nodeVarying = varying( this );
-
-				return nodeVarying.build( builder, nodeType );
-
+				return nodeVarying.build(builder, nodeType)
 			}
-
 		} else {
+			console.warn(
+				`AttributeNode: Vertex attribute "${attributeName}" not found on geometry.`
+			)
 
-			console.warn( `AttributeNode: Vertex attribute "${ attributeName }" not found on geometry.` );
-
-			return builder.generateConst( nodeType );
-
+			return builder.generateConst(nodeType)
 		}
-
 	}
 
-	serialize( data ) {
+	serialize(data) {
+		super.serialize(data)
 
-		super.serialize( data );
-
-		data.global = this.global;
-		data._attributeName = this._attributeName;
-
+		data.global = this.global
+		data._attributeName = this._attributeName
 	}
 
-	deserialize( data ) {
+	deserialize(data) {
+		super.deserialize(data)
 
-		super.deserialize( data );
-
-		this.global = data.global;
-		this._attributeName = data._attributeName;
-
+		this.global = data.global
+		this._attributeName = data._attributeName
 	}
-
 }
 
-export default AttributeNode;
+export default AttributeNode
 
 /**
  * TSL function for creating an attribute node.
@@ -163,4 +131,5 @@ export default AttributeNode;
  * @param {String?} nodeType - The node type.
  * @returns {AttributeNode}
  */
-export const attribute = ( name, nodeType ) => nodeObject( new AttributeNode( name, nodeType ) );
+export const attribute = (name, nodeType) =>
+	nodeObject(new AttributeNode(name, nodeType))

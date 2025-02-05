@@ -1,8 +1,8 @@
-import TempNode from '../core/TempNode.js';
-import { addMethodChaining, nodeObject } from '../tsl/TSLCore.js';
+import TempNode from '../core/TempNode.js'
+import { addMethodChaining, nodeObject } from '../tsl/TSLCore.js'
 
-import { NoColorSpace, NoToneMapping } from '../../constants.js';
-import { ColorManagement } from '../../math/ColorManagement.js';
+import { NoColorSpace, NoToneMapping } from '../../constants.js'
+import { ColorManagement } from '../../math/ColorManagement.js'
 
 /**
  * Normally, tone mapping and color conversion happens automatically
@@ -28,11 +28,8 @@ import { ColorManagement } from '../../math/ColorManagement.js';
  * @augments TempNode
  */
 class RenderOutputNode extends TempNode {
-
 	static get type() {
-
-		return 'RenderOutputNode';
-
+		return 'RenderOutputNode'
 	}
 
 	/**
@@ -42,30 +39,29 @@ class RenderOutputNode extends TempNode {
 	 * @param {Number} toneMapping - The tone mapping type.
 	 * @param {String} outputColorSpace - The output color space.
 	 */
-	constructor( colorNode, toneMapping, outputColorSpace ) {
-
-		super( 'vec4' );
+	constructor(colorNode, toneMapping, outputColorSpace) {
+		super('vec4')
 
 		/**
 		 * The color node to process.
 		 *
 		 * @type {Node}
 		 */
-		this.colorNode = colorNode;
+		this.colorNode = colorNode
 
 		/**
 		 * The tone mapping type.
 		 *
 		 * @type {Number?}
 		 */
-		this.toneMapping = toneMapping;
+		this.toneMapping = toneMapping
 
 		/**
 		 * The output color space.
 		 *
 		 * @type {String?}
 		 */
-		this.outputColorSpace = outputColorSpace;
+		this.outputColorSpace = outputColorSpace
 
 		/**
 		 * This flag can be used for type testing.
@@ -74,40 +70,40 @@ class RenderOutputNode extends TempNode {
 		 * @readonly
 		 * @default true
 		 */
-		this.isRenderOutputNode = true;
-
+		this.isRenderOutputNode = true
 	}
 
-	setup( { context } ) {
-
-		let outputNode = this.colorNode || context.color;
+	setup({ context }) {
+		let outputNode = this.colorNode || context.color
 
 		// tone mapping
 
-		const toneMapping = ( this.toneMapping !== null ? this.toneMapping : context.toneMapping ) || NoToneMapping;
-		const outputColorSpace = ( this.outputColorSpace !== null ? this.outputColorSpace : context.outputColorSpace ) || NoColorSpace;
+		const toneMapping =
+			(this.toneMapping !== null ? this.toneMapping : context.toneMapping) ||
+			NoToneMapping
+		const outputColorSpace =
+			(this.outputColorSpace !== null
+				? this.outputColorSpace
+				: context.outputColorSpace) || NoColorSpace
 
-		if ( toneMapping !== NoToneMapping ) {
-
-			outputNode = outputNode.toneMapping( toneMapping );
-
+		if (toneMapping !== NoToneMapping) {
+			outputNode = outputNode.toneMapping(toneMapping)
 		}
 
 		// working to output color space
 
-		if ( outputColorSpace !== NoColorSpace && outputColorSpace !== ColorManagement.workingColorSpace ) {
-
-			outputNode = outputNode.workingToColorSpace( outputColorSpace );
-
+		if (
+			outputColorSpace !== NoColorSpace &&
+			outputColorSpace !== ColorManagement.workingColorSpace
+		) {
+			outputNode = outputNode.workingToColorSpace(outputColorSpace)
 		}
 
-		return outputNode;
-
+		return outputNode
 	}
-
 }
 
-export default RenderOutputNode;
+export default RenderOutputNode
 
 /**
  * TSL function for creating a posterize node.
@@ -118,6 +114,13 @@ export default RenderOutputNode;
  * @param {String?} [outputColorSpace=null] - The output color space.
  * @returns {RenderOutputNode}
  */
-export const renderOutput = ( color, toneMapping = null, outputColorSpace = null ) => nodeObject( new RenderOutputNode( nodeObject( color ), toneMapping, outputColorSpace ) );
+export const renderOutput = (
+	color,
+	toneMapping = null,
+	outputColorSpace = null
+) =>
+	nodeObject(
+		new RenderOutputNode(nodeObject(color), toneMapping, outputColorSpace)
+	)
 
-addMethodChaining( 'renderOutput', renderOutput );
+addMethodChaining('renderOutput', renderOutput)

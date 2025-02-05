@@ -1,4 +1,4 @@
-import Node from '../core/Node.js';
+import Node from '../core/Node.js'
 
 /**
  * Base class for lighting nodes.
@@ -6,19 +6,15 @@ import Node from '../core/Node.js';
  * @augments Node
  */
 class LightingNode extends Node {
-
 	static get type() {
-
-		return 'LightingNode';
-
+		return 'LightingNode'
 	}
 
 	/**
 	 * Constructs a new lighting node.
 	 */
 	constructor() {
-
-		super( 'vec3' );
+		super('vec3')
 
 		/**
 		 * This flag can be used for type testing.
@@ -27,10 +23,8 @@ class LightingNode extends Node {
 		 * @readonly
 		 * @default true
 		 */
-		this.isLightingNode = true;
-
+		this.isLightingNode = true
 	}
-
 }
 
-export default LightingNode;
+export default LightingNode

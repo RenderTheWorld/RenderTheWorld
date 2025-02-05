@@ -5,20 +5,17 @@
  * @private
  */
 class DataMap {
-
 	/**
 	 * Constructs a new data map.
 	 */
 	constructor() {
-
 		/**
 		 * `DataMap` internally uses a weak map
 		 * to manage its data.
 		 *
 		 * @type {WeakMap}
 		 */
-		this.data = new WeakMap();
-
+		this.data = new WeakMap()
 	}
 
 	/**
@@ -27,19 +24,15 @@ class DataMap {
 	 * @param {Object} object - The object.
 	 * @return {Object} The dictionary.
 	 */
-	get( object ) {
+	get(object) {
+		let map = this.data.get(object)
 
-		let map = this.data.get( object );
-
-		if ( map === undefined ) {
-
-			map = {};
-			this.data.set( object, map );
-
+		if (map === undefined) {
+			map = {}
+			this.data.set(object, map)
 		}
 
-		return map;
-
+		return map
 	}
 
 	/**
@@ -48,20 +41,16 @@ class DataMap {
 	 * @param {Object} object - The object.
 	 * @return {Object?} The deleted dictionary.
 	 */
-	delete( object ) {
+	delete(object) {
+		let map = null
 
-		let map = null;
+		if (this.data.has(object)) {
+			map = this.data.get(object)
 
-		if ( this.data.has( object ) ) {
-
-			map = this.data.get( object );
-
-			this.data.delete( object );
-
+			this.data.delete(object)
 		}
 
-		return map;
-
+		return map
 	}
 
 	/**
@@ -70,21 +59,16 @@ class DataMap {
 	 * @param {Object} object - The object to test.
 	 * @return {Boolean} Whether a dictionary is defined or not.
 	 */
-	has( object ) {
-
-		return this.data.has( object );
-
+	has(object) {
+		return this.data.has(object)
 	}
 
 	/**
 	 * Frees internal resources.
 	 */
 	dispose() {
-
-		this.data = new WeakMap();
-
+		this.data = new WeakMap()
 	}
-
 }
 
-export default DataMap;
+export default DataMap

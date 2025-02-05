@@ -1,6 +1,6 @@
-import Node from '../core/Node.js';
-import { NodeUpdateType } from '../core/constants.js';
-import { addMethodChaining, nodeObject } from '../tsl/TSLCore.js';
+import Node from '../core/Node.js'
+import { NodeUpdateType } from '../core/constants.js'
+import { addMethodChaining, nodeObject } from '../tsl/TSLCore.js'
 
 /**
  * TODO
@@ -8,11 +8,8 @@ import { addMethodChaining, nodeObject } from '../tsl/TSLCore.js';
  * @augments Node
  */
 class ComputeNode extends Node {
-
 	static get type() {
-
-		return 'ComputeNode';
-
+		return 'ComputeNode'
 	}
 
 	/**
@@ -22,9 +19,8 @@ class ComputeNode extends Node {
 	 * @param {Number} count - TODO.
 	 * @param {Array<Number>} [workgroupSize=[64]] - TODO.
 	 */
-	constructor( computeNode, count, workgroupSize = [ 64 ] ) {
-
-		super( 'void' );
+	constructor(computeNode, count, workgroupSize = [64]) {
+		super('void')
 
 		/**
 		 * This flag can be used for type testing.
@@ -33,21 +29,21 @@ class ComputeNode extends Node {
 		 * @readonly
 		 * @default true
 		 */
-		this.isComputeNode = true;
+		this.isComputeNode = true
 
 		/**
 		 * TODO
 		 *
 		 * @type {Node}
 		 */
-		this.computeNode = computeNode;
+		this.computeNode = computeNode
 
 		/**
 		 * TODO
 		 *
 		 * @type {Number}
 		 */
-		this.count = count;
+		this.count = count
 
 		/**
 		 * TODO
@@ -55,21 +51,21 @@ class ComputeNode extends Node {
 		 * @type {Array<Number>}
 		 * @default [64]
 		 */
-		this.workgroupSize = workgroupSize;
+		this.workgroupSize = workgroupSize
 
 		/**
 		 * TODO
 		 *
 		 * @type {Number}
 		 */
-		this.dispatchCount = 0;
+		this.dispatchCount = 0
 
 		/**
 		 * TODO
 		 *
 		 * @type {Number}
 		 */
-		this.version = 1;
+		this.version = 1
 
 		/**
 		 * The name or label of the uniform.
@@ -77,7 +73,7 @@ class ComputeNode extends Node {
 		 * @type {String}
 		 * @default ''
 		 */
-		this.name = '';
+		this.name = ''
 
 		/**
 		 * The `updateBeforeType` is set to `NodeUpdateType.OBJECT` since {@link ComputeNode#updateBefore}
@@ -86,26 +82,23 @@ class ComputeNode extends Node {
 		 * @type {String}
 		 * @default 'object'
 		 */
-		this.updateBeforeType = NodeUpdateType.OBJECT;
+		this.updateBeforeType = NodeUpdateType.OBJECT
 
 		/**
 		 * TODO
 		 *
 		 * @type {Function}
 		 */
-		this.onInitFunction = null;
+		this.onInitFunction = null
 
-		this.updateDispatchCount();
-
+		this.updateDispatchCount()
 	}
 
 	/**
 	 * Executes the `dispose` event for this node.
 	 */
 	dispose() {
-
-		this.dispatchEvent( { type: 'dispose' } );
-
+		this.dispatchEvent({ type: 'dispose' })
 	}
 
 	/**
@@ -114,28 +107,23 @@ class ComputeNode extends Node {
 	 * @param {String} name - The name of the uniform.
 	 * @return {ComputeNode} A reference to this node.
 	 */
-	label( name ) {
+	label(name) {
+		this.name = name
 
-		this.name = name;
-
-		return this;
-
+		return this
 	}
 
 	/**
 	 * TODO
 	 */
 	updateDispatchCount() {
+		const { count, workgroupSize } = this
 
-		const { count, workgroupSize } = this;
+		let size = workgroupSize[0]
 
-		let size = workgroupSize[ 0 ];
+		for (let i = 1; i < workgroupSize.length; i++) size *= workgroupSize[i]
 
-		for ( let i = 1; i < workgroupSize.length; i ++ )
-			size *= workgroupSize[ i ];
-
-		this.dispatchCount = Math.ceil( count / size );
-
+		this.dispatchCount = Math.ceil(count / size)
 	}
 
 	/**
@@ -144,12 +132,10 @@ class ComputeNode extends Node {
 	 * @param {Function} callback - TODO.
 	 * @return {ComputeNode} A reference to this node.
 	 */
-	onInit( callback ) {
+	onInit(callback) {
+		this.onInitFunction = callback
 
-		this.onInitFunction = callback;
-
-		return this;
-
+		return this
 	}
 
 	/**
@@ -157,33 +143,24 @@ class ComputeNode extends Node {
 	 *
 	 * @param {NodeFrame} frame - A reference to the current node frame.
 	 */
-	updateBefore( { renderer } ) {
-
-		renderer.compute( this );
-
+	updateBefore({ renderer }) {
+		renderer.compute(this)
 	}
 
-	generate( builder ) {
+	generate(builder) {
+		const { shaderStage } = builder
 
-		const { shaderStage } = builder;
+		if (shaderStage === 'compute') {
+			const snippet = this.computeNode.build(builder, 'void')
 
-		if ( shaderStage === 'compute' ) {
-
-			const snippet = this.computeNode.build( builder, 'void' );
-
-			if ( snippet !== '' ) {
-
-				builder.addLineFlowCode( snippet, this );
-
+			if (snippet !== '') {
+				builder.addLineFlowCode(snippet, this)
 			}
-
 		}
-
 	}
-
 }
 
-export default ComputeNode;
+export default ComputeNode
 
 /**
  * TSL function for creating a compute node.
@@ -194,6 +171,7 @@ export default ComputeNode;
  * @param {Array<Number>} [workgroupSize=[64]] - TODO.
  * @returns {AtomicFunctionNode}
  */
-export const compute = ( node, count, workgroupSize ) => nodeObject( new ComputeNode( nodeObject( node ), count, workgroupSize ) );
+export const compute = (node, count, workgroupSize) =>
+	nodeObject(new ComputeNode(nodeObject(node), count, workgroupSize))
 
-addMethodChaining( 'compute', compute );
+addMethodChaining('compute', compute)

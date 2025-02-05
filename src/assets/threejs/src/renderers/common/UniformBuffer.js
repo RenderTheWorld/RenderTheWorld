@@ -1,4 +1,4 @@
-import Buffer from './Buffer.js';
+import Buffer from './Buffer.js'
 
 /**
  * Represents a uniform buffer binding type.
@@ -7,16 +7,14 @@ import Buffer from './Buffer.js';
  * @augments Buffer
  */
 class UniformBuffer extends Buffer {
-
 	/**
 	 * Constructs a new uniform buffer.
 	 *
 	 * @param {String} name - The buffer's name.
 	 * @param {TypedArray} [buffer=null] - The buffer.
 	 */
-	constructor( name, buffer = null ) {
-
-		super( name, buffer );
+	constructor(name, buffer = null) {
+		super(name, buffer)
 
 		/**
 		 * This flag can be used for type testing.
@@ -25,10 +23,8 @@ class UniformBuffer extends Buffer {
 		 * @readonly
 		 * @default true
 		 */
-		this.isUniformBuffer = true;
-
+		this.isUniformBuffer = true
 	}
-
 }
 
-export default UniformBuffer;
+export default UniformBuffer

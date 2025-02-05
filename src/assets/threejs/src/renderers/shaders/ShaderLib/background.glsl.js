@@ -1,4 +1,4 @@
-export const vertex = /* glsl */`
+export const vertex = /* glsl */ `
 varying vec2 vUv;
 uniform mat3 uvTransform;
 
@@ -9,9 +9,9 @@ void main() {
 	gl_Position = vec4( position.xy, 1.0, 1.0 );
 
 }
-`;
+`
 
-export const fragment = /* glsl */`
+export const fragment = /* glsl */ `
 uniform sampler2D t2D;
 uniform float backgroundIntensity;
 
@@ -37,4 +37,4 @@ void main() {
 	#include <colorspace_fragment>
 
 }
-`;
+`

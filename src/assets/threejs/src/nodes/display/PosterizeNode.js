@@ -1,5 +1,5 @@
-import TempNode from '../core/TempNode.js';
-import { nodeProxy } from '../tsl/TSLBase.js';
+import TempNode from '../core/TempNode.js'
+import { nodeProxy } from '../tsl/TSLBase.js'
 
 /**
  * Represents a posterize effect which reduces the number of colors
@@ -8,11 +8,8 @@ import { nodeProxy } from '../tsl/TSLBase.js';
  * @augments TempNode
  */
 class PosterizeNode extends TempNode {
-
 	static get type() {
-
-		return 'PosterizeNode';
-
+		return 'PosterizeNode'
 	}
 
 	/**
@@ -21,37 +18,32 @@ class PosterizeNode extends TempNode {
 	 * @param {Node} sourceNode - The input color.
 	 * @param {Node} stepsNode - Controls the intensity of the posterization effect. A lower number results in a more blocky appearance.
 	 */
-	constructor( sourceNode, stepsNode ) {
-
-		super();
+	constructor(sourceNode, stepsNode) {
+		super()
 
 		/**
 		 * The input color.
 		 *
 		 * @type {Node}
 		 */
-		this.sourceNode = sourceNode;
+		this.sourceNode = sourceNode
 
 		/**
 		 * Controls the intensity of the posterization effect. A lower number results in a more blocky appearance.
 		 *
 		 * @type {Node}
 		 */
-		this.stepsNode = stepsNode;
-
+		this.stepsNode = stepsNode
 	}
 
 	setup() {
+		const { sourceNode, stepsNode } = this
 
-		const { sourceNode, stepsNode } = this;
-
-		return sourceNode.mul( stepsNode ).floor().div( stepsNode );
-
+		return sourceNode.mul(stepsNode).floor().div(stepsNode)
 	}
-
 }
 
-export default PosterizeNode;
+export default PosterizeNode
 
 /**
  * TSL function for creating a posterize node.
@@ -61,4 +53,4 @@ export default PosterizeNode;
  * @param {Node} stepsNode - Controls the intensity of the posterization effect. A lower number results in a more blocky appearance.
  * @returns {PosterizeNode}
  */
-export const posterize = /*@__PURE__*/ nodeProxy( PosterizeNode );
+export const posterize = /*@__PURE__*/ nodeProxy(PosterizeNode)

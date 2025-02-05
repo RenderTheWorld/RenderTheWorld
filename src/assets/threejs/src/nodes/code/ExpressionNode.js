@@ -1,5 +1,5 @@
-import Node from '../core/Node.js';
-import { nodeProxy } from '../tsl/TSLCore.js';
+import Node from '../core/Node.js'
+import { nodeProxy } from '../tsl/TSLCore.js'
 
 /**
  * This class can be used to implement basic expressions in shader code.
@@ -8,11 +8,8 @@ import { nodeProxy } from '../tsl/TSLCore.js';
  * @augments Node
  */
 class ExpressionNode extends Node {
-
 	static get type() {
-
-		return 'ExpressionNode';
-
+		return 'ExpressionNode'
 	}
 
 	/**
@@ -21,9 +18,8 @@ class ExpressionNode extends Node {
 	 * @param {String} [snippet=''] - The native code snippet.
 	 * @param {String} [nodeType='void'] - The node type.
 	 */
-	constructor( snippet = '', nodeType = 'void' ) {
-
-		super( nodeType );
+	constructor(snippet = '', nodeType = 'void') {
+		super(nodeType)
 
 		/**
 		 * The native code snippet.
@@ -31,30 +27,22 @@ class ExpressionNode extends Node {
 		 * @type {String}
 		 * @default ''
 		 */
-		this.snippet = snippet;
-
+		this.snippet = snippet
 	}
 
-	generate( builder, output ) {
+	generate(builder, output) {
+		const type = this.getNodeType(builder)
+		const snippet = this.snippet
 
-		const type = this.getNodeType( builder );
-		const snippet = this.snippet;
-
-		if ( type === 'void' ) {
-
-			builder.addLineFlowCode( snippet, this );
-
+		if (type === 'void') {
+			builder.addLineFlowCode(snippet, this)
 		} else {
-
-			return builder.format( `( ${ snippet } )`, type, output );
-
+			return builder.format(`( ${snippet} )`, type, output)
 		}
-
 	}
-
 }
 
-export default ExpressionNode;
+export default ExpressionNode
 
 /**
  * TSL function for creating an expression node.
@@ -64,4 +52,4 @@ export default ExpressionNode;
  * @param {String} [nodeType='void'] - The node type.
  * @returns {ExpressionNode}
  */
-export const expression = /*@__PURE__*/ nodeProxy( ExpressionNode );
+export const expression = /*@__PURE__*/ nodeProxy(ExpressionNode)

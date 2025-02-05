@@ -1,5 +1,5 @@
-import ContextNode from '../core/ContextNode.js';
-import { nodeProxy, float, vec3 } from '../tsl/TSLBase.js';
+import ContextNode from '../core/ContextNode.js'
+import { nodeProxy, float, vec3 } from '../tsl/TSLBase.js'
 
 /**
  * `LightingContextNode` represents an extension of the {@link ContextNode} module
@@ -9,11 +9,8 @@ import { nodeProxy, float, vec3 } from '../tsl/TSLBase.js';
  * @augments ContextNode
  */
 class LightingContextNode extends ContextNode {
-
 	static get type() {
-
-		return 'LightingContextNode';
-
+		return 'LightingContextNode'
 	}
 
 	/**
@@ -24,9 +21,13 @@ class LightingContextNode extends ContextNode {
 	 * @param {Node<vec3>?} [backdropNode=null] - A backdrop node.
 	 * @param {Node<float>?} [backdropAlphaNode=null] - A backdrop alpha node.
 	 */
-	constructor( node, lightingModel = null, backdropNode = null, backdropAlphaNode = null ) {
-
-		super( node );
+	constructor(
+		node,
+		lightingModel = null,
+		backdropNode = null,
+		backdropAlphaNode = null
+	) {
+		super(node)
 
 		/**
 		 * The current lighting model.
@@ -34,7 +35,7 @@ class LightingContextNode extends ContextNode {
 		 * @type {LightingModel?}
 		 * @default null
 		 */
-		this.lightingModel = lightingModel;
+		this.lightingModel = lightingModel
 
 		/**
 		 * A backdrop node.
@@ -42,7 +43,7 @@ class LightingContextNode extends ContextNode {
 		 * @type {Node<vec3>?}
 		 * @default null
 		 */
-		this.backdropNode = backdropNode;
+		this.backdropNode = backdropNode
 
 		/**
 		 * A backdrop alpha node.
@@ -50,10 +51,9 @@ class LightingContextNode extends ContextNode {
 		 * @type {Node<float>?}
 		 * @default null
 		 */
-		this.backdropAlphaNode = backdropAlphaNode;
+		this.backdropAlphaNode = backdropAlphaNode
 
-		this._value = null;
-
+		this._value = null
 	}
 
 	/**
@@ -70,46 +70,42 @@ class LightingContextNode extends ContextNode {
 	 * }} The lighting context object.
 	 */
 	getContext() {
+		const { backdropNode, backdropAlphaNode } = this
 
-		const { backdropNode, backdropAlphaNode } = this;
-
-		const directDiffuse = vec3().toVar( 'directDiffuse' ),
-			directSpecular = vec3().toVar( 'directSpecular' ),
-			indirectDiffuse = vec3().toVar( 'indirectDiffuse' ),
-			indirectSpecular = vec3().toVar( 'indirectSpecular' );
+		const directDiffuse = vec3().toVar('directDiffuse'),
+			directSpecular = vec3().toVar('directSpecular'),
+			indirectDiffuse = vec3().toVar('indirectDiffuse'),
+			indirectSpecular = vec3().toVar('indirectSpecular')
 
 		const reflectedLight = {
 			directDiffuse,
 			directSpecular,
 			indirectDiffuse,
 			indirectSpecular
-		};
+		}
 
 		const context = {
-			radiance: vec3().toVar( 'radiance' ),
-			irradiance: vec3().toVar( 'irradiance' ),
-			iblIrradiance: vec3().toVar( 'iblIrradiance' ),
-			ambientOcclusion: float( 1 ).toVar( 'ambientOcclusion' ),
+			radiance: vec3().toVar('radiance'),
+			irradiance: vec3().toVar('irradiance'),
+			iblIrradiance: vec3().toVar('iblIrradiance'),
+			ambientOcclusion: float(1).toVar('ambientOcclusion'),
 			reflectedLight,
 			backdrop: backdropNode,
 			backdropAlpha: backdropAlphaNode
-		};
+		}
 
-		return context;
-
+		return context
 	}
 
-	setup( builder ) {
+	setup(builder) {
+		this.value = this._value || (this._value = this.getContext())
+		this.value.lightingModel =
+			this.lightingModel || builder.context.lightingModel
 
-		this.value = this._value || ( this._value = this.getContext() );
-		this.value.lightingModel = this.lightingModel || builder.context.lightingModel;
-
-		return super.setup( builder );
-
+		return super.setup(builder)
 	}
-
 }
 
-export default LightingContextNode;
+export default LightingContextNode
 
-export const lightingContext = /*@__PURE__*/ nodeProxy( LightingContextNode );
+export const lightingContext = /*@__PURE__*/ nodeProxy(LightingContextNode)

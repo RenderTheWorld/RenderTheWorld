@@ -1,62 +1,58 @@
-import { UIRow, UISelect, UIText } from './libs/ui.js';
-import { SetMaterialValueCommand } from './commands/SetMaterialValueCommand.js';
+import { UIRow, UISelect, UIText } from './libs/ui.js'
+import { SetMaterialValueCommand } from './commands/SetMaterialValueCommand.js'
 
-function SidebarMaterialConstantProperty( editor, property, name, options ) {
+function SidebarMaterialConstantProperty(editor, property, name, options) {
+	const signals = editor.signals
 
-	const signals = editor.signals;
+	const container = new UIRow()
+	container.add(new UIText(name).setClass('Label'))
 
-	const container = new UIRow();
-	container.add( new UIText( name ).setClass( 'Label' ) );
+	const constant = new UISelect().setOptions(options).onChange(onChange)
+	container.add(constant)
 
-	const constant = new UISelect().setOptions( options ).onChange( onChange );
-	container.add( constant );
-
-	let object = null;
-	let materialSlot = null;
-	let material = null;
+	let object = null
+	let materialSlot = null
+	let material = null
 
 	function onChange() {
+		const value = parseInt(constant.getValue())
 
-		const value = parseInt( constant.getValue() );
-
-		if ( material[ property ] !== value ) {
-
-			editor.execute( new SetMaterialValueCommand( editor, object, property, value, materialSlot ) );
-
+		if (material[property] !== value) {
+			editor.execute(
+				new SetMaterialValueCommand(
+					editor,
+					object,
+					property,
+					value,
+					materialSlot
+				)
+			)
 		}
-
 	}
 
-	function update( currentObject, currentMaterialSlot = 0 ) {
+	function update(currentObject, currentMaterialSlot = 0) {
+		object = currentObject
+		materialSlot = currentMaterialSlot
 
-		object = currentObject;
-		materialSlot = currentMaterialSlot;
+		if (object === null) return
+		if (object.material === undefined) return
 
-		if ( object === null ) return;
-		if ( object.material === undefined ) return;
+		material = editor.getObjectMaterial(object, materialSlot)
 
-		material = editor.getObjectMaterial( object, materialSlot );
-
-		if ( property in material ) {
-
-			constant.setValue( material[ property ] );
-			container.setDisplay( '' );
-
+		if (property in material) {
+			constant.setValue(material[property])
+			container.setDisplay('')
 		} else {
-
-			container.setDisplay( 'none' );
-
+			container.setDisplay('none')
 		}
-
 	}
 
 	//
 
-	signals.objectSelected.add( update );
-	signals.materialChanged.add( update );
+	signals.objectSelected.add(update)
+	signals.materialChanged.add(update)
 
-	return container;
-
+	return container
 }
 
-export { SidebarMaterialConstantProperty };
+export { SidebarMaterialConstantProperty }

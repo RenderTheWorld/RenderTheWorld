@@ -1,5 +1,5 @@
-import ReferenceNode from './ReferenceNode.js';
-import { nodeObject } from '../tsl/TSLBase.js';
+import ReferenceNode from './ReferenceNode.js'
+import { nodeObject } from '../tsl/TSLBase.js'
 
 /**
  * A special type of reference node that allows to link values in
@@ -16,11 +16,8 @@ import { nodeObject } from '../tsl/TSLBase.js';
  * @augments ReferenceNode
  */
 class UserDataNode extends ReferenceNode {
-
 	static get type() {
-
-		return 'UserDataNode';
-
+		return 'UserDataNode'
 	}
 
 	/**
@@ -30,9 +27,8 @@ class UserDataNode extends ReferenceNode {
 	 * @param {String} inputType - The node data type of the reference.
 	 * @param {Object?} [userData=null] - A reference to the `userData` object. If not provided, the `userData` property of the 3D object that uses the node material is evaluated.
 	 */
-	constructor( property, inputType, userData = null ) {
-
-		super( property, inputType, userData );
+	constructor(property, inputType, userData = null) {
+		super(property, inputType, userData)
 
 		/**
 		 * A reference to the `userData` object. If not provided, the `userData`
@@ -41,8 +37,7 @@ class UserDataNode extends ReferenceNode {
 		 * @type {Object?}
 		 * @default null
 		 */
-		this.userData = userData;
-
+		this.userData = userData
 	}
 
 	/**
@@ -52,17 +47,15 @@ class UserDataNode extends ReferenceNode {
 	 * @param {(NodeFrame|NodeBuilder)} state - The current state to evaluate.
 	 * @return {Object} A reference to the `userData` field.
 	 */
-	updateReference( state ) {
+	updateReference(state) {
+		this.reference =
+			this.userData !== null ? this.userData : state.object.userData
 
-		this.reference = this.userData !== null ? this.userData : state.object.userData;
-
-		return this.reference;
-
+		return this.reference
 	}
-
 }
 
-export default UserDataNode;
+export default UserDataNode
 
 /**
  * TSL function for creating a user data node.
@@ -73,4 +66,5 @@ export default UserDataNode;
  * @param {Object?} userData - A reference to the `userData` object. If not provided, the `userData` property of the 3D object that uses the node material is evaluated.
  * @returns {UserDataNode}
  */
-export const userData = ( name, inputType, userData ) => nodeObject( new UserDataNode( name, inputType, userData ) );
+export const userData = (name, inputType, userData) =>
+	nodeObject(new UserDataNode(name, inputType, userData))

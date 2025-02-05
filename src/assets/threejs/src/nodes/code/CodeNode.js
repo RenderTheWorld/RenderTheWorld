@@ -1,5 +1,5 @@
-import Node from '../core/Node.js';
-import { nodeProxy } from '../tsl/TSLBase.js';
+import Node from '../core/Node.js'
+import { nodeProxy } from '../tsl/TSLBase.js'
 
 /**
  * This class represents native code sections. It is the base
@@ -9,11 +9,8 @@ import { nodeProxy } from '../tsl/TSLBase.js';
  * @augments Node
  */
 class CodeNode extends Node {
-
 	static get type() {
-
-		return 'CodeNode';
-
+		return 'CodeNode'
 	}
 
 	/**
@@ -23,9 +20,8 @@ class CodeNode extends Node {
 	 * @param {Array<Node>} [includes=[]] - An array of includes.
 	 * @param {('js'|'wgsl'|'glsl')} [language=''] - The used language.
 	 */
-	constructor( code = '', includes = [], language = '' ) {
-
-		super( 'code' );
+	constructor(code = '', includes = [], language = '') {
+		super('code')
 
 		/**
 		 * This flag can be used for type testing.
@@ -34,7 +30,7 @@ class CodeNode extends Node {
 		 * @readonly
 		 * @default true
 		 */
-		this.isCodeNode = true;
+		this.isCodeNode = true
 
 		/**
 		 * The native code.
@@ -42,7 +38,7 @@ class CodeNode extends Node {
 		 * @type {String}
 		 * @default ''
 		 */
-		this.code = code;
+		this.code = code
 
 		/**
 		 * An array of includes
@@ -50,7 +46,7 @@ class CodeNode extends Node {
 		 * @type {Array<Node>}
 		 * @default []
 		 */
-		this.includes = includes;
+		this.includes = includes
 
 		/**
 		 * The used language.
@@ -58,8 +54,7 @@ class CodeNode extends Node {
 		 * @type {('js'|'wgsl'|'glsl')}
 		 * @default ''
 		 */
-		this.language = language;
-
+		this.language = language
 	}
 
 	/**
@@ -68,9 +63,7 @@ class CodeNode extends Node {
 	 * @return {Boolean} Whether this node is global or not.
 	 */
 	isGlobal() {
-
-		return true;
-
+		return true
 	}
 
 	/**
@@ -79,12 +72,10 @@ class CodeNode extends Node {
 	 * @param {Array<Node>} includes - The includes to set.
 	 * @return {CodeNode} A reference to this node.
 	 */
-	setIncludes( includes ) {
+	setIncludes(includes) {
+		this.includes = includes
 
-		this.includes = includes;
-
-		return this;
-
+		return this
 	}
 
 	/**
@@ -93,50 +84,39 @@ class CodeNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Array<Node>} The includes.
 	 */
-	getIncludes( /*builder*/ ) {
-
-		return this.includes;
-
+	getIncludes(/*builder*/) {
+		return this.includes
 	}
 
-	generate( builder ) {
+	generate(builder) {
+		const includes = this.getIncludes(builder)
 
-		const includes = this.getIncludes( builder );
-
-		for ( const include of includes ) {
-
-			include.build( builder );
-
+		for (const include of includes) {
+			include.build(builder)
 		}
 
-		const nodeCode = builder.getCodeFromNode( this, this.getNodeType( builder ) );
-		nodeCode.code = this.code;
+		const nodeCode = builder.getCodeFromNode(this, this.getNodeType(builder))
+		nodeCode.code = this.code
 
-		return nodeCode.code;
-
+		return nodeCode.code
 	}
 
-	serialize( data ) {
+	serialize(data) {
+		super.serialize(data)
 
-		super.serialize( data );
-
-		data.code = this.code;
-		data.language = this.language;
-
+		data.code = this.code
+		data.language = this.language
 	}
 
-	deserialize( data ) {
+	deserialize(data) {
+		super.deserialize(data)
 
-		super.deserialize( data );
-
-		this.code = data.code;
-		this.language = data.language;
-
+		this.code = data.code
+		this.language = data.language
 	}
-
 }
 
-export default CodeNode;
+export default CodeNode
 
 /**
  * TSL function for creating a code node.
@@ -147,7 +127,7 @@ export default CodeNode;
  * @param {('js'|'wgsl'|'glsl')} [language=''] - The used language.
  * @returns {CodeNode}
  */
-export const code = /*@__PURE__*/ nodeProxy( CodeNode );
+export const code = /*@__PURE__*/ nodeProxy(CodeNode)
 
 /**
  * TSL function for creating a JS code node.
@@ -157,7 +137,7 @@ export const code = /*@__PURE__*/ nodeProxy( CodeNode );
  * @param {Array<Node>} includes - An array of includes.
  * @returns {CodeNode}
  */
-export const js = ( src, includes ) => code( src, includes, 'js' );
+export const js = (src, includes) => code(src, includes, 'js')
 
 /**
  * TSL function for creating a WGSL code node.
@@ -167,7 +147,7 @@ export const js = ( src, includes ) => code( src, includes, 'js' );
  * @param {Array<Node>} includes - An array of includes.
  * @returns {CodeNode}
  */
-export const wgsl = ( src, includes ) => code( src, includes, 'wgsl' );
+export const wgsl = (src, includes) => code(src, includes, 'wgsl')
 
 /**
  * TSL function for creating a GLSL code node.
@@ -177,4 +157,4 @@ export const wgsl = ( src, includes ) => code( src, includes, 'wgsl' );
  * @param {Array<Node>} includes - An array of includes.
  * @returns {CodeNode}
  */
-export const glsl = ( src, includes ) => code( src, includes, 'glsl' );
+export const glsl = (src, includes) => code(src, includes, 'glsl')

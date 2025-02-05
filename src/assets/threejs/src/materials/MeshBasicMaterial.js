@@ -1,84 +1,78 @@
-import { Material } from './Material.js';
-import { MultiplyOperation } from '../constants.js';
-import { Color } from '../math/Color.js';
-import { Euler } from '../math/Euler.js';
+import { Material } from './Material.js'
+import { MultiplyOperation } from '../constants.js'
+import { Color } from '../math/Color.js'
+import { Euler } from '../math/Euler.js'
 
 class MeshBasicMaterial extends Material {
+	constructor(parameters) {
+		super()
 
-	constructor( parameters ) {
+		this.isMeshBasicMaterial = true
 
-		super();
+		this.type = 'MeshBasicMaterial'
 
-		this.isMeshBasicMaterial = true;
+		this.color = new Color(0xffffff) // emissive
 
-		this.type = 'MeshBasicMaterial';
+		this.map = null
 
-		this.color = new Color( 0xffffff ); // emissive
+		this.lightMap = null
+		this.lightMapIntensity = 1.0
 
-		this.map = null;
+		this.aoMap = null
+		this.aoMapIntensity = 1.0
 
-		this.lightMap = null;
-		this.lightMapIntensity = 1.0;
+		this.specularMap = null
 
-		this.aoMap = null;
-		this.aoMapIntensity = 1.0;
+		this.alphaMap = null
 
-		this.specularMap = null;
+		this.envMap = null
+		this.envMapRotation = new Euler()
+		this.combine = MultiplyOperation
+		this.reflectivity = 1
+		this.refractionRatio = 0.98
 
-		this.alphaMap = null;
+		this.wireframe = false
+		this.wireframeLinewidth = 1
+		this.wireframeLinecap = 'round'
+		this.wireframeLinejoin = 'round'
 
-		this.envMap = null;
-		this.envMapRotation = new Euler();
-		this.combine = MultiplyOperation;
-		this.reflectivity = 1;
-		this.refractionRatio = 0.98;
+		this.fog = true
 
-		this.wireframe = false;
-		this.wireframeLinewidth = 1;
-		this.wireframeLinecap = 'round';
-		this.wireframeLinejoin = 'round';
-
-		this.fog = true;
-
-		this.setValues( parameters );
-
+		this.setValues(parameters)
 	}
 
-	copy( source ) {
+	copy(source) {
+		super.copy(source)
 
-		super.copy( source );
+		this.color.copy(source.color)
 
-		this.color.copy( source.color );
+		this.map = source.map
 
-		this.map = source.map;
+		this.lightMap = source.lightMap
+		this.lightMapIntensity = source.lightMapIntensity
 
-		this.lightMap = source.lightMap;
-		this.lightMapIntensity = source.lightMapIntensity;
+		this.aoMap = source.aoMap
+		this.aoMapIntensity = source.aoMapIntensity
 
-		this.aoMap = source.aoMap;
-		this.aoMapIntensity = source.aoMapIntensity;
+		this.specularMap = source.specularMap
 
-		this.specularMap = source.specularMap;
+		this.alphaMap = source.alphaMap
 
-		this.alphaMap = source.alphaMap;
+		this.envMap = source.envMap
+		this.envMapRotation.copy(source.envMapRotation)
+		this.combine = source.combine
+		this.reflectivity = source.reflectivity
+		this.refractionRatio = source.refractionRatio
 
-		this.envMap = source.envMap;
-		this.envMapRotation.copy( source.envMapRotation );
-		this.combine = source.combine;
-		this.reflectivity = source.reflectivity;
-		this.refractionRatio = source.refractionRatio;
+		this.wireframe = source.wireframe
+		this.wireframeLinewidth = source.wireframeLinewidth
+		this.wireframeLinecap = source.wireframeLinecap
+		this.wireframeLinejoin = source.wireframeLinejoin
 
-		this.wireframe = source.wireframe;
-		this.wireframeLinewidth = source.wireframeLinewidth;
-		this.wireframeLinecap = source.wireframeLinecap;
-		this.wireframeLinejoin = source.wireframeLinejoin;
+		this.fog = source.fog
 
-		this.fog = source.fog;
-
-		return this;
-
+		return this
 	}
-
 }
 
-export { MeshBasicMaterial };
+export { MeshBasicMaterial }

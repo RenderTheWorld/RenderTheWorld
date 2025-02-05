@@ -5,7 +5,6 @@
  * process.
  */
 class LightingModel {
-
 	/**
 	 * This method is intended for setting up lighting model and context data
 	 * which are later used in the evaluation process.
@@ -15,7 +14,7 @@ class LightingModel {
 	 * @param {StackNode} stack - The current stack.
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	start( /*input, stack, builder*/ ) { }
+	start(/*input, stack, builder*/) {}
 
 	/**
 	 * This method is intended for executing final tasks like final updates
@@ -26,7 +25,7 @@ class LightingModel {
 	 * @param {StackNode} stack - The current stack.
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	finish( /*input, stack, builder*/ ) { }
+	finish(/*input, stack, builder*/) {}
 
 	/**
 	 * This method is intended for implementing the direct light term and
@@ -37,7 +36,7 @@ class LightingModel {
 	 * @param {StackNode} stack - The current stack.
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	direct( /*input, stack, builder*/ ) { }
+	direct(/*input, stack, builder*/) {}
 
 	/**
 	 * This method is intended for implementing the direct light term for
@@ -48,7 +47,7 @@ class LightingModel {
 	 * @param {StackNode} stack - The current stack.
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	directRectArea( /*input, stack, builder*/ ) {}
+	directRectArea(/*input, stack, builder*/) {}
 
 	/**
 	 * This method is intended for implementing the indirect light term.
@@ -58,7 +57,7 @@ class LightingModel {
 	 * @param {StackNode} stack - The current stack.
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	indirect( /*input, stack, builder*/ ) { }
+	indirect(/*input, stack, builder*/) {}
 
 	/**
 	 * This method is intended for implementing the ambient occlusion term.
@@ -70,8 +69,7 @@ class LightingModel {
 	 * @param {StackNode} stack - The current stack.
 	 * @param {NodeBuilder} builder - The current node builder.
 	 */
-	ambientOcclusion( /*input, stack, builder*/ ) { }
-
+	ambientOcclusion(/*input, stack, builder*/) {}
 }
 
-export default LightingModel;
+export default LightingModel

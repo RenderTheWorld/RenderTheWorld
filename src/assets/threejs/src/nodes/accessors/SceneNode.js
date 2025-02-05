@@ -1,13 +1,13 @@
-import { UVMapping } from '../../constants.js';
-import { Euler } from '../../math/Euler.js';
-import { Matrix4 } from '../../math/Matrix4.js';
-import Node from '../core/Node.js';
-import { renderGroup } from '../core/UniformGroupNode.js';
-import { nodeImmutable, uniform } from '../tsl/TSLBase.js';
-import { reference } from './ReferenceNode.js';
+import { UVMapping } from '../../constants.js'
+import { Euler } from '../../math/Euler.js'
+import { Matrix4 } from '../../math/Matrix4.js'
+import Node from '../core/Node.js'
+import { renderGroup } from '../core/UniformGroupNode.js'
+import { nodeImmutable, uniform } from '../tsl/TSLBase.js'
+import { reference } from './ReferenceNode.js'
 
-const _e1 = /*@__PURE__*/ new Euler();
-const _m1 = /*@__PURE__*/ new Matrix4();
+const _e1 = /*@__PURE__*/ new Euler()
+const _m1 = /*@__PURE__*/ new Matrix4()
 
 /**
  * This module allows access to a collection of scene properties. The following predefined TSL objects
@@ -20,11 +20,8 @@ const _m1 = /*@__PURE__*/ new Matrix4();
  * @augments Node
  */
 class SceneNode extends Node {
-
 	static get type() {
-
-		return 'SceneNode';
-
+		return 'SceneNode'
 	}
 
 	/**
@@ -33,16 +30,15 @@ class SceneNode extends Node {
 	 * @param {('backgroundBlurriness'|'backgroundIntensity'|'backgroundRotation')} scope - The scope defines the type of scene property that is accessed.
 	 * @param {Scene?} [scene=null] - A reference to the scene.
 	 */
-	constructor( scope = SceneNode.BACKGROUND_BLURRINESS, scene = null ) {
-
-		super();
+	constructor(scope = SceneNode.BACKGROUND_BLURRINESS, scene = null) {
+		super()
 
 		/**
 		 * The scope defines the type of scene property that is accessed.
 		 *
 		 * @type {('backgroundBlurriness'|'backgroundIntensity'|'backgroundRotation')}
 		 */
-		this.scope = scope;
+		this.scope = scope
 
 		/**
 		 * A reference to the scene that is going to be accessed.
@@ -50,8 +46,7 @@ class SceneNode extends Node {
 		 * @type {Scene?}
 		 * @default null
 		 */
-		this.scene = scene;
-
+		this.scene = scene
 	}
 
 	/**
@@ -61,81 +56,82 @@ class SceneNode extends Node {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {Node} The output node.
 	 */
-	setup( builder ) {
+	setup(builder) {
+		const scope = this.scope
+		const scene = this.scene !== null ? this.scene : builder.scene
 
-		const scope = this.scope;
-		const scene = this.scene !== null ? this.scene : builder.scene;
+		let output
 
-		let output;
+		if (scope === SceneNode.BACKGROUND_BLURRINESS) {
+			output = reference('backgroundBlurriness', 'float', scene)
+		} else if (scope === SceneNode.BACKGROUND_INTENSITY) {
+			output = reference('backgroundIntensity', 'float', scene)
+		} else if (scope === SceneNode.BACKGROUND_ROTATION) {
+			output = uniform('mat4')
+				.label('backgroundRotation')
+				.setGroup(renderGroup)
+				.onRenderUpdate(() => {
+					const background = scene.background
 
-		if ( scope === SceneNode.BACKGROUND_BLURRINESS ) {
+					if (
+						background !== null &&
+						background.isTexture &&
+						background.mapping !== UVMapping
+					) {
+						_e1.copy(scene.backgroundRotation)
 
-			output = reference( 'backgroundBlurriness', 'float', scene );
+						// accommodate left-handed frame
+						_e1.x *= -1
+						_e1.y *= -1
+						_e1.z *= -1
 
-		} else if ( scope === SceneNode.BACKGROUND_INTENSITY ) {
+						_m1.makeRotationFromEuler(_e1)
+					} else {
+						_m1.identity()
+					}
 
-			output = reference( 'backgroundIntensity', 'float', scene );
-
-		} else if ( scope === SceneNode.BACKGROUND_ROTATION ) {
-
-			output = uniform( 'mat4' ).label( 'backgroundRotation' ).setGroup( renderGroup ).onRenderUpdate( () => {
-
-				const background = scene.background;
-
-				if ( background !== null && background.isTexture && background.mapping !== UVMapping ) {
-
-					_e1.copy( scene.backgroundRotation );
-
-					// accommodate left-handed frame
-					_e1.x *= - 1; _e1.y *= - 1; _e1.z *= - 1;
-
-					_m1.makeRotationFromEuler( _e1 );
-
-				} else {
-
-					_m1.identity();
-
-				}
-
-				return _m1;
-
-			} );
-
+					return _m1
+				})
 		} else {
-
-			console.error( 'THREE.SceneNode: Unknown scope:', scope );
-
+			console.error('THREE.SceneNode: Unknown scope:', scope)
 		}
 
-		return output;
-
+		return output
 	}
-
 }
 
-SceneNode.BACKGROUND_BLURRINESS = 'backgroundBlurriness';
-SceneNode.BACKGROUND_INTENSITY = 'backgroundIntensity';
-SceneNode.BACKGROUND_ROTATION = 'backgroundRotation';
+SceneNode.BACKGROUND_BLURRINESS = 'backgroundBlurriness'
+SceneNode.BACKGROUND_INTENSITY = 'backgroundIntensity'
+SceneNode.BACKGROUND_ROTATION = 'backgroundRotation'
 
-export default SceneNode;
+export default SceneNode
 
 /**
  * TSL object that represents the scene's background blurriness.
  *
  * @type {SceneNode}
  */
-export const backgroundBlurriness = /*@__PURE__*/ nodeImmutable( SceneNode, SceneNode.BACKGROUND_BLURRINESS );
+export const backgroundBlurriness = /*@__PURE__*/ nodeImmutable(
+	SceneNode,
+	SceneNode.BACKGROUND_BLURRINESS
+)
 
 /**
  * TSL object that represents the scene's background intensity.
  *
  * @type {SceneNode}
  */
-export const backgroundIntensity = /*@__PURE__*/ nodeImmutable( SceneNode, SceneNode.BACKGROUND_INTENSITY );
+export const backgroundIntensity = /*@__PURE__*/ nodeImmutable(
+	SceneNode,
+	SceneNode.BACKGROUND_INTENSITY
+)
 
 /**
  * TSL object that represents the scene's background rotation.
  *
  * @type {SceneNode}
  */
-export const backgroundRotation = /*@__PURE__*/ nodeImmutable( SceneNode, SceneNode.BACKGROUND_ROTATION );
+export const backgroundRotation = /*@__PURE__*/ nodeImmutable(
+	SceneNode,
+	SceneNode.BACKGROUND_ROTATION
+)

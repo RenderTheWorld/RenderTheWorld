@@ -1,4 +1,4 @@
-export default /* glsl */`
+export default /* glsl */ `
 #if defined( USE_LOGDEPTHBUF )
 
 	uniform float logDepthBufFC;
@@ -6,4 +6,4 @@ export default /* glsl */`
 	varying float vIsPerspective;
 
 #endif
-`;
+`

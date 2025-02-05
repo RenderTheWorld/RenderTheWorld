@@ -1,7 +1,19 @@
-import TempNode from '../core/TempNode.js';
-import { sub, mul, div } from './OperatorNode.js';
-import { addMethodChaining, nodeObject, nodeProxy, float, vec2, vec3, vec4, Fn } from '../tsl/TSLCore.js';
-import { WebGLCoordinateSystem, WebGPUCoordinateSystem } from '../../constants.js';
+import TempNode from '../core/TempNode.js'
+import { sub, mul, div } from './OperatorNode.js'
+import {
+	addMethodChaining,
+	nodeObject,
+	nodeProxy,
+	float,
+	vec2,
+	vec3,
+	vec4,
+	Fn
+} from '../tsl/TSLCore.js'
+import {
+	WebGLCoordinateSystem,
+	WebGPUCoordinateSystem
+} from '../../constants.js'
 
 /**
  * This node represents a variety of mathematical methods available in shaders.
@@ -14,11 +26,8 @@ import { WebGLCoordinateSystem, WebGPUCoordinateSystem } from '../../constants.j
  * @augments TempNode
  */
 class MathNode extends TempNode {
-
 	static get type() {
-
-		return 'MathNode';
-
+		return 'MathNode'
 	}
 
 	/**
@@ -29,23 +38,22 @@ class MathNode extends TempNode {
 	 * @param {Node?} [bNode=null] - The second input.
 	 * @param {Node?} [cNode=null] - The third input.
 	 */
-	constructor( method, aNode, bNode = null, cNode = null ) {
-
-		super();
+	constructor(method, aNode, bNode = null, cNode = null) {
+		super()
 
 		/**
 		 * The method name.
 		 *
 		 * @type {String}
 		 */
-		this.method = method;
+		this.method = method
 
 		/**
 		 * The first input.
 		 *
 		 * @type {Node}
 		 */
-		this.aNode = aNode;
+		this.aNode = aNode
 
 		/**
 		 * The second input.
@@ -53,7 +61,7 @@ class MathNode extends TempNode {
 		 * @type {Node?}
 		 * @default null
 		 */
-		this.bNode = bNode;
+		this.bNode = bNode
 
 		/**
 		 * The third input.
@@ -61,7 +69,7 @@ class MathNode extends TempNode {
 		 * @type {Node?}
 		 * @default null
 		 */
-		this.cNode = cNode;
+		this.cNode = cNode
 
 		/**
 		 * This flag can be used for type testing.
@@ -70,8 +78,7 @@ class MathNode extends TempNode {
 		 * @readonly
 		 * @default true
 		 */
-		this.isMathNode = true;
-
+		this.isMathNode = true
 	}
 
 	/**
@@ -80,32 +87,24 @@ class MathNode extends TempNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The input type.
 	 */
-	getInputType( builder ) {
+	getInputType(builder) {
+		const aType = this.aNode.getNodeType(builder)
+		const bType = this.bNode ? this.bNode.getNodeType(builder) : null
+		const cType = this.cNode ? this.cNode.getNodeType(builder) : null
 
-		const aType = this.aNode.getNodeType( builder );
-		const bType = this.bNode ? this.bNode.getNodeType( builder ) : null;
-		const cType = this.cNode ? this.cNode.getNodeType( builder ) : null;
+		const aLen = builder.isMatrix(aType) ? 0 : builder.getTypeLength(aType)
+		const bLen = builder.isMatrix(bType) ? 0 : builder.getTypeLength(bType)
+		const cLen = builder.isMatrix(cType) ? 0 : builder.getTypeLength(cType)
 
-		const aLen = builder.isMatrix( aType ) ? 0 : builder.getTypeLength( aType );
-		const bLen = builder.isMatrix( bType ) ? 0 : builder.getTypeLength( bType );
-		const cLen = builder.isMatrix( cType ) ? 0 : builder.getTypeLength( cType );
-
-		if ( aLen > bLen && aLen > cLen ) {
-
-			return aType;
-
-		} else if ( bLen > cLen ) {
-
-			return bType;
-
-		} else if ( cLen > aLen ) {
-
-			return cType;
-
+		if (aLen > bLen && aLen > cLen) {
+			return aType
+		} else if (bLen > cLen) {
+			return bType
+		} else if (cLen > aLen) {
+			return cType
 		}
 
-		return aType;
-
+		return aType
 	}
 
 	/**
@@ -114,229 +113,216 @@ class MathNode extends TempNode {
 	 * @param {NodeBuilder} builder - The current node builder.
 	 * @return {String} The node type.
 	 */
-	getNodeType( builder ) {
+	getNodeType(builder) {
+		const method = this.method
 
-		const method = this.method;
-
-		if ( method === MathNode.LENGTH || method === MathNode.DISTANCE || method === MathNode.DOT ) {
-
-			return 'float';
-
-		} else if ( method === MathNode.CROSS ) {
-
-			return 'vec3';
-
-		} else if ( method === MathNode.ALL ) {
-
-			return 'bool';
-
-		} else if ( method === MathNode.EQUALS ) {
-
-			return builder.changeComponentType( this.aNode.getNodeType( builder ), 'bool' );
-
-		} else if ( method === MathNode.MOD ) {
-
-			return this.aNode.getNodeType( builder );
-
+		if (
+			method === MathNode.LENGTH ||
+			method === MathNode.DISTANCE ||
+			method === MathNode.DOT
+		) {
+			return 'float'
+		} else if (method === MathNode.CROSS) {
+			return 'vec3'
+		} else if (method === MathNode.ALL) {
+			return 'bool'
+		} else if (method === MathNode.EQUALS) {
+			return builder.changeComponentType(
+				this.aNode.getNodeType(builder),
+				'bool'
+			)
+		} else if (method === MathNode.MOD) {
+			return this.aNode.getNodeType(builder)
 		} else {
-
-			return this.getInputType( builder );
-
+			return this.getInputType(builder)
 		}
-
 	}
 
-	generate( builder, output ) {
+	generate(builder, output) {
+		let method = this.method
 
-		let method = this.method;
+		const type = this.getNodeType(builder)
+		const inputType = this.getInputType(builder)
 
-		const type = this.getNodeType( builder );
-		const inputType = this.getInputType( builder );
+		const a = this.aNode
+		const b = this.bNode
+		const c = this.cNode
 
-		const a = this.aNode;
-		const b = this.bNode;
-		const c = this.cNode;
+		const coordinateSystem = builder.renderer.coordinateSystem
 
-		const coordinateSystem = builder.renderer.coordinateSystem;
-
-		if ( method === MathNode.TRANSFORM_DIRECTION ) {
-
+		if (method === MathNode.TRANSFORM_DIRECTION) {
 			// dir can be either a direction vector or a normal vector
 			// upper-left 3x3 of matrix is assumed to be orthogonal
 
-			let tA = a;
-			let tB = b;
+			let tA = a
+			let tB = b
 
-			if ( builder.isMatrix( tA.getNodeType( builder ) ) ) {
-
-				tB = vec4( vec3( tB ), 0.0 );
-
+			if (builder.isMatrix(tA.getNodeType(builder))) {
+				tB = vec4(vec3(tB), 0.0)
 			} else {
-
-				tA = vec4( vec3( tA ), 0.0 );
-
+				tA = vec4(vec3(tA), 0.0)
 			}
 
-			const mulNode = mul( tA, tB ).xyz;
+			const mulNode = mul(tA, tB).xyz
 
-			return normalize( mulNode ).build( builder, output );
-
-		} else if ( method === MathNode.NEGATE ) {
-
-			return builder.format( '( - ' + a.build( builder, inputType ) + ' )', type, output );
-
-		} else if ( method === MathNode.ONE_MINUS ) {
-
-			return sub( 1.0, a ).build( builder, output );
-
-		} else if ( method === MathNode.RECIPROCAL ) {
-
-			return div( 1.0, a ).build( builder, output );
-
-		} else if ( method === MathNode.DIFFERENCE ) {
-
-			return abs( sub( a, b ) ).build( builder, output );
-
+			return normalize(mulNode).build(builder, output)
+		} else if (method === MathNode.NEGATE) {
+			return builder.format(
+				'( - ' + a.build(builder, inputType) + ' )',
+				type,
+				output
+			)
+		} else if (method === MathNode.ONE_MINUS) {
+			return sub(1.0, a).build(builder, output)
+		} else if (method === MathNode.RECIPROCAL) {
+			return div(1.0, a).build(builder, output)
+		} else if (method === MathNode.DIFFERENCE) {
+			return abs(sub(a, b)).build(builder, output)
 		} else {
+			const params = []
 
-			const params = [];
-
-			if ( method === MathNode.CROSS || method === MathNode.MOD ) {
-
+			if (method === MathNode.CROSS || method === MathNode.MOD) {
+				params.push(a.build(builder, type), b.build(builder, type))
+			} else if (
+				coordinateSystem === WebGLCoordinateSystem &&
+				method === MathNode.STEP
+			) {
 				params.push(
-					a.build( builder, type ),
-					b.build( builder, type )
-				);
-
-			} else if ( coordinateSystem === WebGLCoordinateSystem && method === MathNode.STEP ) {
-
+					a.build(
+						builder,
+						builder.getTypeLength(a.getNodeType(builder)) === 1
+							? 'float'
+							: inputType
+					),
+					b.build(builder, inputType)
+				)
+			} else if (
+				(coordinateSystem === WebGLCoordinateSystem &&
+					(method === MathNode.MIN || method === MathNode.MAX)) ||
+				method === MathNode.MOD
+			) {
 				params.push(
-					a.build( builder, builder.getTypeLength( a.getNodeType( builder ) ) === 1 ? 'float' : inputType ),
-					b.build( builder, inputType )
-				);
-
-			} else if ( ( coordinateSystem === WebGLCoordinateSystem && ( method === MathNode.MIN || method === MathNode.MAX ) ) || method === MathNode.MOD ) {
-
+					a.build(builder, inputType),
+					b.build(
+						builder,
+						builder.getTypeLength(b.getNodeType(builder)) === 1
+							? 'float'
+							: inputType
+					)
+				)
+			} else if (method === MathNode.REFRACT) {
 				params.push(
-					a.build( builder, inputType ),
-					b.build( builder, builder.getTypeLength( b.getNodeType( builder ) ) === 1 ? 'float' : inputType )
-				);
-
-			} else if ( method === MathNode.REFRACT ) {
-
+					a.build(builder, inputType),
+					b.build(builder, inputType),
+					c.build(builder, 'float')
+				)
+			} else if (method === MathNode.MIX) {
 				params.push(
-					a.build( builder, inputType ),
-					b.build( builder, inputType ),
-					c.build( builder, 'float' )
-				);
-
-			} else if ( method === MathNode.MIX ) {
-
-				params.push(
-					a.build( builder, inputType ),
-					b.build( builder, inputType ),
-					c.build( builder, builder.getTypeLength( c.getNodeType( builder ) ) === 1 ? 'float' : inputType )
-				);
-
+					a.build(builder, inputType),
+					b.build(builder, inputType),
+					c.build(
+						builder,
+						builder.getTypeLength(c.getNodeType(builder)) === 1
+							? 'float'
+							: inputType
+					)
+				)
 			} else {
-
-				if ( coordinateSystem === WebGPUCoordinateSystem && method === MathNode.ATAN && b !== null ) {
-
-					method = 'atan2';
-
+				if (
+					coordinateSystem === WebGPUCoordinateSystem &&
+					method === MathNode.ATAN &&
+					b !== null
+				) {
+					method = 'atan2'
 				}
 
-				params.push( a.build( builder, inputType ) );
-				if ( b !== null ) params.push( b.build( builder, inputType ) );
-				if ( c !== null ) params.push( c.build( builder, inputType ) );
-
+				params.push(a.build(builder, inputType))
+				if (b !== null) params.push(b.build(builder, inputType))
+				if (c !== null) params.push(c.build(builder, inputType))
 			}
 
-			return builder.format( `${ builder.getMethod( method, type ) }( ${params.join( ', ' )} )`, type, output );
-
+			return builder.format(
+				`${builder.getMethod(method, type)}( ${params.join(', ')} )`,
+				type,
+				output
+			)
 		}
-
 	}
 
-	serialize( data ) {
+	serialize(data) {
+		super.serialize(data)
 
-		super.serialize( data );
-
-		data.method = this.method;
-
+		data.method = this.method
 	}
 
-	deserialize( data ) {
+	deserialize(data) {
+		super.deserialize(data)
 
-		super.deserialize( data );
-
-		this.method = data.method;
-
+		this.method = data.method
 	}
-
 }
 
 // 1 input
 
-MathNode.ALL = 'all';
-MathNode.ANY = 'any';
+MathNode.ALL = 'all'
+MathNode.ANY = 'any'
 
-MathNode.RADIANS = 'radians';
-MathNode.DEGREES = 'degrees';
-MathNode.EXP = 'exp';
-MathNode.EXP2 = 'exp2';
-MathNode.LOG = 'log';
-MathNode.LOG2 = 'log2';
-MathNode.SQRT = 'sqrt';
-MathNode.INVERSE_SQRT = 'inversesqrt';
-MathNode.FLOOR = 'floor';
-MathNode.CEIL = 'ceil';
-MathNode.NORMALIZE = 'normalize';
-MathNode.FRACT = 'fract';
-MathNode.SIN = 'sin';
-MathNode.COS = 'cos';
-MathNode.TAN = 'tan';
-MathNode.ASIN = 'asin';
-MathNode.ACOS = 'acos';
-MathNode.ATAN = 'atan';
-MathNode.ABS = 'abs';
-MathNode.SIGN = 'sign';
-MathNode.LENGTH = 'length';
-MathNode.NEGATE = 'negate';
-MathNode.ONE_MINUS = 'oneMinus';
-MathNode.DFDX = 'dFdx';
-MathNode.DFDY = 'dFdy';
-MathNode.ROUND = 'round';
-MathNode.RECIPROCAL = 'reciprocal';
-MathNode.TRUNC = 'trunc';
-MathNode.FWIDTH = 'fwidth';
-MathNode.TRANSPOSE = 'transpose';
+MathNode.RADIANS = 'radians'
+MathNode.DEGREES = 'degrees'
+MathNode.EXP = 'exp'
+MathNode.EXP2 = 'exp2'
+MathNode.LOG = 'log'
+MathNode.LOG2 = 'log2'
+MathNode.SQRT = 'sqrt'
+MathNode.INVERSE_SQRT = 'inversesqrt'
+MathNode.FLOOR = 'floor'
+MathNode.CEIL = 'ceil'
+MathNode.NORMALIZE = 'normalize'
+MathNode.FRACT = 'fract'
+MathNode.SIN = 'sin'
+MathNode.COS = 'cos'
+MathNode.TAN = 'tan'
+MathNode.ASIN = 'asin'
+MathNode.ACOS = 'acos'
+MathNode.ATAN = 'atan'
+MathNode.ABS = 'abs'
+MathNode.SIGN = 'sign'
+MathNode.LENGTH = 'length'
+MathNode.NEGATE = 'negate'
+MathNode.ONE_MINUS = 'oneMinus'
+MathNode.DFDX = 'dFdx'
+MathNode.DFDY = 'dFdy'
+MathNode.ROUND = 'round'
+MathNode.RECIPROCAL = 'reciprocal'
+MathNode.TRUNC = 'trunc'
+MathNode.FWIDTH = 'fwidth'
+MathNode.TRANSPOSE = 'transpose'
 
 // 2 inputs
 
-MathNode.BITCAST = 'bitcast';
-MathNode.EQUALS = 'equals';
-MathNode.MIN = 'min';
-MathNode.MAX = 'max';
-MathNode.MOD = 'mod';
-MathNode.STEP = 'step';
-MathNode.REFLECT = 'reflect';
-MathNode.DISTANCE = 'distance';
-MathNode.DIFFERENCE = 'difference';
-MathNode.DOT = 'dot';
-MathNode.CROSS = 'cross';
-MathNode.POW = 'pow';
-MathNode.TRANSFORM_DIRECTION = 'transformDirection';
+MathNode.BITCAST = 'bitcast'
+MathNode.EQUALS = 'equals'
+MathNode.MIN = 'min'
+MathNode.MAX = 'max'
+MathNode.MOD = 'mod'
+MathNode.STEP = 'step'
+MathNode.REFLECT = 'reflect'
+MathNode.DISTANCE = 'distance'
+MathNode.DIFFERENCE = 'difference'
+MathNode.DOT = 'dot'
+MathNode.CROSS = 'cross'
+MathNode.POW = 'pow'
+MathNode.TRANSFORM_DIRECTION = 'transformDirection'
 
 // 3 inputs
 
-MathNode.MIX = 'mix';
-MathNode.CLAMP = 'clamp';
-MathNode.REFRACT = 'refract';
-MathNode.SMOOTHSTEP = 'smoothstep';
-MathNode.FACEFORWARD = 'faceforward';
+MathNode.MIX = 'mix'
+MathNode.CLAMP = 'clamp'
+MathNode.REFRACT = 'refract'
+MathNode.SMOOTHSTEP = 'smoothstep'
+MathNode.FACEFORWARD = 'faceforward'
 
-export default MathNode;
+export default MathNode
 
 // 1 inputs
 
@@ -345,28 +331,28 @@ export default MathNode;
  *
  * @type {Node<float>}
  */
-export const EPSILON = /*@__PURE__*/ float( 1e-6 );
+export const EPSILON = /*@__PURE__*/ float(1e-6)
 
 /**
  * Represents infinity.
  *
  * @type {Node<float>}
  */
-export const INFINITY = /*@__PURE__*/ float( 1e6 );
+export const INFINITY = /*@__PURE__*/ float(1e6)
 
 /**
  * Represents PI.
  *
  * @type {Node<float>}
  */
-export const PI = /*@__PURE__*/ float( Math.PI );
+export const PI = /*@__PURE__*/ float(Math.PI)
 
 /**
  * Represents PI * 2.
  *
  * @type {Node<float>}
  */
-export const PI2 = /*@__PURE__*/ float( Math.PI * 2 );
+export const PI2 = /*@__PURE__*/ float(Math.PI * 2)
 
 /**
  * Returns `true` if all components of `x` are `true`.
@@ -375,7 +361,7 @@ export const PI2 = /*@__PURE__*/ float( Math.PI * 2 );
  * @param {Node | Number} x - The parameter.
  * @returns {Node<bool>}
  */
-export const all = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ALL );
+export const all = /*@__PURE__*/ nodeProxy(MathNode, MathNode.ALL)
 
 /**
  * Returns `true` if any components of `x` are `true`.
@@ -384,7 +370,7 @@ export const all = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ALL );
  * @param {Node | Number} x - The parameter.
  * @returns {Node<bool>}
  */
-export const any = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ANY );
+export const any = /*@__PURE__*/ nodeProxy(MathNode, MathNode.ANY)
 
 /**
  * Converts a quantity in degrees to radians.
@@ -393,7 +379,7 @@ export const any = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ANY );
  * @param {Node | Number} x - The input in degrees.
  * @returns {Node}
  */
-export const radians = /*@__PURE__*/ nodeProxy( MathNode, MathNode.RADIANS );
+export const radians = /*@__PURE__*/ nodeProxy(MathNode, MathNode.RADIANS)
 
 /**
  * Convert a quantity in radians to degrees.
@@ -402,7 +388,7 @@ export const radians = /*@__PURE__*/ nodeProxy( MathNode, MathNode.RADIANS );
  * @param {Node | Number} x - The input in radians.
  * @returns {Node}
  */
-export const degrees = /*@__PURE__*/ nodeProxy( MathNode, MathNode.DEGREES );
+export const degrees = /*@__PURE__*/ nodeProxy(MathNode, MathNode.DEGREES)
 
 /**
  * Returns the natural exponentiation of the parameter.
@@ -411,7 +397,7 @@ export const degrees = /*@__PURE__*/ nodeProxy( MathNode, MathNode.DEGREES );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const exp = /*@__PURE__*/ nodeProxy( MathNode, MathNode.EXP );
+export const exp = /*@__PURE__*/ nodeProxy(MathNode, MathNode.EXP)
 
 /**
  * Returns 2 raised to the power of the parameter.
@@ -420,7 +406,7 @@ export const exp = /*@__PURE__*/ nodeProxy( MathNode, MathNode.EXP );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const exp2 = /*@__PURE__*/ nodeProxy( MathNode, MathNode.EXP2 );
+export const exp2 = /*@__PURE__*/ nodeProxy(MathNode, MathNode.EXP2)
 
 /**
  * Returns the natural logarithm of the parameter.
@@ -429,7 +415,7 @@ export const exp2 = /*@__PURE__*/ nodeProxy( MathNode, MathNode.EXP2 );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const log = /*@__PURE__*/ nodeProxy( MathNode, MathNode.LOG );
+export const log = /*@__PURE__*/ nodeProxy(MathNode, MathNode.LOG)
 
 /**
  * Returns the base 2 logarithm of the parameter.
@@ -438,7 +424,7 @@ export const log = /*@__PURE__*/ nodeProxy( MathNode, MathNode.LOG );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const log2 = /*@__PURE__*/ nodeProxy( MathNode, MathNode.LOG2 );
+export const log2 = /*@__PURE__*/ nodeProxy(MathNode, MathNode.LOG2)
 
 /**
  * Returns the square root of the parameter.
@@ -447,7 +433,7 @@ export const log2 = /*@__PURE__*/ nodeProxy( MathNode, MathNode.LOG2 );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const sqrt = /*@__PURE__*/ nodeProxy( MathNode, MathNode.SQRT );
+export const sqrt = /*@__PURE__*/ nodeProxy(MathNode, MathNode.SQRT)
 
 /**
  * Returns the inverse of the square root of the parameter.
@@ -456,7 +442,10 @@ export const sqrt = /*@__PURE__*/ nodeProxy( MathNode, MathNode.SQRT );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const inverseSqrt = /*@__PURE__*/ nodeProxy( MathNode, MathNode.INVERSE_SQRT );
+export const inverseSqrt = /*@__PURE__*/ nodeProxy(
+	MathNode,
+	MathNode.INVERSE_SQRT
+)
 
 /**
  * Finds the nearest integer less than or equal to the parameter.
@@ -465,7 +454,7 @@ export const inverseSqrt = /*@__PURE__*/ nodeProxy( MathNode, MathNode.INVERSE_S
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const floor = /*@__PURE__*/ nodeProxy( MathNode, MathNode.FLOOR );
+export const floor = /*@__PURE__*/ nodeProxy(MathNode, MathNode.FLOOR)
 
 /**
  * Finds the nearest integer that is greater than or equal to the parameter.
@@ -474,7 +463,7 @@ export const floor = /*@__PURE__*/ nodeProxy( MathNode, MathNode.FLOOR );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const ceil = /*@__PURE__*/ nodeProxy( MathNode, MathNode.CEIL );
+export const ceil = /*@__PURE__*/ nodeProxy(MathNode, MathNode.CEIL)
 
 /**
  * Calculates the unit vector in the same direction as the original vector.
@@ -483,7 +472,7 @@ export const ceil = /*@__PURE__*/ nodeProxy( MathNode, MathNode.CEIL );
  * @param {Node} x - The input vector.
  * @returns {Node}
  */
-export const normalize = /*@__PURE__*/ nodeProxy( MathNode, MathNode.NORMALIZE );
+export const normalize = /*@__PURE__*/ nodeProxy(MathNode, MathNode.NORMALIZE)
 
 /**
  * Computes the fractional part of the parameter.
@@ -492,7 +481,7 @@ export const normalize = /*@__PURE__*/ nodeProxy( MathNode, MathNode.NORMALIZE )
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const fract = /*@__PURE__*/ nodeProxy( MathNode, MathNode.FRACT );
+export const fract = /*@__PURE__*/ nodeProxy(MathNode, MathNode.FRACT)
 
 /**
  * Returns the sine of the parameter.
@@ -501,7 +490,7 @@ export const fract = /*@__PURE__*/ nodeProxy( MathNode, MathNode.FRACT );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const sin = /*@__PURE__*/ nodeProxy( MathNode, MathNode.SIN );
+export const sin = /*@__PURE__*/ nodeProxy(MathNode, MathNode.SIN)
 
 /**
  * Returns the cosine of the parameter.
@@ -510,7 +499,7 @@ export const sin = /*@__PURE__*/ nodeProxy( MathNode, MathNode.SIN );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const cos = /*@__PURE__*/ nodeProxy( MathNode, MathNode.COS );
+export const cos = /*@__PURE__*/ nodeProxy(MathNode, MathNode.COS)
 
 /**
  * Returns the tangent of the parameter.
@@ -519,7 +508,7 @@ export const cos = /*@__PURE__*/ nodeProxy( MathNode, MathNode.COS );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const tan = /*@__PURE__*/ nodeProxy( MathNode, MathNode.TAN );
+export const tan = /*@__PURE__*/ nodeProxy(MathNode, MathNode.TAN)
 
 /**
  * Returns the arcsine of the parameter.
@@ -528,7 +517,7 @@ export const tan = /*@__PURE__*/ nodeProxy( MathNode, MathNode.TAN );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const asin = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ASIN );
+export const asin = /*@__PURE__*/ nodeProxy(MathNode, MathNode.ASIN)
 
 /**
  * Returns the arccosine of the parameter.
@@ -537,7 +526,7 @@ export const asin = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ASIN );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const acos = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ACOS );
+export const acos = /*@__PURE__*/ nodeProxy(MathNode, MathNode.ACOS)
 
 /**
  * Returns the arc-tangent of the parameter.
@@ -548,7 +537,7 @@ export const acos = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ACOS );
  * @param {(Node | Number)?} x - The x parameter.
  * @returns {Node}
  */
-export const atan = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ATAN );
+export const atan = /*@__PURE__*/ nodeProxy(MathNode, MathNode.ATAN)
 
 /**
  * Returns the absolute value of the parameter.
@@ -557,7 +546,7 @@ export const atan = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ATAN );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const abs = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ABS );
+export const abs = /*@__PURE__*/ nodeProxy(MathNode, MathNode.ABS)
 
 /**
  * Extracts the sign of the parameter.
@@ -566,7 +555,7 @@ export const abs = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ABS );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const sign = /*@__PURE__*/ nodeProxy( MathNode, MathNode.SIGN );
+export const sign = /*@__PURE__*/ nodeProxy(MathNode, MathNode.SIGN)
 
 /**
  * Calculates the length of a vector.
@@ -575,7 +564,7 @@ export const sign = /*@__PURE__*/ nodeProxy( MathNode, MathNode.SIGN );
  * @param {Node} x - The parameter.
  * @returns {Node<float>}
  */
-export const length = /*@__PURE__*/ nodeProxy( MathNode, MathNode.LENGTH );
+export const length = /*@__PURE__*/ nodeProxy(MathNode, MathNode.LENGTH)
 
 /**
  * Negates the value of the parameter (-x).
@@ -584,7 +573,7 @@ export const length = /*@__PURE__*/ nodeProxy( MathNode, MathNode.LENGTH );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const negate = /*@__PURE__*/ nodeProxy( MathNode, MathNode.NEGATE );
+export const negate = /*@__PURE__*/ nodeProxy(MathNode, MathNode.NEGATE)
 
 /**
  * Return `1` minus the parameter.
@@ -593,7 +582,7 @@ export const negate = /*@__PURE__*/ nodeProxy( MathNode, MathNode.NEGATE );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const oneMinus = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ONE_MINUS );
+export const oneMinus = /*@__PURE__*/ nodeProxy(MathNode, MathNode.ONE_MINUS)
 
 /**
  * Returns the partial derivative of the parameter with respect to x.
@@ -602,7 +591,7 @@ export const oneMinus = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ONE_MINUS );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const dFdx = /*@__PURE__*/ nodeProxy( MathNode, MathNode.DFDX );
+export const dFdx = /*@__PURE__*/ nodeProxy(MathNode, MathNode.DFDX)
 
 /**
  * Returns the partial derivative of the parameter with respect to y.
@@ -611,7 +600,7 @@ export const dFdx = /*@__PURE__*/ nodeProxy( MathNode, MathNode.DFDX );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const dFdy = /*@__PURE__*/ nodeProxy( MathNode, MathNode.DFDY );
+export const dFdy = /*@__PURE__*/ nodeProxy(MathNode, MathNode.DFDY)
 
 /**
  * Rounds the parameter to the nearest integer.
@@ -620,7 +609,7 @@ export const dFdy = /*@__PURE__*/ nodeProxy( MathNode, MathNode.DFDY );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const round = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ROUND );
+export const round = /*@__PURE__*/ nodeProxy(MathNode, MathNode.ROUND)
 
 /**
  * Returns the reciprocal of the parameter `(1/x)`.
@@ -629,7 +618,7 @@ export const round = /*@__PURE__*/ nodeProxy( MathNode, MathNode.ROUND );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const reciprocal = /*@__PURE__*/ nodeProxy( MathNode, MathNode.RECIPROCAL );
+export const reciprocal = /*@__PURE__*/ nodeProxy(MathNode, MathNode.RECIPROCAL)
 
 /**
  * Truncates the parameter, removing the fractional part.
@@ -638,7 +627,7 @@ export const reciprocal = /*@__PURE__*/ nodeProxy( MathNode, MathNode.RECIPROCAL
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const trunc = /*@__PURE__*/ nodeProxy( MathNode, MathNode.TRUNC );
+export const trunc = /*@__PURE__*/ nodeProxy(MathNode, MathNode.TRUNC)
 
 /**
  * Returns the sum of the absolute derivatives in x and y.
@@ -647,7 +636,7 @@ export const trunc = /*@__PURE__*/ nodeProxy( MathNode, MathNode.TRUNC );
  * @param {Node | Number} x - The parameter.
  * @returns {Node}
  */
-export const fwidth = /*@__PURE__*/ nodeProxy( MathNode, MathNode.FWIDTH );
+export const fwidth = /*@__PURE__*/ nodeProxy(MathNode, MathNode.FWIDTH)
 
 /**
  * Returns the transpose of a matrix.
@@ -656,7 +645,7 @@ export const fwidth = /*@__PURE__*/ nodeProxy( MathNode, MathNode.FWIDTH );
  * @param {Node<mat2|mat3|mat4>} x - The parameter.
  * @returns {Node}
  */
-export const transpose = /*@__PURE__*/ nodeProxy( MathNode, MathNode.TRANSPOSE );
+export const transpose = /*@__PURE__*/ nodeProxy(MathNode, MathNode.TRANSPOSE)
 
 // 2 inputs
 
@@ -668,7 +657,7 @@ export const transpose = /*@__PURE__*/ nodeProxy( MathNode, MathNode.TRANSPOSE )
  * @param {String} y - The new type.
  * @returns {Node}
  */
-export const bitcast = /*@__PURE__*/ nodeProxy( MathNode, MathNode.BITCAST );
+export const bitcast = /*@__PURE__*/ nodeProxy(MathNode, MathNode.BITCAST)
 
 /**
  * Returns `true` if `x` equals `y`.
@@ -678,7 +667,7 @@ export const bitcast = /*@__PURE__*/ nodeProxy( MathNode, MathNode.BITCAST );
  * @param {Node | Number} y - The second parameter.
  * @returns {Node<bool>}
  */
-export const equals = /*@__PURE__*/ nodeProxy( MathNode, MathNode.EQUALS );
+export const equals = /*@__PURE__*/ nodeProxy(MathNode, MathNode.EQUALS)
 
 /**
  * Returns the lesser of two values.
@@ -688,7 +677,7 @@ export const equals = /*@__PURE__*/ nodeProxy( MathNode, MathNode.EQUALS );
  * @param {Node | Number} y - The x parameter.
  * @returns {Node}
  */
-export const min = /*@__PURE__*/ nodeProxy( MathNode, MathNode.MIN );
+export const min = /*@__PURE__*/ nodeProxy(MathNode, MathNode.MIN)
 
 /**
  * Returns the greater of two values.
@@ -698,7 +687,7 @@ export const min = /*@__PURE__*/ nodeProxy( MathNode, MathNode.MIN );
  * @param {Node | Number} y - The x parameter.
  * @returns {Node}
  */
-export const max = /*@__PURE__*/ nodeProxy( MathNode, MathNode.MAX );
+export const max = /*@__PURE__*/ nodeProxy(MathNode, MathNode.MAX)
 
 /**
  * Computes the remainder of dividing the first node by the second one.
@@ -708,7 +697,7 @@ export const max = /*@__PURE__*/ nodeProxy( MathNode, MathNode.MAX );
  * @param {Node | Number} y - The x parameter.
  * @returns {Node}
  */
-export const mod = /*@__PURE__*/ nodeProxy( MathNode, MathNode.MOD );
+export const mod = /*@__PURE__*/ nodeProxy(MathNode, MathNode.MOD)
 
 /**
  * Generate a step function by comparing two values.
@@ -718,7 +707,7 @@ export const mod = /*@__PURE__*/ nodeProxy( MathNode, MathNode.MOD );
  * @param {Node | Number} y - The x parameter.
  * @returns {Node}
  */
-export const step = /*@__PURE__*/ nodeProxy( MathNode, MathNode.STEP );
+export const step = /*@__PURE__*/ nodeProxy(MathNode, MathNode.STEP)
 
 /**
  * Calculates the reflection direction for an incident vector.
@@ -728,7 +717,7 @@ export const step = /*@__PURE__*/ nodeProxy( MathNode, MathNode.STEP );
  * @param {Node<vec2|vec3|vec4>} N - The normal vector.
  * @returns {Node<vec2|vec3|vec4>}
  */
-export const reflect = /*@__PURE__*/ nodeProxy( MathNode, MathNode.REFLECT );
+export const reflect = /*@__PURE__*/ nodeProxy(MathNode, MathNode.REFLECT)
 
 /**
  * Calculates the distance between two points.
@@ -738,7 +727,7 @@ export const reflect = /*@__PURE__*/ nodeProxy( MathNode, MathNode.REFLECT );
  * @param {Node<vec2|vec3|vec4>} y - The second point.
  * @returns {Node<float>}
  */
-export const distance = /*@__PURE__*/ nodeProxy( MathNode, MathNode.DISTANCE );
+export const distance = /*@__PURE__*/ nodeProxy(MathNode, MathNode.DISTANCE)
 
 /**
  * Calculates the absolute difference between two values.
@@ -748,7 +737,7 @@ export const distance = /*@__PURE__*/ nodeProxy( MathNode, MathNode.DISTANCE );
  * @param {Node | Number} y - The second parameter.
  * @returns {Node}
  */
-export const difference = /*@__PURE__*/ nodeProxy( MathNode, MathNode.DIFFERENCE );
+export const difference = /*@__PURE__*/ nodeProxy(MathNode, MathNode.DIFFERENCE)
 
 /**
  * Calculates the dot product of two vectors.
@@ -758,7 +747,7 @@ export const difference = /*@__PURE__*/ nodeProxy( MathNode, MathNode.DIFFERENCE
  * @param {Node<vec2|vec3|vec4>} y - The second vector.
  * @returns {Node<float>}
  */
-export const dot = /*@__PURE__*/ nodeProxy( MathNode, MathNode.DOT );
+export const dot = /*@__PURE__*/ nodeProxy(MathNode, MathNode.DOT)
 
 /**
  * Calculates the cross product of two vectors.
@@ -768,7 +757,7 @@ export const dot = /*@__PURE__*/ nodeProxy( MathNode, MathNode.DOT );
  * @param {Node<vec2|vec3|vec4>} y - The second vector.
  * @returns {Node<vec2|vec3|vec4>}
  */
-export const cross = /*@__PURE__*/ nodeProxy( MathNode, MathNode.CROSS );
+export const cross = /*@__PURE__*/ nodeProxy(MathNode, MathNode.CROSS)
 
 /**
  * Return the value of the first parameter raised to the power of the second one.
@@ -778,7 +767,7 @@ export const cross = /*@__PURE__*/ nodeProxy( MathNode, MathNode.CROSS );
  * @param {Node | Number} y - The second parameter.
  * @returns {Node}
  */
-export const pow = /*@__PURE__*/ nodeProxy( MathNode, MathNode.POW );
+export const pow = /*@__PURE__*/ nodeProxy(MathNode, MathNode.POW)
 
 /**
  * Returns the square of the parameter.
@@ -787,7 +776,7 @@ export const pow = /*@__PURE__*/ nodeProxy( MathNode, MathNode.POW );
  * @param {Node | Number} x - The first parameter.
  * @returns {Node}
  */
-export const pow2 = /*@__PURE__*/ nodeProxy( MathNode, MathNode.POW, 2 );
+export const pow2 = /*@__PURE__*/ nodeProxy(MathNode, MathNode.POW, 2)
 
 /**
  * Returns the cube of the parameter.
@@ -796,7 +785,7 @@ export const pow2 = /*@__PURE__*/ nodeProxy( MathNode, MathNode.POW, 2 );
  * @param {Node | Number} x - The first parameter.
  * @returns {Node}
  */
-export const pow3 = /*@__PURE__*/ nodeProxy( MathNode, MathNode.POW, 3 );
+export const pow3 = /*@__PURE__*/ nodeProxy(MathNode, MathNode.POW, 3)
 
 /**
  * Returns the fourth power of the parameter.
@@ -805,7 +794,7 @@ export const pow3 = /*@__PURE__*/ nodeProxy( MathNode, MathNode.POW, 3 );
  * @param {Node | Number} x - The first parameter.
  * @returns {Node}
  */
-export const pow4 = /*@__PURE__*/ nodeProxy( MathNode, MathNode.POW, 4 );
+export const pow4 = /*@__PURE__*/ nodeProxy(MathNode, MathNode.POW, 4)
 
 /**
  * Transforms the direction of a vector by a matrix and then normalizes the result.
@@ -815,7 +804,10 @@ export const pow4 = /*@__PURE__*/ nodeProxy( MathNode, MathNode.POW, 4 );
  * @param {Node<mat2|mat3|mat4>} matrix - The transformation matrix.
  * @returns {Node}
  */
-export const transformDirection = /*@__PURE__*/ nodeProxy( MathNode, MathNode.TRANSFORM_DIRECTION );
+export const transformDirection = /*@__PURE__*/ nodeProxy(
+	MathNode,
+	MathNode.TRANSFORM_DIRECTION
+)
 
 /**
  * Returns the cube root of a number.
@@ -824,7 +816,7 @@ export const transformDirection = /*@__PURE__*/ nodeProxy( MathNode, MathNode.TR
  * @param {Node | Number} a - The first parameter.
  * @returns {Node}
  */
-export const cbrt = ( a ) => mul( sign( a ), pow( abs( a ), 1.0 / 3.0 ) );
+export const cbrt = a => mul(sign(a), pow(abs(a), 1.0 / 3.0))
 
 /**
  * Calculate the squared length of a vector.
@@ -833,7 +825,7 @@ export const cbrt = ( a ) => mul( sign( a ), pow( abs( a ), 1.0 / 3.0 ) );
  * @param {Node<vec2|vec3|vec4>} a - The vector.
  * @returns {Node<float>}
  */
-export const lengthSq = ( a ) => dot( a, a );
+export const lengthSq = a => dot(a, a)
 
 /**
  * Linearly interpolates between two values.
@@ -844,7 +836,7 @@ export const lengthSq = ( a ) => dot( a, a );
  * @param {Node | Number} t - The interpolation value.
  * @returns {Node}
  */
-export const mix = /*@__PURE__*/ nodeProxy( MathNode, MathNode.MIX );
+export const mix = /*@__PURE__*/ nodeProxy(MathNode, MathNode.MIX)
 
 /**
  * Constrains a value to lie between two further values.
@@ -855,7 +847,15 @@ export const mix = /*@__PURE__*/ nodeProxy( MathNode, MathNode.MIX );
  * @param {Node | Number} [high=1] - The upper bound.
  * @returns {Node}
  */
-export const clamp = ( value, low = 0, high = 1 ) => nodeObject( new MathNode( MathNode.CLAMP, nodeObject( value ), nodeObject( low ), nodeObject( high ) ) );
+export const clamp = (value, low = 0, high = 1) =>
+	nodeObject(
+		new MathNode(
+			MathNode.CLAMP,
+			nodeObject(value),
+			nodeObject(low),
+			nodeObject(high)
+		)
+	)
 
 /**
  * Constrains a value between `0` and `1`.
@@ -864,7 +864,7 @@ export const clamp = ( value, low = 0, high = 1 ) => nodeObject( new MathNode( M
  * @param {Node | Number} value - The value to constrain.
  * @returns {Node}
  */
-export const saturate = ( value ) => clamp( value );
+export const saturate = value => clamp(value)
 
 /**
  * Calculates the refraction direction for an incident vector.
@@ -875,7 +875,7 @@ export const saturate = ( value ) => clamp( value );
  * @param {Node<float>} eta - The the ratio of indices of refraction.
  * @returns {Node<vec2|vec3|vec4>}
  */
-export const refract = /*@__PURE__*/ nodeProxy( MathNode, MathNode.REFRACT );
+export const refract = /*@__PURE__*/ nodeProxy(MathNode, MathNode.REFRACT)
 
 /**
  * Performs a Hermite interpolation between two values.
@@ -886,7 +886,7 @@ export const refract = /*@__PURE__*/ nodeProxy( MathNode, MathNode.REFRACT );
  * @param {Node | Number} x - The source value for interpolation.
  * @returns {Node}
  */
-export const smoothstep = /*@__PURE__*/ nodeProxy( MathNode, MathNode.SMOOTHSTEP );
+export const smoothstep = /*@__PURE__*/ nodeProxy(MathNode, MathNode.SMOOTHSTEP)
 
 /**
  * Returns a vector pointing in the same direction as another.
@@ -897,7 +897,10 @@ export const smoothstep = /*@__PURE__*/ nodeProxy( MathNode, MathNode.SMOOTHSTEP
  * @param {Node<vec2|vec3|vec4>} Nref - The reference vector.
  * @returns {Node<vec2|vec3|vec4>}
  */
-export const faceForward = /*@__PURE__*/ nodeProxy( MathNode, MathNode.FACEFORWARD );
+export const faceForward = /*@__PURE__*/ nodeProxy(
+	MathNode,
+	MathNode.FACEFORWARD
+)
 
 /**
  * Returns a random value for the given uv.
@@ -906,14 +909,15 @@ export const faceForward = /*@__PURE__*/ nodeProxy( MathNode, MathNode.FACEFORWA
  * @param {Node<vec2>} uv - The uv node.
  * @returns {Node<float>}
  */
-export const rand = /*@__PURE__*/ Fn( ( [ uv ] ) => {
+export const rand = /*@__PURE__*/ Fn(([uv]) => {
+	const a = 12.9898,
+		b = 78.233,
+		c = 43758.5453
+	const dt = dot(uv.xy, vec2(a, b)),
+		sn = mod(dt, PI)
 
-	const a = 12.9898, b = 78.233, c = 43758.5453;
-	const dt = dot( uv.xy, vec2( a, b ) ), sn = mod( dt, PI );
-
-	return fract( sin( sn ).mul( c ) );
-
-} );
+	return fract(sin(sn).mul(c))
+})
 
 /**
  * Alias for `mix()` with a different parameter order.
@@ -924,7 +928,7 @@ export const rand = /*@__PURE__*/ Fn( ( [ uv ] ) => {
  * @param {Node | Number} e2 - The second parameter.
  * @returns {Node}
  */
-export const mixElement = ( t, e1, e2 ) => mix( e1, e2, t );
+export const mixElement = (t, e1, e2) => mix(e1, e2, t)
 
 /**
  * Alias for `smoothstep()` with a different parameter order.
@@ -935,7 +939,7 @@ export const mixElement = ( t, e1, e2 ) => mix( e1, e2, t );
  * @param {Node | Number} high - The value of the upper edge of the Hermite function.
  * @returns {Node}
  */
-export const smoothstepElement = ( x, low, high ) => smoothstep( low, high, x );
+export const smoothstepElement = (x, low, high) => smoothstep(low, high, x)
 
 /**
  * Returns the arc-tangent of the quotient of its parameters.
@@ -947,75 +951,75 @@ export const smoothstepElement = ( x, low, high ) => smoothstep( low, high, x );
  * @param {Node | Number} x - The x parameter.
  * @returns {Node}
  */
-export const atan2 = ( y, x ) => { // @deprecated, r172
+export const atan2 = (y, x) => {
+	// @deprecated, r172
 
-	console.warn( 'THREE.TSL: "atan2" is overloaded. Use "atan" instead.' );
-	return atan( y, x );
-
-};
+	console.warn('THREE.TSL: "atan2" is overloaded. Use "atan" instead.')
+	return atan(y, x)
+}
 
 // GLSL alias function
 
-export const faceforward = faceForward;
-export const inversesqrt = inverseSqrt;
+export const faceforward = faceForward
+export const inversesqrt = inverseSqrt
 
 // Method chaining
 
-addMethodChaining( 'all', all );
-addMethodChaining( 'any', any );
-addMethodChaining( 'equals', equals );
+addMethodChaining('all', all)
+addMethodChaining('any', any)
+addMethodChaining('equals', equals)
 
-addMethodChaining( 'radians', radians );
-addMethodChaining( 'degrees', degrees );
-addMethodChaining( 'exp', exp );
-addMethodChaining( 'exp2', exp2 );
-addMethodChaining( 'log', log );
-addMethodChaining( 'log2', log2 );
-addMethodChaining( 'sqrt', sqrt );
-addMethodChaining( 'inverseSqrt', inverseSqrt );
-addMethodChaining( 'floor', floor );
-addMethodChaining( 'ceil', ceil );
-addMethodChaining( 'normalize', normalize );
-addMethodChaining( 'fract', fract );
-addMethodChaining( 'sin', sin );
-addMethodChaining( 'cos', cos );
-addMethodChaining( 'tan', tan );
-addMethodChaining( 'asin', asin );
-addMethodChaining( 'acos', acos );
-addMethodChaining( 'atan', atan );
-addMethodChaining( 'abs', abs );
-addMethodChaining( 'sign', sign );
-addMethodChaining( 'length', length );
-addMethodChaining( 'lengthSq', lengthSq );
-addMethodChaining( 'negate', negate );
-addMethodChaining( 'oneMinus', oneMinus );
-addMethodChaining( 'dFdx', dFdx );
-addMethodChaining( 'dFdy', dFdy );
-addMethodChaining( 'round', round );
-addMethodChaining( 'reciprocal', reciprocal );
-addMethodChaining( 'trunc', trunc );
-addMethodChaining( 'fwidth', fwidth );
-addMethodChaining( 'atan2', atan2 );
-addMethodChaining( 'min', min );
-addMethodChaining( 'max', max );
-addMethodChaining( 'mod', mod );
-addMethodChaining( 'step', step );
-addMethodChaining( 'reflect', reflect );
-addMethodChaining( 'distance', distance );
-addMethodChaining( 'dot', dot );
-addMethodChaining( 'cross', cross );
-addMethodChaining( 'pow', pow );
-addMethodChaining( 'pow2', pow2 );
-addMethodChaining( 'pow3', pow3 );
-addMethodChaining( 'pow4', pow4 );
-addMethodChaining( 'transformDirection', transformDirection );
-addMethodChaining( 'mix', mixElement );
-addMethodChaining( 'clamp', clamp );
-addMethodChaining( 'refract', refract );
-addMethodChaining( 'smoothstep', smoothstepElement );
-addMethodChaining( 'faceForward', faceForward );
-addMethodChaining( 'difference', difference );
-addMethodChaining( 'saturate', saturate );
-addMethodChaining( 'cbrt', cbrt );
-addMethodChaining( 'transpose', transpose );
-addMethodChaining( 'rand', rand );
+addMethodChaining('radians', radians)
+addMethodChaining('degrees', degrees)
+addMethodChaining('exp', exp)
+addMethodChaining('exp2', exp2)
+addMethodChaining('log', log)
+addMethodChaining('log2', log2)
+addMethodChaining('sqrt', sqrt)
+addMethodChaining('inverseSqrt', inverseSqrt)
+addMethodChaining('floor', floor)
+addMethodChaining('ceil', ceil)
+addMethodChaining('normalize', normalize)
+addMethodChaining('fract', fract)
+addMethodChaining('sin', sin)
+addMethodChaining('cos', cos)
+addMethodChaining('tan', tan)
+addMethodChaining('asin', asin)
+addMethodChaining('acos', acos)
+addMethodChaining('atan', atan)
+addMethodChaining('abs', abs)
+addMethodChaining('sign', sign)
+addMethodChaining('length', length)
+addMethodChaining('lengthSq', lengthSq)
+addMethodChaining('negate', negate)
+addMethodChaining('oneMinus', oneMinus)
+addMethodChaining('dFdx', dFdx)
+addMethodChaining('dFdy', dFdy)
+addMethodChaining('round', round)
+addMethodChaining('reciprocal', reciprocal)
+addMethodChaining('trunc', trunc)
+addMethodChaining('fwidth', fwidth)
+addMethodChaining('atan2', atan2)
+addMethodChaining('min', min)
+addMethodChaining('max', max)
+addMethodChaining('mod', mod)
+addMethodChaining('step', step)
+addMethodChaining('reflect', reflect)
+addMethodChaining('distance', distance)
+addMethodChaining('dot', dot)
+addMethodChaining('cross', cross)
+addMethodChaining('pow', pow)
+addMethodChaining('pow2', pow2)
+addMethodChaining('pow3', pow3)
+addMethodChaining('pow4', pow4)
+addMethodChaining('transformDirection', transformDirection)
+addMethodChaining('mix', mixElement)
+addMethodChaining('clamp', clamp)
+addMethodChaining('refract', refract)
+addMethodChaining('smoothstep', smoothstepElement)
+addMethodChaining('faceForward', faceForward)
+addMethodChaining('difference', difference)
+addMethodChaining('saturate', saturate)
+addMethodChaining('cbrt', cbrt)
+addMethodChaining('transpose', transpose)
+addMethodChaining('rand', rand)
