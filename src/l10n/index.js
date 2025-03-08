@@ -78,6 +78,8 @@ export default {
 
     'RenderTheWorld.getChildrenNumInObject': '获取物体: [name] 中的子物体数量',
     'RenderTheWorld.getChildrenInObject': '获取物体: [name] 中的第 [num] 个子物体',
+    'RenderTheWorld.getChildrenInObject.joinCh': '个子物体中的第',
+    'RenderTheWorld.getChildrenInObject.preText': '中的第',
     'RenderTheWorld.getChildrenInObjectByName': '获取物体: [name] 中第一个名为 [name2] 的子物体',
     'RenderTheWorld.addChildren': '给物体: [name] 添加子物体: [name2]',
     'RenderTheWorld.removeChildren': '给物体: [name] 删除子物体: [name2]',
@@ -111,18 +113,24 @@ export default {
     'RenderTheWorld.getLightPos': '获取光源: [name] 的 [xyz] 坐标',
 
     'RenderTheWorld.camera': '📷相机',
+    'RenderTheWorld.perspectiveCamera': '<相机> 透视投影相机 fov [fov] aspect [aspect] near [near] far [far]',
+    'RenderTheWorld.useCamera': '用相机 [camera] 渲染3D场景',
     'RenderTheWorld.moveCamera': '将相机移动到x [x] y [y] z [z]',
     'RenderTheWorld.rotationCamera': '将相机旋转: x [x] y [y] z [z]',
     'RenderTheWorld.cameraLookAt': '让相机面向: x [x] y [y] z [z]',
     'RenderTheWorld.getCameraPos': '获取相机 [xyz] 坐标',
     'RenderTheWorld.getCameraRotation': '获取相机 [xyz] 的旋转角度',
-    'RenderTheWorld.setControlState': '鼠标 [YN] 控制相机',
-    'RenderTheWorld.mouseCanControlCamera': '鼠标能控制相机吗?',
-    'RenderTheWorld.controlCamera':
-      '鼠标控制相机: [yn1] 右键拖拽 [yn2] 中键缩放 [yn3] 左键旋转',
-    'RenderTheWorld.setControlCameraDamping': '鼠标控制相机: [YN2] 惯性',
-    'RenderTheWorld.setControlCameraDampingNum':
-      '设置鼠标控制相机的惯性系数 [num]',
+
+    'RenderTheWorld.control': '🎚️控制模块',
+    'RenderTheWorld.createOrbitControls': '<轨道控制器> 绑定 [name]',
+    'RenderTheWorld.updateControls': '更新控制器 [name]',
+    
+    'RenderTheWorld.setControlState': '鼠标 [YN] 使用控制器 [name]',
+    'RenderTheWorld.mouseCanControl': '鼠标能使用控制器 [name] 吗?',
+    'RenderTheWorld.mouseControl': '控制器 [name] : [yn1] 右键拖拽 [yn2] 中键缩放 [yn3] 左键旋转',
+    'RenderTheWorld.setControlDamping': '使用控制器 [name] : [YN2] 惯性',
+    'RenderTheWorld.setControlDampingNum': '设置控制器 [name] 的惯性系数 [num]',
+    'RenderTheWorld.setOrbitControlsTarget': '设置轨道控制器 [name] 的焦点 x [x] y [y] z [z]',
 
     'RenderTheWorld.fogs': '🌫️雾',
     'RenderTheWorld.enableFogEffect':
@@ -207,20 +215,26 @@ export default {
       '设置方向光的阴影投射范围',
     'RenderTheWorld.setLightMapSize.tooltip': '设置光源的阴影纹理分辨率',
 
+    'RenderTheWorld.perspectiveCamera.tooltip': '创建一个透视投影相机',
+    'RenderTheWorld.useCamera.tooltip': '指定渲染3D场景的相机',
     'RenderTheWorld.moveCamera.tooltip': '移动相机',
     'RenderTheWorld.rotationCamera.tooltip': '旋转相机',
     'RenderTheWorld.cameraLookAt.tooltip': '让相机面向一个坐标',
     'RenderTheWorld.getCameraPos.tooltip': '获取相机任意xyz的坐标',
     'RenderTheWorld.getCameraRotation.tooltip': '获取相机任意xyz的旋转角度',
-    'RenderTheWorld.setControlState.tooltip': '设置鼠标控制相机模式是否开启',
-    'RenderTheWorld.mouseCanControlCamera.tooltip':
-      '判断鼠标控制相机模式是否开启',
-    'RenderTheWorld.controlCamera.tooltip':
-      '设置鼠标控制相机模式能否右键拖拽、能否中键缩放、能否左键旋转',
-    'RenderTheWorld.setControlCameraDamping.tooltip':
-      '设置鼠标控制相机模式的视口旋转是否启用惯性',
-    'RenderTheWorld.setControlCameraDampingNum.tooltip':
-      '设置鼠标控制相机模式的视口旋转惯性',
+
+    'RenderTheWorld.createOrbitControls.tooltip': '创建一个轨道控制器，并绑定一个对象',
+    'RenderTheWorld.updateControls.tooltip': '更新控制器，常在手动使用积木移动、旋转等操作后使用',
+
+    'RenderTheWorld.setControlState.tooltip': '设置鼠标能否使用某个控制器',
+    'RenderTheWorld.mouseCanControl.tooltip': '判断鼠标是否能使用某个控制器',
+    'RenderTheWorld.mouseControl.tooltip':
+      '设置某个控制器能否右键拖拽、能否中键缩放、能否左键旋转',
+    'RenderTheWorld.setControlDamping.tooltip':
+      '设置某个控制器的视口旋转是否启用惯性',
+    'RenderTheWorld.setControlDampingNum.tooltip':
+      '设置某个控制器的视口旋转惯性',
+    'RenderTheWorld.setOrbitControlsTarget.tooltip': '设置某个轨道控制器的焦点',
 
     'RenderTheWorld.enableFogEffect.tooltip': '启用雾效果并设置雾颜色',
     'RenderTheWorld.disableFogEffect.tooltip': '禁用雾效果'
@@ -311,8 +325,9 @@ export default {
 
     'RenderTheWorld.getChildrenNumInObject':
       'Get the number of sub objects in Object: [name]',
-    'RenderTheWorld.getChildrenInObject':
-      'Get the [nun] th sub object in Object [name]',
+    'RenderTheWorld.getChildrenInObject': 'Get object: [name]\'s [num]th child object',
+    'RenderTheWorld.getChildrenInObject.joinCh': 'th child object\'s',
+    'RenderTheWorld.getChildrenInObject.preText': '\'s',
     'RenderTheWorld.getChildrenInObjectByName': 'Get the first sub object named [name2] in the object: [name]',
     'RenderTheWorld.addChildren': 'Add sub object: [name2] to object: [name]',
     'RenderTheWorld.removeChildren':
@@ -347,19 +362,24 @@ export default {
     'RenderTheWorld.getLightPos': "get Light: [name]'s [xyz] pos",
 
     'RenderTheWorld.camera': '📷Camera',
+    'RenderTheWorld.perspectiveCamera': '<Camera> PerspectiveCamera fov [fov] aspect [aspect] near [near] far [far]',
+    'RenderTheWorld.useCamera': 'Rendering a 3D scene with a camera [camera]',
     'RenderTheWorld.moveCamera': 'camera go to: x [x] y [y] z [z]',
     'RenderTheWorld.rotationCamera': 'camera rotation: x [x] y [y] z [z]',
     'RenderTheWorld.cameraLookAt': 'Face the camera towards: x [x] y [y] z [z]',
     'RenderTheWorld.getCameraPos': "get camera's [xyz] pos",
     'RenderTheWorld.getCameraRotation': "get camera's  [xyz] rotation",
-    'RenderTheWorld.setControlState': 'Mouse [YN] control camera',
-    'RenderTheWorld.mouseCanControlCamera': 'Mouse can control camera?',
-    'RenderTheWorld.controlCamera':
-      'Mouse control camera: [yn1] right click drag [yn2] middle click zoom and [yn3] left click rotation',
-    'RenderTheWorld.setControlCameraDamping':
-      'Mouse control camera: [YN2] Damping',
-    'RenderTheWorld.setControlCameraDampingNum':
-      'set the damping coefficient of mouse controlled camera [num]',
+
+    'RenderTheWorld.control': '🎚️Controller',
+    'RenderTheWorld.createOrbitControls': '<OrbitControls> Bind [name]',
+    'RenderTheWorld.updateControls': 'Update Controller [name]',
+
+    'RenderTheWorld.setControlState': 'Mouse [YN] Using Controller [name]',
+    'RenderTheWorld.mouseCanControl': 'Can a mouse use a controller [name]?',
+    'RenderTheWorld.mouseControl': 'Controller [name] : [yn1] right-click drag [yn2] middle-click zoom [yn3] left-click to rotate',
+    'RenderTheWorld.setControlDamping': 'Use controller [name] : [YN2] inertia',
+    'RenderTheWorld.setControlDampingNum': 'Set the coefficient of inertia [num] for controller [name]',
+    'RenderTheWorld.setOrbitControlsTarget': 'Set the target of the OrbitControls [name] x [x] y [y] z [z]',
 
     'RenderTheWorld.fogs': '🌫️Fog',
     'RenderTheWorld.enableFogEffect':
@@ -455,6 +475,8 @@ export default {
     'RenderTheWorld.setLightMapSize.tooltip':
       'Set the shadow texture resolution of the light source',
 
+    'RenderTheWorld.perspectiveCamera.tooltip': 'Create a perspective camera',
+    'RenderTheWorld.useCamera.tooltip': 'Specify the camera for rendering the 3D scene',
     'RenderTheWorld.moveCamera.tooltip': 'Moving camera',
     'RenderTheWorld.rotationCamera.tooltip': 'Rotating camera',
     'RenderTheWorld.cameraLookAt.tooltip':
@@ -463,16 +485,20 @@ export default {
       'Obtain the coordinates of any xyz of the camera',
     'RenderTheWorld.getCameraRotation.tooltip':
       'Obtain the rotation angle of any xyz of the camera',
-    'RenderTheWorld.setControlState.tooltip':
-      'Set whether the Mouse Control Camera mode is enabled or not',
-    'RenderTheWorld.mouseCanControlCamera.tooltip':
-      'Check if the Mouse Control Camera mode is enabled',
-    'RenderTheWorld.controlCamera.tooltip':
-      'Can the Mouse Control Camera mode be used for right click drag, middle click zoom, and left click rotation',
-    'RenderTheWorld.setControlCameraDamping.tooltip':
-      'Whether to enable inertia for viewport rotation in the Mouse Control Camera mode',
-    'RenderTheWorld.setControlCameraDampingNum.tooltip':
-      'Set viewport rotation inertia for Mouse Control Camera mode',
+    
+      
+    'RenderTheWorld.createOrbitControls.tooltip': 'Create a OrbitControls and bind an object',
+    'RenderTheWorld.updateControls.tooltip': 'Update the controller, often used after manually moving, rotating, and other operations with block',
+    
+    'RenderTheWorld.setControlState.tooltip': 'Sets whether the mouse can use a controller',
+    'RenderTheWorld.mouseCanControl.tooltip': 'Determines whether the mouse can use a controller',
+    'RenderTheWorld.mouseControl.tooltip':
+      'Sets whether a controller can be right-clicked and dragged, middle-clicked to zoom, or left-clicked to rotate',
+    'RenderTheWorld.setControlDamping.tooltip':
+      'Sets whether viewport rotation for a controller has inertia enabled',
+    'RenderTheWorld.setControlDampingNum.tooltip':
+      'Sets the viewport rotation inertia for a controller',
+    'RenderTheWorld.setOrbitControlsTarget.tooltip': 'Set the target of a OrbitControls',
 
     'RenderTheWorld.enableFogEffect.tooltip':
       'Enable fog effect and set fog color',

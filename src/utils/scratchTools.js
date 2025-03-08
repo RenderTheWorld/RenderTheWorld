@@ -1,29 +1,65 @@
-import { RTW_Model_Box, Wrapper } from './RTWTools.js';
-import {patch} from './RTWTools.js'; 
+/* eslint-disable no-underscore-dangle */
+/* eslint-disable func-names */
+/* eslint-disable max-classes-per-file */
+import { RTW_Model_Box, Wrapper, patch } from './RTWTools.js';
+import { chen_RenderTheWorld_extensionId } from '../assets/index.js';
 
 /**
  * 改编自系统工具
  */
 const inMainWorkspace = (ext) => {
     const ur1 = window.location.pathname;
-    // /gandi
-    // ^^^^^^
-    // /gandi/project
-    // ^^^^^^-
     const rege = /\/(?:gandi|creator)(?:\/|$)/;
-    //            \/\_______________/\______/
-    //   “/”部分--'         |         |
-    //    gandi或者creator--'         |
-    //               “/”或者文本末尾--'
-    return rege.test(ur1) && ext.Blockly.getMainWorkspace() !== null;
+    return rege.test(ur1) && ext.ScratchBlocks.getMainWorkspace() !== null;
 };
 
-function getBlockly(runtime) {
-    return runtime.scratchBlocks || window.ScratchBlocks || window.Blockly;
+/**
+ * By FurryR
+ * Hijacks the Function.prototype.apply method.
+ * @param {Function} fn - The function to execute while the apply method is hijacked.
+ * @returns {*} The result of the function execution.
+ */
+function hijack(fn) {
+    const _orig = Function.prototype.apply;
+    // eslint-disable-next-line no-extend-native
+    Function.prototype.apply = (thisArg) => thisArg;
+    const result = fn();
+    // eslint-disable-next-line no-extend-native
+    Function.prototype.apply = _orig;
+    return result;
 }
 
-function getVM(runtime) {  // ?.vm是为了防止creator报错（
-    return runtime.extensionManager?.vm || window.Scratch.vm;
+/**
+ * Retrieves the event listener from an event object.
+ * @param {Event|Event[]} e - The event object or array of event objects.
+ * @returns {Event} The event listener.
+ */
+function getEventListener(e) {
+    return e instanceof Array ? e[e.length - 1] : e;
+}
+
+/**
+ * Retrieves ScratchBlocks from the runtime or window object.
+ * @param {Runtime} runtime - The runtime object.
+ * @returns {Object} The ScratchBlocks object.
+ */
+function getScratchBlocks(runtime) {
+    // In Gandi, ScratchBlocks can be accessed from the runtime.
+    // In TW, ScratchBlocks can be directly accessed from the window.
+    return (
+        hijack(getEventListener(runtime._events.EXTENSION_ADDED))?.ScratchBlocks ||
+        runtime.scratchBlocks ||
+        window.Blockly?.getMainWorkspace()?.getScratchBlocks() ||
+        window.ScratchBlocks
+    );
+}
+
+function getVM(runtime) {
+    return (
+        hijack(getEventListener(runtime._events["QUESTION"])).props.vm ||
+        runtime.extensionManager.scratchBlocks ||  // 如果用户使用了“扩展管理”插件就太好了（
+        window.Scratch.vm  // 最坏情况
+    );
 }
 
 const hackFun = (runtime) => {
@@ -49,13 +85,16 @@ const hackFun = (runtime) => {
     }
 };
 
-function show(Blockly, id, value, textAlign) {
-    const workspace = Blockly.getMainWorkspace();
+/**
+ * By FurryR
+ */
+function show(ScratchBlocks, id, value, textAlign) {
+    const workspace = ScratchBlocks.getMainWorkspace();
     const block = workspace.getBlockById(id);
     if (!block) return;
-    Blockly.DropDownDiv.hideWithoutAnimation();
-    Blockly.DropDownDiv.clearContent();
-    const contentDiv = Blockly.DropDownDiv.getContentDiv(),
+    ScratchBlocks.DropDownDiv.hideWithoutAnimation();
+    ScratchBlocks.DropDownDiv.clearContent();
+    const contentDiv = ScratchBlocks.DropDownDiv.getContentDiv(),
         elem = document.createElement('div');
     elem.setAttribute('class', 'valueReportBox');
     elem.append(...value);
@@ -64,14 +103,17 @@ function show(Blockly, id, value, textAlign) {
     elem.style.textAlign = textAlign;
     elem.style.userSelect = 'none';
     contentDiv.appendChild(elem);
-    Blockly.DropDownDiv.setColour(
-        Blockly.Colours.valueReportBackground,
-        Blockly.Colours.valueReportBorder,
+    ScratchBlocks.DropDownDiv.setColour(
+        ScratchBlocks.Colours.valueReportBackground,
+        ScratchBlocks.Colours.valueReportBorder,
     );
-    Blockly.DropDownDiv.showPositionedByBlock(workspace, block);
+    ScratchBlocks.DropDownDiv.showPositionedByBlock(workspace, block);
     return elem;
 }
 
+/**
+ * By FurryR
+ */
 const refactoringVisualReport = (ext) => {
     /**
      * 在编辑器自定义返回值显示的方法来自 https://github.com/FurryR/lpp-scratch 的LPP扩展
@@ -98,10 +140,10 @@ const refactoringVisualReport = (ext) => {
     const _visualReport = ext.runtime.visualReport;
     ext.runtime.visualReport = (blockId, value) => {
         const unwrappedValue = Wrapper.unwrap(value);
-        if (unwrappedValue instanceof RTW_Model_Box && ext.Blockly) {
+        if (unwrappedValue instanceof RTW_Model_Box && ext.ScratchBlocks) {
             //return _visualReport.call(ext.runtime, blockId, value);
             show(
-                ext.Blockly,
+                ext.ScratchBlocks,
                 blockId,
                 [unwrappedValue.getHTML()],
                 'center',
@@ -126,7 +168,7 @@ const refactoringVisualReport = (ext) => {
                         Reflect.has(v, 'stateNode'),
                 );
                 if (unwrappedValue instanceof RTW_Model_Box) {
-                    const inspector = unwrappedValue.getHTML();
+                    const inspector = unwrappedValue.getHTML(true);
                     valueElement.style.textAlign = 'left';
                     valueElement.style.backgroundColor = '#121C3D';
                     valueElement.style.color = '#eeeeee';
@@ -245,4 +287,4 @@ const refactoringVisualReport = (ext) => {
     }
 }
 
-export { refactoringVisualReport, inMainWorkspace, getBlockly, getVM, hackFun };
+export { refactoringVisualReport, inMainWorkspace, getScratchBlocks, getVM, hackFun };

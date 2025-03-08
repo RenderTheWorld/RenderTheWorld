@@ -3,7 +3,6 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable func-names */
 /* eslint-disable max-classes-per-file */
-
 /**
  * Label options for different input types.
  * @type {{s: string, n: string, b: string}}
@@ -48,17 +47,17 @@ let proxingBlocklyBlocks = false;
 
 /**
 * Sets localization messages for Blockly.
-* @param {Blockly} Blockly - The Blockly object.
+* @param {ScratchBlocks} ScratchBlocks - The Blockly object.
 */
-function setLocales(Blockly) {
-  Object.assign(Blockly.ScratchMsgs.locales.en, {
+function setLocales(ScratchBlocks) {
+  Object.assign(ScratchBlocks.ScratchMsgs.locales.en, {
     ADD_TEXT_PARAMETER: 'Add Text Parameter',
     ADD_NUM_PARAMETER: 'Add Num Parameter',
     ADD_BOOL_PARAMETER: 'Add Booln Parameter',
     DELETE_DYNAMIC_PARAMETER: 'Delete Dynamic Parameter',
   });
 
-  Object.assign(Blockly.ScratchMsgs.locales['zh-cn'], {
+  Object.assign(ScratchBlocks.ScratchMsgs.locales['zh-cn'], {
     ADD_TEXT_PARAMETER: '添加文本参数',
     ADD_NUM_PARAMETER: '添加数字参数',
     ADD_BOOL_PARAMETER: '添加布尔值参数',
@@ -68,21 +67,21 @@ function setLocales(Blockly) {
 
 /**
 * Translates a key using Blockly's translation messages.
-* @param {Blockly} Blockly - The Blockly object.
+* @param {ScratchBlocks} ScratchBlocks - The Blockly object.
 * @param {string} key - The key to translate.
 * @returns {string} The translated string.
 */
-function translate(Blockly, key) {
-  return Blockly.ScratchMsgs.translate(key);
+function translate(ScratchBlocks, key) {
+  return ScratchBlocks.ScratchMsgs.translate(key);
 }
 
 /**
 * Creates custom buttons for Blockly blocks.
-* @param {Blockly} Blockly - The Blockly object.
+* @param {ScratchBlocks} ScratchBlocks - The Blockly object.
 * @returns {Object} An object containing custom button classes.
 */
 function createButtons(
-  Blockly,
+  ScratchBlocks,
   plusImage = rightArrow,
   minusImage = leftArrow,
   plusSelectImage = defaultPlusSelectImage,
@@ -108,10 +107,16 @@ function createButtons(
     h = 18;
     size = 0.7;
   }
-  class FieldButton extends Blockly.FieldImage {
-    constructor(src, isSelectButton = false, width = w * size, height = h * size) {
+  class FieldButton extends ScratchBlocks.FieldImage {
+    constructor(
+      src,
+      isSelectButton = false,
+      width = w * size,
+      height = h * size,
+    ) {
       // 这里的比例根据你的图片宽度定义（写这个注释防止我自己忘了）
-      if (isSelectButton) width = width / 35 * 91, height = height / 35 * 91;
+      if (isSelectButton)
+        (width = (width / 35) * 91), (height = (height / 35) * 91);
       super(src, width, height, undefined, false);
       this.initialized = false;
     }
@@ -121,10 +126,9 @@ function createButtons(
 
       if (!this.initialized) {
         // this.getSvgRoot().style.cursor = 'pointer';
-        this.getSvgRoot().getElementsByTagName('image').forEach(element => {
-          element.classList.add('RTW-blockbutton');
-        });
-        Blockly.bindEventWithChecks_(
+        for (let _img of this.getSvgRoot().getElementsByTagName('image'))
+          _img.classList.add('RTW-blockbutton');
+        ScratchBlocks.bindEventWithChecks_(
           this.getSvgRoot(),
           'mousedown',
           this,
@@ -133,7 +137,7 @@ function createButtons(
             e.stopPropagation();
           },
         );
-        Blockly.bindEventWithChecks_(
+        ScratchBlocks.bindEventWithChecks_(
           this.getSvgRoot(),
           'mouseup',
           this,
@@ -164,14 +168,14 @@ function createButtons(
       if (e.button != 0) return;
       const menuOptions = this.sourceBlock_.dynamicArgOptionalTypes_.map(
         (i) => ({
-          text: translate(Blockly, INPUT_TYPES_OPTIONS_LABEL[i]),
+          text: translate(ScratchBlocks, INPUT_TYPES_OPTIONS_LABEL[i]),
           enabled: true,
           callback: () => {
             this.sourceBlock_.addDynamicArg(i);
           },
         }),
       );
-      Blockly.ContextMenu.show(e, menuOptions, false);
+      ScratchBlocks.ContextMenu.show(e, menuOptions, false);
     }
   }
   // + button
@@ -212,12 +216,12 @@ function createButtons(
 * Proxies the Blockly Blocks object to enable dynamic argument blocks.
 * @param {Runtime} runtime - The runtime object.
 */
-function proxyBlocklyBlocksObject(runtime, Blockly) {
+function proxyBlocklyBlocksObject(runtime, ScratchBlocks) {
   if (proxingBlocklyBlocks) return;
   proxingBlocklyBlocks = true;
-  if (!Blockly) return;
-  setLocales(Blockly);
-  Blockly.Blocks = new Proxy(Blockly.Blocks, {
+  if (!ScratchBlocks) return;
+  setLocales(ScratchBlocks);
+  ScratchBlocks.Blocks = new Proxy(ScratchBlocks.Blocks, {
     set(target, opcode, blockDefinition) {
       if (
         Object.prototype.hasOwnProperty.call(
@@ -229,7 +233,7 @@ function proxyBlocklyBlocksObject(runtime, Blockly) {
           runtime,
           blockDefinition,
           enabledDynamicArgBlocksInfo[opcode],
-          Blockly,
+          ScratchBlocks,
         );
       }
       return Reflect.set(target, opcode, blockDefinition);
@@ -247,7 +251,7 @@ function initExpandableBlock(
   runtime,
   blockDefinition,
   dynamicArgInfo,
-  Blockly,
+  ScratchBlocks,
 ) {
   const { PlusSelectButton, PlusButton, MinusButton } = dynamicArgInfo.extInfo;
   /**
@@ -327,8 +331,8 @@ function initExpandableBlock(
     // this.moveInputBefore('PLUS', null);
     const showPlus = getNextParamInc.call(this) > 0; // 是否显示 +
     if (showPlus) {
-      this.getInput('PLUS').setVisible(true);
       // + 按钮不存在，创建
+      this.getInput('PLUS').setVisible(true);
       // if (!this.getInput('PLUS')) this.appendDummyInput('PLUS').appendField(new PlusButton());
       // 调整 + 按钮位置
       const { afterArg } = this.dynamicArgInfo_;
@@ -400,16 +404,19 @@ function initExpandableBlock(
 
   // Supports deleting specified parameters with right-click
   blockDefinition.customContextMenu = function (contextMenu) {
-    if (this.isInFlyout) return;  // 不对toolbax中的积木提供右键菜单支持
+    if (this.isInFlyout) return; // 不对toolbax中的积木提供右键菜单支持
     let separator_ = true;
     this.dynamicArgOptionalTypes_.forEach((i) => {
-      const _text = document.createElement("div");
-      _text.classList.add("keyboard-shortcuts-item");
-      const ltext = document.createElement("span");
-      ltext.textContent = translate(Blockly, INPUT_TYPES_OPTIONS_LABEL[i]);
-      const rtext = document.createElement("span");
-      rtext.classList.add("keyboard-shortcuts");
-      rtext.textContent = "+";
+      const _text = document.createElement('div');
+      _text.classList.add('keyboard-shortcuts-item');
+      const ltext = document.createElement('span');
+      ltext.textContent = translate(
+        ScratchBlocks,
+        INPUT_TYPES_OPTIONS_LABEL[i],
+      );
+      const rtext = document.createElement('span');
+      rtext.classList.add('keyboard-shortcuts');
+      rtext.textContent = '+';
       _text.appendChild(ltext);
       _text.appendChild(rtext);
       contextMenu.splice(-1, 0, {
@@ -438,12 +445,12 @@ function initExpandableBlock(
 
     args.forEach((id, idx) => {
       const element = document.createElement('div');
-      element.classList.add("keyboard-shortcuts-item");
-      const ltext = document.createElement("span");
-      ltext.textContent = `${Blockly.ScratchMsgs.translate('DELETE_DYNAMIC_PARAMETER')} ${idx + 1}`;
-      const rtext = document.createElement("span");
-      rtext.classList.add("keyboard-shortcuts");
-      rtext.textContent = "-";
+      element.classList.add('keyboard-shortcuts-item');
+      const ltext = document.createElement('span');
+      ltext.textContent = `${ScratchBlocks.ScratchMsgs.translate('DELETE_DYNAMIC_PARAMETER')} ${idx + 1}`;
+      const rtext = document.createElement('span');
+      rtext.classList.add('keyboard-shortcuts');
+      rtext.textContent = '-';
       element.appendChild(ltext);
       element.appendChild(rtext);
 
@@ -463,8 +470,7 @@ function initExpandableBlock(
             : input.outlinePath;
           element.addEventListener('mouseenter', () => {
             const replacementGlowFilterId =
-              this.workspace.options
-                .replacementGlowFilterId ||
+              this.workspace.options.replacementGlowFilterId ||
               'blocklyReplacementGlowFilter';
             pathElement.setAttribute(
               'filter',
@@ -480,10 +486,11 @@ function initExpandableBlock(
         let _i1 = 0;
         _i1 = setTimeout(() => {
           if (element.parentElement?.parentElement) {
-            element.parentElement.parentElement.style.borderStyle = "dashed";
+            element.parentElement.parentElement.style.borderStyle =
+              'dashed';
             clearTimeout(_i1);
           }
-        }, 1);
+        }, 0);
       }
       contextMenu.splice(-1, 0, {
         text: element,
@@ -494,7 +501,7 @@ function initExpandableBlock(
         },
         separator: separator_,
       });
-      separator_=false;
+      separator_ = false;
     });
   };
 
@@ -505,7 +512,7 @@ function initExpandableBlock(
   ) {
     if (argumentType === 'n' || argumentType === 's') {
       const blockType = argumentType === 'n' ? 'math_number' : 'text';
-      Blockly.Events.disable();
+      ScratchBlocks.Events.disable();
       const newBlock = this.workspace.newBlock(blockType);
       try {
         if (argumentType === 'n') {
@@ -519,10 +526,10 @@ function initExpandableBlock(
           newBlock.render(false);
         }
       } finally {
-        Blockly.Events.enable();
+        ScratchBlocks.Events.enable();
       }
-      if (Blockly.Events.isEnabled()) {
-        Blockly.Events.fire(new Blockly.Events.BlockCreate(newBlock));
+      if (ScratchBlocks.Events.isEnabled()) {
+        ScratchBlocks.Events.fire(new ScratchBlocks.Events.BlockCreate(newBlock));
       }
       newBlock.outputConnection.connect(input.connection);
     }
@@ -552,9 +559,9 @@ function initExpandableBlock(
   blockDefinition.addDynamicArg = function (type) {
     const oldMutationDom = this.mutationToDom();
     const oldMutation =
-      oldMutationDom && Blockly.Xml.domToText(oldMutationDom);
+      oldMutationDom && ScratchBlocks.Xml.domToText(oldMutationDom);
 
-    Blockly.Events.setGroup(true);
+    ScratchBlocks.Events.setGroup(true);
 
     let index = 0;
     const lastArgName = this.dynamicArgumentIds_.slice(-1)[0];
@@ -574,10 +581,10 @@ function initExpandableBlock(
 
     const newMutationDom = this.mutationToDom();
     const newMutation =
-      newMutationDom && Blockly.Xml.domToText(newMutationDom);
+      newMutationDom && ScratchBlocks.Xml.domToText(newMutationDom);
     if (oldMutation !== newMutation) {
-      Blockly.Events.fire(
-        new Blockly.Events.BlockChange(
+      ScratchBlocks.Events.fire(
+        new ScratchBlocks.Events.BlockChange(
           this,
           'mutation',
           null,
@@ -587,7 +594,7 @@ function initExpandableBlock(
       );
     }
 
-    Blockly.Events.setGroup(false);
+    ScratchBlocks.Events.setGroup(false);
   };
 
   /**
@@ -595,11 +602,11 @@ function initExpandableBlock(
    * @param {string} id 参数id
    */
   blockDefinition.removeDynamicArg = function (id) {
-    Blockly.Events.setGroup(true);
+    ScratchBlocks.Events.setGroup(true);
 
     const oldMutationDom = this.mutationToDom();
     const oldMutation =
-      oldMutationDom && Blockly.Xml.domToText(oldMutationDom);
+      oldMutationDom && ScratchBlocks.Xml.domToText(oldMutationDom);
 
     const matches = id.match(/^([^\d]+)(\d+)$/);
     const name = matches[1];
@@ -621,10 +628,10 @@ function initExpandableBlock(
 
     const newMutationDom = this.mutationToDom();
     const newMutation =
-      newMutationDom && Blockly.Xml.domToText(newMutationDom);
+      newMutationDom && ScratchBlocks.Xml.domToText(newMutationDom);
     if (oldMutation !== newMutation) {
-      Blockly.Events.fire(
-        new Blockly.Events.BlockChange(
+      ScratchBlocks.Events.fire(
+        new ScratchBlocks.Events.BlockChange(
           this,
           'mutation',
           null,
@@ -657,7 +664,7 @@ function initExpandableBlock(
       }, 0);
     }
 
-    Blockly.Events.setGroup(false);
+    ScratchBlocks.Events.setGroup(false);
   };
 
   blockDefinition.updateDisplay_ = function () {
@@ -667,7 +674,7 @@ function initExpandableBlock(
     const connectionMap = this.disconnectDynamicArgBlocks_();
     this.removeAllDynamicArgInputs_();
 
-    this.createAllDynamicArgInputs_(connectionMap);
+    this.createAllDynamicArgInputs_(connectionMap);  // <--问题处在这里
     this.deleteShadows_(connectionMap);
 
     this.rendered = wasRendered;
@@ -732,10 +739,11 @@ function initExpandableBlock(
             it.name !== 'ENDTEXT',
         ); // 改第一个参数前的文本
 
-      // 查找afterArg对应的参数前面的文本（Blockly.FieldLabel）
-      input.fieldRow
-        .findLast((it) => it instanceof Blockly.FieldLabel)
-        ?.setText(txt);
+      // 查找afterArg对应的参数前面的文本（ScratchBlocks.FieldLabel）
+      if (input)
+        input.fieldRow
+          .findLast((it) => it instanceof ScratchBlocks.FieldLabel)
+          ?.setText(txt);
     }
   }
 
@@ -750,7 +758,8 @@ function initExpandableBlock(
         !(
           argumentType === 'n' ||
           argumentType === 'b' ||
-          argumentType === 's'
+          argumentType === 's' ||
+          argumentType === 'l'
         )
       ) {
         throw new Error(
@@ -767,7 +776,21 @@ function initExpandableBlock(
       }
       if (argumentType === 'b') {
         input.setCheck('Boolean');
-      }
+      } /** else if (argumentType === 'l') {  // 测试
+        console.log("dropdown", this);
+        input.appendField(new ScratchBlocks.FieldDropdown([["a", 0], ["bbb", 1]]), id)
+        const fields = runtime
+          .getEditingTarget()
+          ?.blocks.getBlock(this.id)?.fields
+        if (fields) {
+          fields[id] = {
+            id: null,
+            name: id,
+            value: '+'
+          }
+        }
+        // this.moveInputBefore(id, 'END')
+      } */
       this.populateArgument_(argumentType, connectionMap, id, input, i);
     }
     // 动态参数后的文本
@@ -788,6 +811,7 @@ function initExpandableBlock(
       for (let i = cnt - 1; i >= 0; i--) {
         const id = this.dynamicArgumentIds_[i];
         this.moveInputBefore(id, afterArg);
+
         this.moveInputBefore(afterArg, id);
       }
     }
@@ -835,10 +859,10 @@ function initExpandableBlock(
   };
 
   blockDefinition.deleteShadows_ =
-    Blockly.ScratchBlocks.ProcedureUtils.deleteShadows_;
+    ScratchBlocks.ScratchBlocks.ProcedureUtils.deleteShadows_;
 
   blockDefinition.buildShadowDom_ =
-    Blockly.ScratchBlocks.ProcedureUtils.buildShadowDom_;
+    ScratchBlocks.ScratchBlocks.ProcedureUtils.buildShadowDom_;
 }
 
 const patchSymbol = Symbol('patch');
@@ -856,14 +880,14 @@ function initExpandableBlocks(
   rightSelectButton = defaultPlusSelectImage,
 ) {
   // 创建按钮
-  const { runtime, Blockly } = extension;
+  const { runtime, ScratchBlocks } = extension;
   const { PlusSelectButton, PlusButton, MinusButton } = createButtons(
-    Blockly,
+    ScratchBlocks,
     plusImage,
     minusImage,
     rightSelectButton,
   );
-  proxyBlocklyBlocksObject(runtime, Blockly);
+  proxyBlocklyBlocksObject(runtime, ScratchBlocks);
 
   if (extension[patchSymbol]) return;
   extension[patchSymbol] = true;

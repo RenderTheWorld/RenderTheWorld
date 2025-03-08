@@ -83,7 +83,6 @@ function SidebarSettingsHistory(editor) {
 				options.push(option)
 			}
 		})(history.undos)
-
 		;(function addObjects(objects) {
 			for (let i = objects.length - 1; i >= 0; i--) {
 				const object = objects[i]

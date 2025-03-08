@@ -11544,12 +11544,10 @@ const normalMap = /*@__PURE__*/ nodeProxy(NormalMapNode)
 const dHdxy_fwd = Fn(({ textureNode, bumpScale }) => {
 	// It's used to preserve the same TextureNode instance
 	const sampleTexture = callback =>
-		textureNode
-			.cache()
-			.context({
-				getUV: texNode => callback(texNode.uvNode || uv()),
-				forceUVContext: true
-			})
+		textureNode.cache().context({
+			getUV: texNode => callback(texNode.uvNode || uv()),
+			forceUVContext: true
+		})
 
 	const Hll = float(sampleTexture(uvNode => uvNode))
 
@@ -18956,20 +18954,18 @@ class PhysicalLightingModel extends LightingModel {
 		)
 
 		reflectedLight.directDiffuse.addAssign(
-			lightColor
-				.mul(diffuseColor)
-				.mul(
-					LTC_Evaluate({
-						N,
-						V,
-						P,
-						mInv: mat3(1, 0, 0, 0, 1, 0, 0, 0, 1),
-						p0,
-						p1,
-						p2,
-						p3
-					})
-				)
+			lightColor.mul(diffuseColor).mul(
+				LTC_Evaluate({
+					N,
+					V,
+					P,
+					mInv: mat3(1, 0, 0, 0, 1, 0, 0, 0, 1),
+					p0,
+					p1,
+					p2,
+					p3
+				})
+			)
 		)
 	}
 
@@ -19441,20 +19437,18 @@ const blur = /*@__PURE__*/ Fn(
 
 		const gl_FragColor = vec3().toVar()
 		gl_FragColor.addAssign(
-			weights
-				.element(0)
-				.mul(
-					getSample({
-						theta: 0.0,
-						axis,
-						outputDirection,
-						mipInt,
-						envMap,
-						CUBEUV_TEXEL_WIDTH,
-						CUBEUV_TEXEL_HEIGHT,
-						CUBEUV_MAX_MIP
-					})
-				)
+			weights.element(0).mul(
+				getSample({
+					theta: 0.0,
+					axis,
+					outputDirection,
+					mipInt,
+					envMap,
+					CUBEUV_TEXEL_WIDTH,
+					CUBEUV_TEXEL_HEIGHT,
+					CUBEUV_MAX_MIP
+				})
+			)
 		)
 
 		Loop({ start: int(1), end: n }, ({ i }) => {
@@ -19464,36 +19458,32 @@ const blur = /*@__PURE__*/ Fn(
 
 			const theta = float(dTheta.mul(float(i))).toVar()
 			gl_FragColor.addAssign(
-				weights
-					.element(i)
-					.mul(
-						getSample({
-							theta: theta.mul(-1.0),
-							axis,
-							outputDirection,
-							mipInt,
-							envMap,
-							CUBEUV_TEXEL_WIDTH,
-							CUBEUV_TEXEL_HEIGHT,
-							CUBEUV_MAX_MIP
-						})
-					)
+				weights.element(i).mul(
+					getSample({
+						theta: theta.mul(-1.0),
+						axis,
+						outputDirection,
+						mipInt,
+						envMap,
+						CUBEUV_TEXEL_WIDTH,
+						CUBEUV_TEXEL_HEIGHT,
+						CUBEUV_MAX_MIP
+					})
+				)
 			)
 			gl_FragColor.addAssign(
-				weights
-					.element(i)
-					.mul(
-						getSample({
-							theta,
-							axis,
-							outputDirection,
-							mipInt,
-							envMap,
-							CUBEUV_TEXEL_WIDTH,
-							CUBEUV_TEXEL_HEIGHT,
-							CUBEUV_MAX_MIP
-						})
-					)
+				weights.element(i).mul(
+					getSample({
+						theta,
+						axis,
+						outputDirection,
+						mipInt,
+						envMap,
+						CUBEUV_TEXEL_WIDTH,
+						CUBEUV_TEXEL_HEIGHT,
+						CUBEUV_MAX_MIP
+					})
+				)
 			)
 		})
 
@@ -55330,7 +55320,6 @@ class WebGLBackend extends Backend {
 
 			if (vaoGPU === undefined) {
 				let staticVao
-
 				;({ vaoGPU, staticVao } = this._createVao(
 					renderObject.getIndex(),
 					renderObject.getAttributes()

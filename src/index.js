@@ -1,3 +1,6 @@
+/* eslint-disable no-underscore-dangle */
+/* eslint-disable func-names */
+/* eslint-disable max-classes-per-file */
 // 扩展资源
 import {
     chen_RenderTheWorld_extensionId,
@@ -20,11 +23,18 @@ import * as THREE from './assets/threejs/src/Three.js';
 import WebGL from './assets/threejs_ext/WebGL.js';
 
 // utils
-import { refactoringVisualReport, inMainWorkspace, getBlockly, getVM, hackFun } from './utils/scratchTools.js';
+import {
+    refactoringVisualReport,
+    inMainWorkspace,
+    getScratchBlocks,
+    getVM,
+    hackFun,
+} from './utils/scratchTools.js';
 import { getDynamicArgs, initExpandableBlocks } from './utils/extendableBlock.js';
 import { addRTWStyle, RTW_Model_Box, Wrapper, patch } from './utils/RTWTools.js';
 import { addFileType } from './utils/gandiAssetTools.js';
 import { Skins } from './utils/canvasSkin.js';
+import { mod } from './assets/threejs/build/three.tsl.js';
 
 (function (Scratch) {
     'use strict';
@@ -43,7 +53,15 @@ import { Skins } from './utils/canvasSkin.js';
         }
     `);
 
-    const { ArgumentType, BlockType, TargetType, Cast, translate, extensions, runtime } = Scratch;
+    const {
+        ArgumentType,
+        BlockType,
+        TargetType,
+        Cast,
+        translate,
+        extensions,
+        runtime,
+    } = Scratch;
 
     translate.setup(l10n);
 
@@ -53,18 +71,20 @@ import { Skins } from './utils/canvasSkin.js';
             if (!this.runtime) return;
             hackFun(this.runtime);
 
-            this.Blockly = void 0;
+            this.ScratchBlocks = void 0;
             this.vm = getVM(this.runtime);
 
-            this.Blockly = getBlockly(this.runtime);
-            if (!this.Blockly) {
+            this.ScratchBlocks = getScratchBlocks(this.runtime);
+            if (!this.ScratchBlocks) {
                 this.vm.once('workspaceUpdate', () => {
-                    const newBlockly = getBlockly(this.vm);
-                    if (newBlockly && newBlockly !== this.Blockly) {
-                        this.Blockly = newBlockly;
+                    const newScratchBlocks = getScratchBlocks(this.vm);
+                    if (newScratchBlocks && newScratchBlocks !== this.ScratchBlocks) {
+                        this.ScratchBlocks = newScratchBlocks;
                     }
                 });
             }
+            console.log(this.ScratchBlocks);
+
 
             this.gandi = this.runtime.gandi;
             addFileType(this, 'OBJ', 'obj');
@@ -114,7 +134,7 @@ import { Skins } from './utils/canvasSkin.js';
                 // 修复ccw_hat_parameter的颜色问题
                 this._RTW_hat_parameters = new Set();
                 this.objectLoadingCompletedUpdate = () => {
-                    this.Blockly.getMainWorkspace()
+                    this.ScratchBlocks.getMainWorkspace()
                         .getAllBlocks()
                         .filter((block) => block.type === 'ccw_hat_parameter')
                         .forEach((hat_parameter) => {
@@ -160,7 +180,7 @@ import { Skins } from './utils/canvasSkin.js';
                                 }
                                 this._RTW_hat_parameters.forEach((id) => {
                                     if (
-                                        this.Blockly.getMainWorkspace().getBlockById(
+                                        this.ScratchBlocks.getMainWorkspace().getBlockById(
                                             id,
                                         ) === null
                                     ) {
@@ -182,7 +202,12 @@ import { Skins } from './utils/canvasSkin.js';
                     'BLOCKSINFO_UPDATE',
                     this.objectLoadingCompletedUpdate,
                 ); // 切换角色时
-                initExpandableBlocks(this, rightButton, leftButton, rightSelectButton);
+                initExpandableBlocks(
+                    this,
+                    rightButton,
+                    leftButton,
+                    rightSelectButton,
+                );
             }
 
             this.is_listener = false;
@@ -344,6 +369,10 @@ import { Skins } from './utils/canvasSkin.js';
                             menu: 'WebGLRendererShadowMapType',
                         },
                     },
+                    // dynamicArgsInfo: {
+                    //     defaultValues: 'shadowMapType',
+                    //     dynamicArgTypes: ['l'],
+                    // },
                 },
                 {
                     opcode: 'set3dState',
@@ -472,7 +501,7 @@ import { Skins } from './utils/canvasSkin.js';
                 },
                 {
                     opcode: 'objectLoadingCompleted',
-                    blockType: BlockType.HAT,
+                    blockType: BlockType.EVENT,
                     text: this.formatMessage(
                         'RenderTheWorld.objectLoadingCompleted',
                     ),
@@ -653,9 +682,14 @@ import { Skins } from './utils/canvasSkin.js';
                     dynamicArgsInfo: {
                         defaultValues: 'MODEL',
                         dynamicArgTypes: ['s'],
-                        joinCh: ", ",
-                        preText: (n) => (n === 0 ? this.formatMessage("RenderTheWorld.groupModel") : `${this.formatMessage("RenderTheWorld.groupModel")}[`),
-                        endText: (n) => (n === 0 ? "" : "]"),
+                        joinCh: ', ',
+                        preText: (n) =>
+                            n === 0
+                                ? this.formatMessage(
+                                    'RenderTheWorld.groupModel',
+                                )
+                                : `${this.formatMessage('RenderTheWorld.groupModel')}[`,
+                        endText: (n) => (n === 0 ? '' : ']'),
                     },
                     output: 'Reporter',
                     outputShape: 3,
@@ -926,6 +960,17 @@ import { Skins } from './utils/canvasSkin.js';
                             defaultValue: '1',
                         },
                     },
+                    dynamicArgsInfo: {
+                        afterArg: 'num',
+                        defaultValues: '1',
+                        dynamicArgTypes: ['n'],
+                        joinCh: this.formatMessage(
+                            'RenderTheWorld.getChildrenInObject.joinCh',
+                        ),
+                        preText: this.formatMessage(
+                            'RenderTheWorld.getChildrenInObject.preText',
+                        ),
+                    },
                     output: 'Reporter',
                     outputShape: 3,
                     branchCount: 0,
@@ -1135,7 +1180,7 @@ import { Skins } from './utils/canvasSkin.js';
                         defaultValues: (i) => `animationName${i + 2}`,
                         afterArg: 'animationName',
                         joinCh: ', ',
-                        dynamicArgTypes: ['s']
+                        dynamicArgTypes: ['s'],
                     },
                 },
                 {
@@ -1156,7 +1201,7 @@ import { Skins } from './utils/canvasSkin.js';
                         defaultValues: (i) => `animationName${i + 2}`,
                         afterArg: 'animationName',
                         joinCh: ', ',
-                        dynamicArgTypes: ['s']
+                        dynamicArgTypes: ['s'],
                     },
                 },
                 {
@@ -1370,6 +1415,45 @@ import { Skins } from './utils/canvasSkin.js';
                     text: this.formatMessage('RenderTheWorld.camera'),
                 },
                 {
+                    opcode: 'useCamera',
+                    blockType: BlockType.COMMAND,
+                    text: this.formatMessage('RenderTheWorld.useCamera'),
+                    hideFromPalette: false,
+                    arguments: {
+                        camera: {
+                            type: ArgumentType.STRING,
+                            defaultValue: "name",
+                        },
+                    },
+                },
+                {
+                    opcode: 'perspectiveCamera',
+                    blockType: BlockType.OUTPUT,
+                    text: this.formatMessage('RenderTheWorld.perspectiveCamera'),
+                    hideFromPalette: false,
+                    arguments: {
+                        fov: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 40,
+                        },
+                        aspect: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: (this.runtime.renderer.canvas.width / this.runtime.renderer.canvas.height).toFixed(2),
+                        },
+                        near: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0.1,
+                        },
+                        far: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 1000,
+                        },
+                    },
+                    output: 'Reporter',
+                    outputShape: 3,
+                    branchCount: 0,
+                },
+                {
                     opcode: 'moveCamera',
                     blockType: BlockType.COMMAND,
                     text: this.formatMessage('RenderTheWorld.moveCamera'),
@@ -1453,13 +1537,47 @@ import { Skins } from './utils/canvasSkin.js';
                     },
                     disableMonitor: true,
                 },
-                '---',
+                {
+                    blockType: BlockType.LABEL,
+                    text: this.formatMessage('RenderTheWorld.control'),
+                },
+                {
+                    opcode: 'createOrbitControls',
+                    blockType: BlockType.OUTPUT,
+                    text: this.formatMessage('RenderTheWorld.createOrbitControls'),
+                    hideFromPalette: false,
+                    arguments: {
+                        name: {
+                            type: ArgumentType.STRING,
+                            defaultValue: "name",
+                        },
+                    },
+                    output: 'Reporter',
+                    outputShape: 3,
+                    branchCount: 0,
+                },
+                {
+                    opcode: 'updateControls',
+                    blockType: BlockType.COMMAND,
+                    text: this.formatMessage('RenderTheWorld.updateControls'),
+                    hideFromPalette: false,
+                    arguments: {
+                        name: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'name',
+                        },
+                    },
+                },
                 {
                     opcode: 'setControlState',
                     blockType: BlockType.COMMAND,
                     text: this.formatMessage('RenderTheWorld.setControlState'),
                     hideFromPalette: false,
                     arguments: {
+                        name: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'name',
+                        },
                         YN: {
                             type: ArgumentType.STRING,
                             menu: 'YN',
@@ -1467,19 +1585,28 @@ import { Skins } from './utils/canvasSkin.js';
                     },
                 },
                 {
-                    opcode: 'mouseCanControlCamera',
+                    opcode: 'mouseCanControl',
                     blockType: BlockType.BOOLEAN,
                     text: this.formatMessage(
-                        'RenderTheWorld.mouseCanControlCamera',
+                        'RenderTheWorld.mouseCanControl',
                     ),
-                    arguments: {},
+                    arguments: {
+                        name: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'name',
+                        },
+                    },
                 },
                 {
-                    opcode: 'controlCamera',
+                    opcode: 'mouseControl',
                     blockType: BlockType.COMMAND,
-                    text: this.formatMessage('RenderTheWorld.controlCamera'),
+                    text: this.formatMessage('RenderTheWorld.mouseControl'),
                     hideFromPalette: false,
                     arguments: {
+                        name: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'name',
+                        },
                         yn1: {
                             type: ArgumentType.STRING,
                             menu: 'YN',
@@ -1495,12 +1622,16 @@ import { Skins } from './utils/canvasSkin.js';
                     },
                 },
                 {
-                    opcode: 'setControlCameraDamping',
+                    opcode: 'setControlDamping',
                     blockType: BlockType.COMMAND,
                     text: this.formatMessage(
-                        'RenderTheWorld.setControlCameraDamping',
+                        'RenderTheWorld.setControlDamping',
                     ),
                     arguments: {
+                        name: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'name',
+                        },
                         YN2: {
                             type: ArgumentType.STRING,
                             menu: 'YN2',
@@ -1508,15 +1639,44 @@ import { Skins } from './utils/canvasSkin.js';
                     },
                 },
                 {
-                    opcode: 'setControlCameraDampingNum',
+                    opcode: 'setControlDampingNum',
                     blockType: BlockType.COMMAND,
                     text: this.formatMessage(
-                        'RenderTheWorld.setControlCameraDampingNum',
+                        'RenderTheWorld.setControlDampingNum',
                     ),
                     arguments: {
+                        name: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'name',
+                        },
                         num: {
                             type: ArgumentType.NUMBER,
                             defaultValue: 0.05,
+                        },
+                    },
+                },
+                {
+                    opcode: 'setOrbitControlsTarget',
+                    blockType: BlockType.COMMAND,
+                    text: this.formatMessage(
+                        'RenderTheWorld.setOrbitControlsTarget',
+                    ),
+                    arguments: {
+                        name: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'name',
+                        },
+                        x: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0,
+                        },
+                        y: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0,
+                        },
+                        z: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0,
                         },
                     },
                 },
@@ -1772,7 +1932,8 @@ import { Skins } from './utils/canvasSkin.js';
 
         docs() {
             let a = document.createElement('a');
-            a.href = 'https://learn.ccw.site/article/aa0cf6d0-6758-447a-96f5-8e5dfdbe14d6';
+            a.href =
+                'https://learn.ccw.site/article/aa0cf6d0-6758-447a-96f5-8e5dfdbe14d6';
             a.rel = 'noopener noreferrer';
             a.target = '_blank';
             a.click();
@@ -1795,17 +1956,17 @@ import { Skins } from './utils/canvasSkin.js';
             return this.isWebglAvailable;
         }
 
-        objectLoadingCompleted({ name }) {
-            if (Cast.toString(name) in this.objects) {
-                return true;
-            } else {
-                return false;
-            }
-        }
+        // objectLoadingCompleted({ name }) {
+        //     if (Cast.toString(name) in this.objects) {
+        //         return true;
+        //     } else {
+        //         return false;
+        //     }
+        // }
 
         /**
          * 清除材质
-         * @param {THREE.Material} material 
+         * @param {THREE.Material} material
          */
         __disposeMaterial(material) {
             if (material.isMaterial) {
@@ -1820,7 +1981,7 @@ import { Skins } from './utils/canvasSkin.js';
 
         /**
          * 清除物体
-         * @param {THREE.Object3D} obj 
+         * @param {THREE.Object3D} obj
          */
         __disposeObject(obj) {
             if (obj.geometry) {
@@ -1904,6 +2065,8 @@ import { Skins } from './utils/canvasSkin.js';
             if (!this.tc) {
                 this.tc = document.createElement('canvas');
                 this.tc.className = 'RenderTheWorld';
+                this.tc.width = 5120;
+                this.tc.height = 1440;
             }
 
             let _antialias = false;
@@ -1940,7 +2103,7 @@ import { Skins } from './utils/canvasSkin.js';
 
             // 创建摄像机
             this.fov = 40; // 视野范围
-            this.aspect = this.tc.width / this.tc.height; // 相机默认值 画布的宽高比
+            this.aspect = this.runtime.renderer.canvas.width / this.runtime.renderer.canvas.height; // 相机默认值 画布的宽高比
             this.near = 0.1; // 近平面
             this.far = 1000; // 远平面
             // 透视投影相机
@@ -1976,7 +2139,6 @@ import { Skins } from './utils/canvasSkin.js';
             this.scene.add(this.hemisphere_light);
 
             this.isTcShow = false;
-            this._isTcShow = this.isTcShow;
 
             this.threeSkin.setContent(this.NullCanvas);
             this.render = () => {
@@ -1986,9 +2148,8 @@ import { Skins } from './utils/canvasSkin.js';
                     this.renderer.render(this.scene, this.camera);
                     this.threeSkin.setContent(this.tc);
                     this.runtime.requestRedraw();
-                } else if (this._isTcShow != this.isTcShow) {
+                } else {
                     this.threeSkin.setContent(this.NullCanvas);
-                    this._isTcShow = this.isTcShow;
                 }
                 this.controls.update();
             };
@@ -2033,7 +2194,7 @@ import { Skins } from './utils/canvasSkin.js';
             if (
                 obj instanceof RTW_Model_Box &&
                 obj.model != undefined &&
-                obj.model.isObject3D
+                (obj.model.isObject3D || obj.model instanceof OrbitControls)
             ) {
                 return obj.model;
             } else if (Cast.toString(obj) in this.objects) {
@@ -3360,36 +3521,32 @@ import { Skins } from './utils/canvasSkin.js';
          * @param {number} args.num
          * @returns {Wrapper | ''}
          */
-        getChildrenInObject({ name, num }) {
-            let model = this._getModel(name);
-            if (model === -1) return '';
-            num = Cast.toNumber(num) - 1;
-            if (num >= 0 && model.children[num]) {
-                return new Wrapper(
-                    new RTW_Model_Box(
-                        model.children[num],
-                        false,
-                        false,
-                        false,
-                        undefined,
-                    ),
+        getChildrenInObject(args) {
+            let model = this._getModel(args.name),
+                num = [Cast.toNumber(args.num)].concat(getDynamicArgs(args)),
+                cnt = 0;
+            while (model !== -1 && cnt < num.length) {
+                let _num = num[cnt++] - 1;
+                if (_num >= 0 && model.children[_num]) {
+                    model = model.children[_num];
+                }
+            }
+            return model === -1
+                ? ''
+                : new Wrapper(
+                    new RTW_Model_Box(model, false, false, false, undefined),
                 );
-            } else return '';
         }
 
         getChildrenInObjectByName({ name, name2 }) {
             let model = this._getModel(name);
             if (model === -1) return '';
             let child = model.getObjectByName(Cast.toString(name2));
-            return (child === undefined ? '' : new Wrapper(
-                new RTW_Model_Box(
-                    child,
-                    false,
-                    false,
-                    false,
-                    undefined,
-                ),
-            ));
+            return child === undefined
+                ? ''
+                : new Wrapper(
+                    new RTW_Model_Box(child, false, false, false, undefined),
+                );
         }
 
         addChildren({ name, name2 }) {
@@ -3605,6 +3762,32 @@ import { Skins } from './utils/canvasSkin.js';
             this.render();
         }
 
+        useCamera({ camera }) {
+            if (!this.tc) {
+                return '⚠️显示器未初始化！';
+            }
+            let model = this._getModel(camera);
+            if (model === -1) return '⚠️传入的相机有误！';
+            this.camera = model;
+        }
+
+        perspectiveCamera({ fov, aspect, near, far }) {
+            return new Wrapper(
+                new RTW_Model_Box(
+                    new THREE.PerspectiveCamera(
+                        Cast.toNumber(fov),
+                        Cast.toNumber(aspect),
+                        Cast.toNumber(near),
+                        Cast.toNumber(far),
+                    ),
+                    false,
+                    false,
+                    false,
+                    undefined,
+                ),
+            );
+        }
+
         /**
          * 移动相机
          * @param {object} args
@@ -3636,29 +3819,28 @@ import { Skins } from './utils/canvasSkin.js';
             if (!this.tc) {
                 return '⚠️显示器未初始化！';
             }
-            // 因为启用了相机控制，使用不能使用rotation函数了
-            // this.camera.rotation.set(
-            //     THREE.MathUtils.degToRad(Cast.toNumber(x)),
-
-            //     THREE.MathUtils.degToRad(Cast.toNumber(y)),
-
-            //     THREE.MathUtils.degToRad(Cast.toNumber(z)),
-            // );
-            const cameraPos = this.camera.position.clone();
-            const controlsTag = this.controls.target.clone();
-            controlsTag.sub(cameraPos);
-            // 麻烦。。。
-            const euler = new THREE.Euler(
+            this.camera.rotation.set(
                 THREE.MathUtils.degToRad(Cast.toNumber(x)),
-                THREE.MathUtils.degToRad(Cast.toNumber(y)),
-                THREE.MathUtils.degToRad(Cast.toNumber(z)),
-                'XYZ',
-            );
-            const quaternion = new THREE.Quaternion().setFromEuler(euler);
 
-            controlsTag.applyQuaternion(quaternion);
-            cameraPos.add(controlsTag);
-            this.controls.target.set(cameraPos.x, cameraPos.y, cameraPos.z);
+                THREE.MathUtils.degToRad(Cast.toNumber(y)),
+
+                THREE.MathUtils.degToRad(Cast.toNumber(z)),
+            );
+            // const cameraPos = this.camera.position.clone();
+            // const controlsTag = this.controls.target.clone();
+            // controlsTag.sub(cameraPos);
+            // // 麻烦。。。
+            // const euler = new THREE.Euler(
+            //     THREE.MathUtils.degToRad(Cast.toNumber(x)),
+            //     THREE.MathUtils.degToRad(Cast.toNumber(y)),
+            //     THREE.MathUtils.degToRad(Cast.toNumber(z)),
+            //     'XYZ',
+            // );
+            // const quaternion = new THREE.Quaternion().setFromEuler(euler);
+
+            // controlsTag.applyQuaternion(quaternion);
+            // cameraPos.add(controlsTag);
+            // this.controls.target.set(cameraPos.x, cameraPos.y, cameraPos.z);
         }
 
         /**
@@ -3672,11 +3854,11 @@ import { Skins } from './utils/canvasSkin.js';
             if (!this.tc) {
                 return '⚠️显示器未初始化！';
             }
-            this.controls.target.set(
-                Cast.toNumber(x),
-                Cast.toNumber(y),
-                Cast.toNumber(z),
-            );
+            // this.controls.target.set(
+            //     Cast.toNumber(x),
+            //     Cast.toNumber(y),
+            //     Cast.toNumber(z),
+            // );
             this.camera.lookAt(
                 Cast.toNumber(x),
                 Cast.toNumber(y),
@@ -3725,18 +3907,11 @@ import { Skins } from './utils/canvasSkin.js';
             }
         }
 
-        /**
-         * 鼠标控制相机
-         * @param {object} args
-         * @param {string} args.yn1
-         * @param {string} args.yn2
-         * @param {string} args.yn3
-         */
 
-        controlCamera({ yn1, yn2, yn3 }) {
-            if (!this.tc) {
-                return '⚠️显示器未初始化！';
-            }
+        mouseControl({ name, yn1, yn2, yn3 }) {
+            let model = this._getModel(name);
+            if (model === -1 || !model.update) return '⚠️设置的控制器有误！';
+
             let enablePan = false;
             let enableZoom = false;
             let enableRotate = false;
@@ -3750,62 +3925,87 @@ import { Skins } from './utils/canvasSkin.js';
                 enableRotate = true;
             }
 
-            this.controls.enablePan = enablePan;
-            this.controls.enableZoom = enableZoom;
-            this.controls.enableRotate = enableRotate;
-            this.controls.update();
+            model.enablePan = enablePan;
+            model.enableZoom = enableZoom;
+            model.enableRotate = enableRotate;
+            model.update();
         }
 
-        setControlState({ YN }) {
-            if (!this.tc) {
-                return '⚠️显示器未初始化！';
-            }
+        createOrbitControls({ name }) {
+            let model = this._getModel(name);
+            if (model === -1) return '⚠️绑定的对象有误！';
+
+            let _orbitControls = new OrbitControls(
+                model,
+                this.runtime.renderer.canvas,
+            );
+
+            _orbitControls.update();
+
+            return new Wrapper(
+                new RTW_Model_Box(
+                    _orbitControls,
+                    false,
+                    false,
+                    false,
+                    undefined,
+                ),
+            );
+        }
+
+        updateControls({ name }) {
+            let model = this._getModel(name);
+            if (model === -1 || !model.update) return '⚠️更新的控制器有误！';
+
+            model.update();
+        }
+
+        setControlState({ name, YN }) {
+            let model = this._getModel(name);
+            if (model === -1 || !model.update) return '⚠️设置的控制器有误！';
 
             if (Cast.toString(YN) == 'true') {
-                this.controls.enabled = true;
+                model.enabled = true;
             } else {
-                this.controls.enabled = false;
+                model.enabled = false;
             }
-            this.controls.update();
+            model.update();
         }
 
-        mouseCanControlCamera({ }) {
-            if (!this.tc) {
-                return false;
-            }
-            return this.controls.enabled;
+        mouseCanControl({ name }) {
+            let model = this._getModel(name);
+            if (model === -1 || !model.update) return '⚠️设置的控制器有误！';
+            return model.enabled;
         }
 
-        /**
-         * 启用/禁用鼠标控制相机惯性
-         * @param {object} args
-         * @param {string} args.YN2
-         */
 
-        setControlCameraDamping({ YN2 }) {
-            if (!this.tc) {
-                return '⚠️显示器未初始化！';
-            }
+        setControlDamping({ name, YN2 }) {
+            let model = this._getModel(name);
+            if (model === -1 || !model.update) return '⚠️设置的控制器有误！';
 
             if (Cast.toString(YN2) == 'yes') {
-                this.controls.enableDamping = true;
+                model.enableDamping = true;
             } else {
-                this.controls.enableDamping = false;
+                model.enableDamping = false;
             }
         }
 
-        /**
-         * 获取鼠标控制相机惯性状态
-         * @param {object} args
-         * @param {number} args.num
-         */
+        setControlDampingNum({ name, num }) {
+            let model = this._getModel(name);
+            if (model === -1 || !model.update) return '⚠️设置的控制器有误！';
 
-        setControlCameraDampingNum({ num }) {
-            if (!this.tc) {
-                return '⚠️显示器未初始化！';
-            }
+            model.dampingFactor = Cast.toNumber(num);
+        }
 
-            this.controls.dampingFactor = Cast.toNumber(num);
+        setOrbitControlsTarget({ name, x, y, z }) {
+            let model = this._getModel(name);
+            if (model === -1 || !model.update || !(model.target instanceof THREE.Vector3)) return '⚠️设置的轨道控制器有误！';
+
+            model.target.set(
+                Cast.toNumber(x),
+                Cast.toNumber(y),
+                Cast.toNumber(z),
+            );
         }
 
         /**
