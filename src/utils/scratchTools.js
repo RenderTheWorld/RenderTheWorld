@@ -20,6 +20,7 @@ const inMainWorkspace = (ext) => {
  * @returns {*} The result of the function execution.
  */
 function hijack(fn) {
+    if (fn === undefined) return 0;
     const _orig = Function.prototype.apply;
     // eslint-disable-next-line no-extend-native
     Function.prototype.apply = (thisArg) => thisArg;
@@ -46,10 +47,11 @@ function getEventListener(e) {
 function getScratchBlocks(runtime) {
     // In Gandi, ScratchBlocks can be accessed from the runtime.
     // In TW, ScratchBlocks can be directly accessed from the window.
+
     return (
         hijack(getEventListener(runtime._events.EXTENSION_ADDED))?.ScratchBlocks ||
         runtime.scratchBlocks ||
-        window.Blockly?.getMainWorkspace()?.getScratchBlocks() ||
+        window.Blockly?.getMainWorkspace()?.getScratchBlocks?.() ||
         window.ScratchBlocks
     );
 }

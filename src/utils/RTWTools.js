@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable func-names */
 /* eslint-disable max-classes-per-file */
-import { chen_RenderTheWorld_extensionId } from 'src/assets';
+import { chen_RenderTheWorld_extensionId } from '../assets';
 import * as THREE from '../assets/threejs/src/Three.js';
 import { OrbitControls } from '../assets/threejs_ext/OrbitControls.js';
 

@@ -54,10 +54,10 @@ export default {
     'RenderTheWorld.importModel': '导入或重置: 名称 [name] 对象 [model]',
     'RenderTheWorld.shadowSettings':
       '设置 [name] 的阴影设置: [YN] 投射阴影 [YN2] 被投射阴影',
-    'RenderTheWorld.makeMaterial': '创建材质 [material]',
+    'RenderTheWorld.makeMaterial': '创建材质',
     'RenderTheWorld.setMaterialColor': '设置当前材质颜色 [color]',
     'RenderTheWorld.setMaterialFog': '设置当前材质 [YN] 受雾效果影响',
-    'RenderTheWorld.return': '材质创建完成',
+    'RenderTheWorld.returnm': '材质创建完成 [material]',
 
     'RenderTheWorld.playAnimation': '启动模型: [name] 的动画 [animationName]',
     'RenderTheWorld.stopAnimation': '结束模型: [name] 的动画 [animationName]',
@@ -179,7 +179,7 @@ export default {
       '设置当前材质颜色，在“创建材质”积木中使用',
     'RenderTheWorld.setMaterialFog.tooltip':
       '设置当前材质是否受雾效果影响，在“创建材质”积木中使用',
-    'RenderTheWorld.return.tooltip': '材质创建完成，必须在“创建材质”积木中使用',
+    'RenderTheWorld.returnm.tooltip': '材质创建完成，必须在“创建材质”积木中使用',
 
     'RenderTheWorld.playAnimation.tooltip': '启动模型的动画',
     'RenderTheWorld.stopAnimation.tooltip': '结束模型的动画',
@@ -298,10 +298,10 @@ export default {
     'RenderTheWorld.importModel': 'reset or make: name [name] object [model]',
     'RenderTheWorld.shadowSettings':
       'set [name] shadow settings: [YN] cast shadows [YN2] shadow cast',
-    'RenderTheWorld.makeMaterial': 'make material [material]',
+    'RenderTheWorld.makeMaterial': 'make material',
     'RenderTheWorld.setMaterialColor': 'set current material color [color]',
     'RenderTheWorld.setMaterialFog': 'set current material [YN] affected fog',
-    'RenderTheWorld.return': 'Material make completed',
+    'RenderTheWorld.returnm': 'Material make completed [material]',
 
     'RenderTheWorld.playAnimation':
       "start Object: [name] 's Animation [animationName]",
@@ -431,7 +431,7 @@ export default {
       'Set the current material color and use it in the "make material" block',
     'RenderTheWorld.setMaterialFog.tooltip':
       'Set whether the current material is affected by fog effects, using in the "make material" block',
-    'RenderTheWorld.return.tooltip':
+    'RenderTheWorld.returnm.tooltip':
       'The material creation is completed and must be used in the "make material" block',
 
     'RenderTheWorld.playAnimation.tooltip': 'Start the animation of the model',
