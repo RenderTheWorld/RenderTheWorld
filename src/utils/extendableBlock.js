@@ -1,5 +1,5 @@
 // 基于Nights/FurryR/zxq的可扩展积木
-// xiaochen004hao对其进行了一下更改优化
+// xiaochen004hao对其进行了一些更改优化
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable func-names */
 /* eslint-disable max-classes-per-file */

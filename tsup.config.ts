@@ -18,5 +18,10 @@ export default defineConfig({
 `
   },
   platform: 'browser',
-  clean: true
+  clean: true,
+  esbuildOptions(options) {
+    options.target = 'esnext';
+    options.charset = 'utf8'; // 禁用 Unicode 转义
+    options.legalComments = 'inline'; // 保留注释
+  },
 })
