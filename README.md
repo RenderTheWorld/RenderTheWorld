@@ -4,7 +4,7 @@
 
 > Scratch 3D extension.
 
-![License](https://img.shields.io/github/license/RenderTheWorld/RenderTheWorld?labelColor=%23121c3d&countColor=%234a76ff&style=flat-square&labelStyle=upper)
+![License](https://img.shields.io/github/license/RenderTheWorld/RenderTheWorld?labelColor=%23121c3d&color=%234a76ff&style=flat-square&labelStyle=upper)
 [![Visitors](https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fgithub.com%2FRenderTheWorld%2FRenderTheWorld&labelColor=%23121c3d&countColor=%234a76ff&style=flat-square&labelStyle=upper)](https://visitorbadge.io/status?path=https%3A%2F%2Fgithub.com%2FRenderTheWorld%2FRenderTheWorld)
 
 [🇺🇸](./README.md) | [🇨🇳](./README_zh-CN.md)
