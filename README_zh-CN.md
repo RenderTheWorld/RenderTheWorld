@@ -4,7 +4,7 @@
 
 > Scratch 3D扩展.
 
-[![HitCount](https://hits.dwyl.com/RenderTheWorld/RenderTheWorld.svg?style=flat&show=unique)](http://hits.dwyl.com/RenderTheWorld/RenderTheWorld)
+[![Visitors](https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fgithub.com%2FRenderTheWorld%2FRenderTheWorld&countColor=%23263759)](https://visitorbadge.io/status?path=https%3A%2F%2Fgithub.com%2FRenderTheWorld%2FRenderTheWorld)
 
 [🇺🇸](./README.md) | [🇨🇳](./README_zh-CN.md)
 
