@@ -4,7 +4,7 @@
 
 > Scratch 3D extension.
 
-[![Visitors](https://hits.dwyl.com/RenderTheWorld/RenderTheWorld.svg?style=flat-square)](https://github.com/RenderTheWorld/RenderTheWorld)
+[![HitCount](https://hits.dwyl.com/RenderTheWorld/RenderTheWorld.svg?style=flat&show=unique)](http://hits.dwyl.com/RenderTheWorld/RenderTheWorld)
 
 [🇺🇸](./README.md) | [🇨🇳](./README_zh-CN.md)
 
