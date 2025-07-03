@@ -37935,7 +37935,7 @@ void main() {
     return hijack(getEventListener(runtime._events.EXTENSION_ADDED))?.ScratchBlocks || runtime.scratchBlocks || window.Blockly?.getMainWorkspace()?.getScratchBlocks?.() || window.ScratchBlocks;
   }
   function getVM(runtime) {
-    return hijack(getEventListener(runtime._events["QUESTION"])).props.vm || runtime.extensionManager.scratchBlocks || // 如果用户使用了“扩展管理”插件就太好了（
+    return hijack(getEventListener(runtime._events["QUESTION"])).props.vm || // runtime.extensionManager.scratchBlocks ||  // 如果用户使用了“扩展管理”插件就太好了（
     window.Scratch.vm;
   }
   var hackFun = (runtime) => {

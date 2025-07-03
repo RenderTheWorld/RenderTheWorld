@@ -34,7 +34,6 @@ import { getDynamicArgs, initExpandableBlocks } from './utils/extendableBlock.js
 import { addRTWStyle, RTW_Model_Box, Wrapper, patch } from './utils/RTWTools.js';
 import { addFileType } from './utils/gandiAssetTools.js';
 import { Skins } from './utils/canvasSkin.js';
-import { mod } from './assets/threejs/build/three.tsl.js';
 
 (function (Scratch) {
     'use strict';

@@ -59,7 +59,7 @@ function getScratchBlocks(runtime) {
 function getVM(runtime) {
     return (
         hijack(getEventListener(runtime._events["QUESTION"])).props.vm ||
-        runtime.extensionManager.scratchBlocks ||  // 如果用户使用了“扩展管理”插件就太好了（
+        // runtime.extensionManager.scratchBlocks ||  // 如果用户使用了“扩展管理”插件就太好了（
         window.Scratch.vm  // 最坏情况
     );
 }
