@@ -118,14 +118,13 @@ class RenderEngine {
         // 物体
         this.objects = {};
 
+        // 动画
+        this.animations = {};
+
         // 渲染canvas
         /** @type {HTMLDivElement} */
         this.tc = document.createElement('canvas');
         this.tc.className = 'RenderTheWorld';
-
-        // 渲染器
-        /** @type {THREE.WebGLRenderer} */
-        this.renderer = null;
 
         // threejs skin
         let index = this.ext.runtime.renderer._groupOrdering.indexOf('video');

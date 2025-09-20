@@ -528,12 +528,17 @@
   var SIGNED_RED_RGTC1_Format = 36284;
   var RED_GREEN_RGTC2_Format = 36285;
   var SIGNED_RED_GREEN_RGTC2_Format = 36286;
+  var LoopOnce = 2200;
+  var LoopRepeat = 2201;
+  var LoopPingPong = 2202;
   var InterpolateDiscrete = 2300;
   var InterpolateLinear = 2301;
   var InterpolateSmooth = 2302;
   var ZeroCurvatureEnding = 2400;
   var ZeroSlopeEnding = 2401;
   var WrapAroundEnding = 2402;
+  var NormalAnimationBlendMode = 2500;
+  var AdditiveAnimationBlendMode = 2501;
   var BasicDepthPacking = 3200;
   var RGBADepthPacking = 3201;
   var TangentSpaceNormalMap = 0;
@@ -623,6 +628,7 @@
     }
   };
   var _lut = ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "0a", "0b", "0c", "0d", "0e", "0f", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "1a", "1b", "1c", "1d", "1e", "1f", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "2a", "2b", "2c", "2d", "2e", "2f", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "3a", "3b", "3c", "3d", "3e", "3f", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "4a", "4b", "4c", "4d", "4e", "4f", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "5a", "5b", "5c", "5d", "5e", "5f", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69", "6a", "6b", "6c", "6d", "6e", "6f", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "7a", "7b", "7c", "7d", "7e", "7f", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89", "8a", "8b", "8c", "8d", "8e", "8f", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "9a", "9b", "9c", "9d", "9e", "9f", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "a9", "aa", "ab", "ac", "ad", "ae", "af", "b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "ba", "bb", "bc", "bd", "be", "bf", "c0", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "ca", "cb", "cc", "cd", "ce", "cf", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9", "da", "db", "dc", "dd", "de", "df", "e0", "e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "ea", "eb", "ec", "ed", "ee", "ef", "f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "fa", "fb", "fc", "fd", "fe", "ff"];
+  var _seed = 1234567;
   var DEG2RAD = Math.PI / 180;
   var RAD2DEG = 180 / Math.PI;
   function generateUUID() {
@@ -639,8 +645,101 @@
   function euclideanModulo(n, m) {
     return (n % m + m) % m;
   }
+  function mapLinear(x, a1, a2, b1, b2) {
+    return b1 + (x - a1) * (b2 - b1) / (a2 - a1);
+  }
+  function inverseLerp(x, y, value) {
+    if (x !== y) {
+      return (value - x) / (y - x);
+    } else {
+      return 0;
+    }
+  }
   function lerp(x, y, t) {
     return (1 - t) * x + t * y;
+  }
+  function damp(x, y, lambda, dt) {
+    return lerp(x, y, 1 - Math.exp(-lambda * dt));
+  }
+  function pingpong(x, length = 1) {
+    return length - Math.abs(euclideanModulo(x, length * 2) - length);
+  }
+  function smoothstep(x, min, max) {
+    if (x <= min) return 0;
+    if (x >= max) return 1;
+    x = (x - min) / (max - min);
+    return x * x * (3 - 2 * x);
+  }
+  function smootherstep(x, min, max) {
+    if (x <= min) return 0;
+    if (x >= max) return 1;
+    x = (x - min) / (max - min);
+    return x * x * x * (x * (x * 6 - 15) + 10);
+  }
+  function randInt(low, high) {
+    return low + Math.floor(Math.random() * (high - low + 1));
+  }
+  function randFloat(low, high) {
+    return low + Math.random() * (high - low);
+  }
+  function randFloatSpread(range) {
+    return range * (0.5 - Math.random());
+  }
+  function seededRandom(s) {
+    if (s !== void 0) _seed = s;
+    let t = _seed += 1831565813;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+  function degToRad(degrees) {
+    return degrees * DEG2RAD;
+  }
+  function radToDeg(radians) {
+    return radians * RAD2DEG;
+  }
+  function isPowerOfTwo(value) {
+    return (value & value - 1) === 0 && value !== 0;
+  }
+  function ceilPowerOfTwo(value) {
+    return Math.pow(2, Math.ceil(Math.log(value) / Math.LN2));
+  }
+  function floorPowerOfTwo(value) {
+    return Math.pow(2, Math.floor(Math.log(value) / Math.LN2));
+  }
+  function setQuaternionFromProperEuler(q, a, b, c, order) {
+    const cos = Math.cos;
+    const sin = Math.sin;
+    const c2 = cos(b / 2);
+    const s2 = sin(b / 2);
+    const c13 = cos((a + c) / 2);
+    const s13 = sin((a + c) / 2);
+    const c1_3 = cos((a - c) / 2);
+    const s1_3 = sin((a - c) / 2);
+    const c3_1 = cos((c - a) / 2);
+    const s3_1 = sin((c - a) / 2);
+    switch (order) {
+      case "XYX":
+        q.set(c2 * s13, s2 * c1_3, s2 * s1_3, c2 * c13);
+        break;
+      case "YZY":
+        q.set(s2 * s1_3, c2 * s13, s2 * c1_3, c2 * c13);
+        break;
+      case "ZXZ":
+        q.set(s2 * c1_3, s2 * s1_3, c2 * s13, c2 * c13);
+        break;
+      case "XZX":
+        q.set(c2 * s13, s2 * s3_1, s2 * c3_1, c2 * c13);
+        break;
+      case "YXY":
+        q.set(s2 * c3_1, c2 * s13, s2 * s3_1, c2 * c13);
+        break;
+      case "ZYZ":
+        q.set(s2 * s3_1, s2 * c3_1, c2 * s13, c2 * c13);
+        break;
+      default:
+        console.warn("THREE.MathUtils: .setQuaternionFromProperEuler() encountered an unknown order: " + order);
+    }
   }
   function denormalize(value, array) {
     switch (array.constructor) {
@@ -682,6 +781,250 @@
         throw new Error("Invalid component type.");
     }
   }
+  var MathUtils = {
+    DEG2RAD,
+    RAD2DEG,
+    /**
+     * Generate a [UUID]{@link https://en.wikipedia.org/wiki/Universally_unique_identifier}
+     * (universally unique identifier).
+     *
+     * @static
+     * @method
+     * @return {string} The UUID.
+     */
+    generateUUID,
+    /**
+     * Clamps the given value between min and max.
+     *
+     * @static
+     * @method
+     * @param {number} value - The value to clamp.
+     * @param {number} min - The min value.
+     * @param {number} max - The max value.
+     * @return {number} The clamped value.
+     */
+    clamp,
+    /**
+     * Computes the Euclidean modulo of the given parameters that
+     * is `( ( n % m ) + m ) % m`.
+     *
+     * @static
+     * @method
+     * @param {number} n - The first parameter.
+     * @param {number} m - The second parameter.
+     * @return {number} The Euclidean modulo.
+     */
+    euclideanModulo,
+    /**
+     * Performs a linear mapping from range `<a1, a2>` to range `<b1, b2>`
+     * for the given value.
+     *
+     * @static
+     * @method
+     * @param {number} x - The value to be mapped.
+     * @param {number} a1 - Minimum value for range A.
+     * @param {number} a2 - Maximum value for range A.
+     * @param {number} b1 - Minimum value for range B.
+     * @param {number} b2 - Maximum value for range B.
+     * @return {number} The mapped value.
+     */
+    mapLinear,
+    /**
+     * Returns the percentage in the closed interval `[0, 1]` of the given value
+     * between the start and end point.
+     *
+     * @static
+     * @method
+     * @param {number} x - The start point
+     * @param {number} y - The end point.
+     * @param {number} value - A value between start and end.
+     * @return {number} The interpolation factor.
+     */
+    inverseLerp,
+    /**
+     * Returns a value linearly interpolated from two known points based on the given interval -
+     * `t = 0` will return `x` and `t = 1` will return `y`.
+     *
+     * @static
+     * @method
+     * @param {number} x - The start point
+     * @param {number} y - The end point.
+     * @param {number} t - The interpolation factor in the closed interval `[0, 1]`.
+     * @return {number} The interpolated value.
+     */
+    lerp,
+    /**
+     * Smoothly interpolate a number from `x` to `y` in  a spring-like manner using a delta
+     * time to maintain frame rate independent movement. For details, see
+     * [Frame rate independent damping using lerp]{@link http://www.rorydriscoll.com/2016/03/07/frame-rate-independent-damping-using-lerp/}.
+     *
+     * @static
+     * @method
+     * @param {number} x - The current point.
+     * @param {number} y - The target point.
+     * @param {number} lambda - A higher lambda value will make the movement more sudden,
+     * and a lower value will make the movement more gradual.
+     * @param {number} dt - Delta time in seconds.
+     * @return {number} The interpolated value.
+     */
+    damp,
+    /**
+     * Returns a value that alternates between `0` and the given `length` parameter.
+     *
+     * @static
+     * @method
+     * @param {number} x - The value to pingpong.
+     * @param {number} [length=1] - The positive value the function will pingpong to.
+     * @return {number} The alternated value.
+     */
+    pingpong,
+    /**
+     * Returns a value in the range `[0,1]` that represents the percentage that `x` has
+     * moved between `min` and `max`, but smoothed or slowed down the closer `x` is to
+     * the `min` and `max`.
+     *
+     * See [Smoothstep]{@link http://en.wikipedia.org/wiki/Smoothstep} for more details.
+     *
+     * @static
+     * @method
+     * @param {number} x - The value to evaluate based on its position between min and max.
+     * @param {number} min - The min value. Any x value below min will be `0`.
+     * @param {number} max - The max value. Any x value above max will be `1`.
+     * @return {number} The alternated value.
+     */
+    smoothstep,
+    /**
+     * A [variation on smoothstep]{@link https://en.wikipedia.org/wiki/Smoothstep#Variations}
+     * that has zero 1st and 2nd order derivatives at x=0 and x=1.
+     *
+     * @static
+     * @method
+     * @param {number} x - The value to evaluate based on its position between min and max.
+     * @param {number} min - The min value. Any x value below min will be `0`.
+     * @param {number} max - The max value. Any x value above max will be `1`.
+     * @return {number} The alternated value.
+     */
+    smootherstep,
+    /**
+     * Returns a random integer from `<low, high>` interval.
+     *
+     * @static
+     * @method
+     * @param {number} low - The lower value boundary.
+     * @param {number} high - The upper value boundary
+     * @return {number} A random integer.
+     */
+    randInt,
+    /**
+     * Returns a random float from `<low, high>` interval.
+     *
+     * @static
+     * @method
+     * @param {number} low - The lower value boundary.
+     * @param {number} high - The upper value boundary
+     * @return {number} A random float.
+     */
+    randFloat,
+    /**
+     * Returns a random integer from `<-range/2, range/2>` interval.
+     *
+     * @static
+     * @method
+     * @param {number} range - Defines the value range.
+     * @return {number} A random float.
+     */
+    randFloatSpread,
+    /**
+     * Returns a deterministic pseudo-random float in the interval `[0, 1]`.
+     *
+     * @static
+     * @method
+     * @param {number} [s] - The integer seed.
+     * @return {number} A random float.
+     */
+    seededRandom,
+    /**
+     * Converts degrees to radians.
+     *
+     * @static
+     * @method
+     * @param {number} degrees - A value in degrees.
+     * @return {number} The converted value in radians.
+     */
+    degToRad,
+    /**
+     * Converts radians to degrees.
+     *
+     * @static
+     * @method
+     * @param {number} radians - A value in radians.
+     * @return {number} The converted value in degrees.
+     */
+    radToDeg,
+    /**
+     * Returns `true` if the given number is a power of two.
+     *
+     * @static
+     * @method
+     * @param {number} value - The value to check.
+     * @return {boolean} Whether the given number is a power of two or not.
+     */
+    isPowerOfTwo,
+    /**
+     * Returns the smallest power of two that is greater than or equal to the given number.
+     *
+     * @static
+     * @method
+     * @param {number} value - The value to find a POT for.
+     * @return {number} The smallest power of two that is greater than or equal to the given number.
+     */
+    ceilPowerOfTwo,
+    /**
+     * Returns the largest power of two that is less than or equal to the given number.
+     *
+     * @static
+     * @method
+     * @param {number} value - The value to find a POT for.
+     * @return {number} The largest power of two that is less than or equal to the given number.
+     */
+    floorPowerOfTwo,
+    /**
+     * Sets the given quaternion from the [Intrinsic Proper Euler Angles]{@link https://en.wikipedia.org/wiki/Euler_angles}
+     * defined by the given angles and order.
+     *
+     * Rotations are applied to the axes in the order specified by order:
+     * rotation by angle `a` is applied first, then by angle `b`, then by angle `c`.
+     *
+     * @static
+     * @method
+     * @param {Quaternion} q - The quaternion to set.
+     * @param {number} a - The rotation applied to the first axis, in radians.
+     * @param {number} b - The rotation applied to the second axis, in radians.
+     * @param {number} c - The rotation applied to the third axis, in radians.
+     * @param {('XYX'|'XZX'|'YXY'|'YZY'|'ZXZ'|'ZYZ')} order - A string specifying the axes order.
+     */
+    setQuaternionFromProperEuler,
+    /**
+     * Normalizes the given value according to the given typed array.
+     *
+     * @static
+     * @method
+     * @param {number} value - The float value in the range `[0,1]` to normalize.
+     * @param {TypedArray} array - The typed array that defines the data type of the value.
+     * @return {number} The normalize value.
+     */
+    normalize,
+    /**
+     * Denormalizes the given value according to the given typed array.
+     *
+     * @static
+     * @method
+     * @param {number} value - The value to denormalize.
+     * @param {TypedArray} array - The typed array that defines the data type of the value.
+     * @return {number} The denormalize (float) value in the range `[0,1]`.
+     */
+    denormalize
+  };
   var Vector2 = class _Vector2 {
     /**
      * Constructs a new 2D vector.
@@ -12663,6 +13006,45 @@
       return hand.joints[inputjoint.jointName];
     }
   };
+  var Fog = class _Fog {
+    /**
+     * Constructs a new fog.
+     *
+     * @param {number|Color} color - The fog's color.
+     * @param {number} [near=1] - The minimum distance to start applying fog.
+     * @param {number} [far=1000] - The maximum distance at which fog stops being calculated and applied.
+     */
+    constructor(color2, near = 1, far = 1e3) {
+      this.isFog = true;
+      this.name = "";
+      this.color = new Color(color2);
+      this.near = near;
+      this.far = far;
+    }
+    /**
+     * Returns a new fog with copied values from this instance.
+     *
+     * @return {Fog} A clone of this instance.
+     */
+    clone() {
+      return new _Fog(this.color, this.near, this.far);
+    }
+    /**
+     * Serializes the fog into JSON.
+     *
+     * @param {?(Object|string)} meta - An optional value holding meta information about the serialization.
+     * @return {Object} A JSON object representing the serialized fog
+     */
+    toJSON() {
+      return {
+        type: "Fog",
+        name: this.name,
+        color: this.color.getHex(),
+        near: this.near,
+        far: this.far
+      };
+    }
+  };
   var Scene = class extends Object3D {
     /**
      * Constructs a new scene.
@@ -13232,6 +13614,260 @@
       return new _PlaneGeometry(data.width, data.height, data.widthSegments, data.heightSegments);
     }
   };
+  var SphereGeometry = class _SphereGeometry extends BufferGeometry {
+    /**
+     * Constructs a new sphere geometry.
+     *
+     * @param {number} [radius=1] - The sphere radius.
+     * @param {number} [widthSegments=32] - The number of horizontal segments. Minimum value is `3`.
+     * @param {number} [heightSegments=16] - The number of vertical segments. Minimum value is `2`.
+     * @param {number} [phiStart=0] - The horizontal starting angle in radians.
+     * @param {number} [phiLength=Math.PI*2] - The horizontal sweep angle size.
+     * @param {number} [thetaStart=0] - The vertical starting angle in radians.
+     * @param {number} [thetaLength=Math.PI] - The vertical sweep angle size.
+     */
+    constructor(radius = 1, widthSegments = 32, heightSegments = 16, phiStart = 0, phiLength = Math.PI * 2, thetaStart = 0, thetaLength = Math.PI) {
+      super();
+      this.type = "SphereGeometry";
+      this.parameters = {
+        radius,
+        widthSegments,
+        heightSegments,
+        phiStart,
+        phiLength,
+        thetaStart,
+        thetaLength
+      };
+      widthSegments = Math.max(3, Math.floor(widthSegments));
+      heightSegments = Math.max(2, Math.floor(heightSegments));
+      const thetaEnd = Math.min(thetaStart + thetaLength, Math.PI);
+      let index = 0;
+      const grid = [];
+      const vertex2 = new Vector3();
+      const normal = new Vector3();
+      const indices = [];
+      const vertices = [];
+      const normals = [];
+      const uvs = [];
+      for (let iy = 0; iy <= heightSegments; iy++) {
+        const verticesRow = [];
+        const v = iy / heightSegments;
+        let uOffset = 0;
+        if (iy === 0 && thetaStart === 0) {
+          uOffset = 0.5 / widthSegments;
+        } else if (iy === heightSegments && thetaEnd === Math.PI) {
+          uOffset = -0.5 / widthSegments;
+        }
+        for (let ix = 0; ix <= widthSegments; ix++) {
+          const u = ix / widthSegments;
+          vertex2.x = -radius * Math.cos(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
+          vertex2.y = radius * Math.cos(thetaStart + v * thetaLength);
+          vertex2.z = radius * Math.sin(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
+          vertices.push(vertex2.x, vertex2.y, vertex2.z);
+          normal.copy(vertex2).normalize();
+          normals.push(normal.x, normal.y, normal.z);
+          uvs.push(u + uOffset, 1 - v);
+          verticesRow.push(index++);
+        }
+        grid.push(verticesRow);
+      }
+      for (let iy = 0; iy < heightSegments; iy++) {
+        for (let ix = 0; ix < widthSegments; ix++) {
+          const a = grid[iy][ix + 1];
+          const b = grid[iy][ix];
+          const c = grid[iy + 1][ix];
+          const d = grid[iy + 1][ix + 1];
+          if (iy !== 0 || thetaStart > 0) indices.push(a, b, d);
+          if (iy !== heightSegments - 1 || thetaEnd < Math.PI) indices.push(b, c, d);
+        }
+      }
+      this.setIndex(indices);
+      this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
+      this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
+      this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+    }
+    copy(source) {
+      super.copy(source);
+      this.parameters = Object.assign({}, source.parameters);
+      return this;
+    }
+    /**
+     * Factory method for creating an instance of this class from the given
+     * JSON object.
+     *
+     * @param {Object} data - A JSON object representing the serialized geometry.
+     * @return {SphereGeometry} A new instance.
+     */
+    static fromJSON(data) {
+      return new _SphereGeometry(data.radius, data.widthSegments, data.heightSegments, data.phiStart, data.phiLength, data.thetaStart, data.thetaLength);
+    }
+  };
+  var MeshPhongMaterial = class extends Material {
+    /**
+     * Constructs a new mesh phong material.
+     *
+     * @param {Object} [parameters] - An object with one or more properties
+     * defining the material's appearance. Any property of the material
+     * (including any property from inherited materials) can be passed
+     * in here. Color values can be passed any type of value accepted
+     * by {@link Color#set}.
+     */
+    constructor(parameters) {
+      super();
+      this.isMeshPhongMaterial = true;
+      this.type = "MeshPhongMaterial";
+      this.color = new Color(16777215);
+      this.specular = new Color(1118481);
+      this.shininess = 30;
+      this.map = null;
+      this.lightMap = null;
+      this.lightMapIntensity = 1;
+      this.aoMap = null;
+      this.aoMapIntensity = 1;
+      this.emissive = new Color(0);
+      this.emissiveIntensity = 1;
+      this.emissiveMap = null;
+      this.bumpMap = null;
+      this.bumpScale = 1;
+      this.normalMap = null;
+      this.normalMapType = TangentSpaceNormalMap;
+      this.normalScale = new Vector2(1, 1);
+      this.displacementMap = null;
+      this.displacementScale = 1;
+      this.displacementBias = 0;
+      this.specularMap = null;
+      this.alphaMap = null;
+      this.envMap = null;
+      this.envMapRotation = new Euler();
+      this.combine = MultiplyOperation;
+      this.reflectivity = 1;
+      this.refractionRatio = 0.98;
+      this.wireframe = false;
+      this.wireframeLinewidth = 1;
+      this.wireframeLinecap = "round";
+      this.wireframeLinejoin = "round";
+      this.flatShading = false;
+      this.fog = true;
+      this.setValues(parameters);
+    }
+    copy(source) {
+      super.copy(source);
+      this.color.copy(source.color);
+      this.specular.copy(source.specular);
+      this.shininess = source.shininess;
+      this.map = source.map;
+      this.lightMap = source.lightMap;
+      this.lightMapIntensity = source.lightMapIntensity;
+      this.aoMap = source.aoMap;
+      this.aoMapIntensity = source.aoMapIntensity;
+      this.emissive.copy(source.emissive);
+      this.emissiveMap = source.emissiveMap;
+      this.emissiveIntensity = source.emissiveIntensity;
+      this.bumpMap = source.bumpMap;
+      this.bumpScale = source.bumpScale;
+      this.normalMap = source.normalMap;
+      this.normalMapType = source.normalMapType;
+      this.normalScale.copy(source.normalScale);
+      this.displacementMap = source.displacementMap;
+      this.displacementScale = source.displacementScale;
+      this.displacementBias = source.displacementBias;
+      this.specularMap = source.specularMap;
+      this.alphaMap = source.alphaMap;
+      this.envMap = source.envMap;
+      this.envMapRotation.copy(source.envMapRotation);
+      this.combine = source.combine;
+      this.reflectivity = source.reflectivity;
+      this.refractionRatio = source.refractionRatio;
+      this.wireframe = source.wireframe;
+      this.wireframeLinewidth = source.wireframeLinewidth;
+      this.wireframeLinecap = source.wireframeLinecap;
+      this.wireframeLinejoin = source.wireframeLinejoin;
+      this.flatShading = source.flatShading;
+      this.fog = source.fog;
+      return this;
+    }
+  };
+  var MeshLambertMaterial = class extends Material {
+    /**
+     * Constructs a new mesh lambert material.
+     *
+     * @param {Object} [parameters] - An object with one or more properties
+     * defining the material's appearance. Any property of the material
+     * (including any property from inherited materials) can be passed
+     * in here. Color values can be passed any type of value accepted
+     * by {@link Color#set}.
+     */
+    constructor(parameters) {
+      super();
+      this.isMeshLambertMaterial = true;
+      this.type = "MeshLambertMaterial";
+      this.color = new Color(16777215);
+      this.map = null;
+      this.lightMap = null;
+      this.lightMapIntensity = 1;
+      this.aoMap = null;
+      this.aoMapIntensity = 1;
+      this.emissive = new Color(0);
+      this.emissiveIntensity = 1;
+      this.emissiveMap = null;
+      this.bumpMap = null;
+      this.bumpScale = 1;
+      this.normalMap = null;
+      this.normalMapType = TangentSpaceNormalMap;
+      this.normalScale = new Vector2(1, 1);
+      this.displacementMap = null;
+      this.displacementScale = 1;
+      this.displacementBias = 0;
+      this.specularMap = null;
+      this.alphaMap = null;
+      this.envMap = null;
+      this.envMapRotation = new Euler();
+      this.combine = MultiplyOperation;
+      this.reflectivity = 1;
+      this.refractionRatio = 0.98;
+      this.wireframe = false;
+      this.wireframeLinewidth = 1;
+      this.wireframeLinecap = "round";
+      this.wireframeLinejoin = "round";
+      this.flatShading = false;
+      this.fog = true;
+      this.setValues(parameters);
+    }
+    copy(source) {
+      super.copy(source);
+      this.color.copy(source.color);
+      this.map = source.map;
+      this.lightMap = source.lightMap;
+      this.lightMapIntensity = source.lightMapIntensity;
+      this.aoMap = source.aoMap;
+      this.aoMapIntensity = source.aoMapIntensity;
+      this.emissive.copy(source.emissive);
+      this.emissiveMap = source.emissiveMap;
+      this.emissiveIntensity = source.emissiveIntensity;
+      this.bumpMap = source.bumpMap;
+      this.bumpScale = source.bumpScale;
+      this.normalMap = source.normalMap;
+      this.normalMapType = source.normalMapType;
+      this.normalScale.copy(source.normalScale);
+      this.displacementMap = source.displacementMap;
+      this.displacementScale = source.displacementScale;
+      this.displacementBias = source.displacementBias;
+      this.specularMap = source.specularMap;
+      this.alphaMap = source.alphaMap;
+      this.envMap = source.envMap;
+      this.envMapRotation.copy(source.envMapRotation);
+      this.combine = source.combine;
+      this.reflectivity = source.reflectivity;
+      this.refractionRatio = source.refractionRatio;
+      this.wireframe = source.wireframe;
+      this.wireframeLinewidth = source.wireframeLinewidth;
+      this.wireframeLinecap = source.wireframeLinecap;
+      this.wireframeLinejoin = source.wireframeLinejoin;
+      this.flatShading = source.flatShading;
+      this.fog = source.fog;
+      return this;
+    }
+  };
   var MeshDepthMaterial = class extends Material {
     /**
      * Constructs a new mesh depth material.
@@ -13309,6 +13945,64 @@
   }
   function isTypedArray(object) {
     return ArrayBuffer.isView(object) && !(object instanceof DataView);
+  }
+  function getKeyframeOrder(times) {
+    function compareTime(i, j) {
+      return times[i] - times[j];
+    }
+    const n = times.length;
+    const result = new Array(n);
+    for (let i = 0; i !== n; ++i) result[i] = i;
+    result.sort(compareTime);
+    return result;
+  }
+  function sortedArray(values, stride, order) {
+    const nValues = values.length;
+    const result = new values.constructor(nValues);
+    for (let i = 0, dstOffset = 0; dstOffset !== nValues; ++i) {
+      const srcOffset = order[i] * stride;
+      for (let j = 0; j !== stride; ++j) {
+        result[dstOffset++] = values[srcOffset + j];
+      }
+    }
+    return result;
+  }
+  function flattenJSON(jsonKeys, times, values, valuePropertyName) {
+    let i = 1, key = jsonKeys[0];
+    while (key !== void 0 && key[valuePropertyName] === void 0) {
+      key = jsonKeys[i++];
+    }
+    if (key === void 0) return;
+    let value = key[valuePropertyName];
+    if (value === void 0) return;
+    if (Array.isArray(value)) {
+      do {
+        value = key[valuePropertyName];
+        if (value !== void 0) {
+          times.push(key.time);
+          values.push(...value);
+        }
+        key = jsonKeys[i++];
+      } while (key !== void 0);
+    } else if (value.toArray !== void 0) {
+      do {
+        value = key[valuePropertyName];
+        if (value !== void 0) {
+          times.push(key.time);
+          value.toArray(values, values.length);
+        }
+        key = jsonKeys[i++];
+      } while (key !== void 0);
+    } else {
+      do {
+        value = key[valuePropertyName];
+        if (value !== void 0) {
+          times.push(key.time);
+          values.push(value);
+        }
+        key = jsonKeys[i++];
+      } while (key !== void 0);
+    }
   }
   var Interpolant = class {
     /**
@@ -13997,6 +14691,368 @@
     }
   };
   VectorKeyframeTrack.prototype.ValueTypeName = "vector";
+  var AnimationClip = class {
+    /**
+     * Constructs a new animation clip.
+     *
+     * Note: Instead of instantiating an AnimationClip directly with the constructor, you can
+     * use the static interface of this class for creating clips. In most cases though, animation clips
+     * will automatically be created by loaders when importing animated 3D assets.
+     *
+     * @param {string} [name=''] - The clip's name.
+     * @param {number} [duration=-1] - The clip's duration in seconds. If a negative value is passed,
+     * the duration will be calculated from the passed keyframes.
+     * @param {Array<KeyframeTrack>} tracks - An array of keyframe tracks.
+     * @param {(NormalAnimationBlendMode|AdditiveAnimationBlendMode)} [blendMode=NormalAnimationBlendMode] - Defines how the animation
+     * is blended/combined when two or more animations are simultaneously played.
+     */
+    constructor(name = "", duration = -1, tracks = [], blendMode = NormalAnimationBlendMode) {
+      this.name = name;
+      this.tracks = tracks;
+      this.duration = duration;
+      this.blendMode = blendMode;
+      this.uuid = generateUUID();
+      if (this.duration < 0) {
+        this.resetDuration();
+      }
+    }
+    /**
+     * Factory method for creating an animation clip from the given JSON.
+     *
+     * @static
+     * @param {Object} json - The serialized animation clip.
+     * @return {AnimationClip} The new animation clip.
+     */
+    static parse(json) {
+      const tracks = [], jsonTracks = json.tracks, frameTime = 1 / (json.fps || 1);
+      for (let i = 0, n = jsonTracks.length; i !== n; ++i) {
+        tracks.push(parseKeyframeTrack(jsonTracks[i]).scale(frameTime));
+      }
+      const clip = new this(json.name, json.duration, tracks, json.blendMode);
+      clip.uuid = json.uuid;
+      return clip;
+    }
+    /**
+     * Serializes the given animation clip into JSON.
+     *
+     * @static
+     * @param {AnimationClip} clip - The animation clip to serialize.
+     * @return {Object} The JSON object.
+     */
+    static toJSON(clip) {
+      const tracks = [], clipTracks = clip.tracks;
+      const json = {
+        "name": clip.name,
+        "duration": clip.duration,
+        "tracks": tracks,
+        "uuid": clip.uuid,
+        "blendMode": clip.blendMode
+      };
+      for (let i = 0, n = clipTracks.length; i !== n; ++i) {
+        tracks.push(KeyframeTrack.toJSON(clipTracks[i]));
+      }
+      return json;
+    }
+    /**
+     * Returns a new animation clip from the passed morph targets array of a
+     * geometry, taking a name and the number of frames per second.
+     *
+     * Note: The fps parameter is required, but the animation speed can be
+     * overridden via {@link AnimationAction#setDuration}.
+     *
+     * @static
+     * @param {string} name - The name of the animation clip.
+     * @param {Array<Object>} morphTargetSequence - A sequence of morph targets.
+     * @param {number} fps - The Frames-Per-Second value.
+     * @param {boolean} noLoop - Whether the clip should be no loop or not.
+     * @return {AnimationClip} The new animation clip.
+     */
+    static CreateFromMorphTargetSequence(name, morphTargetSequence, fps, noLoop) {
+      const numMorphTargets = morphTargetSequence.length;
+      const tracks = [];
+      for (let i = 0; i < numMorphTargets; i++) {
+        let times = [];
+        let values = [];
+        times.push(
+          (i + numMorphTargets - 1) % numMorphTargets,
+          i,
+          (i + 1) % numMorphTargets
+        );
+        values.push(0, 1, 0);
+        const order = getKeyframeOrder(times);
+        times = sortedArray(times, 1, order);
+        values = sortedArray(values, 1, order);
+        if (!noLoop && times[0] === 0) {
+          times.push(numMorphTargets);
+          values.push(values[0]);
+        }
+        tracks.push(
+          new NumberKeyframeTrack(
+            ".morphTargetInfluences[" + morphTargetSequence[i].name + "]",
+            times,
+            values
+          ).scale(1 / fps)
+        );
+      }
+      return new this(name, -1, tracks);
+    }
+    /**
+     * Searches for an animation clip by name, taking as its first parameter
+     * either an array of clips, or a mesh or geometry that contains an
+     * array named "animations" property.
+     *
+     * @static
+     * @param {(Array<AnimationClip>|Object3D)} objectOrClipArray - The array or object to search through.
+     * @param {string} name - The name to search for.
+     * @return {?AnimationClip} The found animation clip. Returns `null` if no clip has been found.
+     */
+    static findByName(objectOrClipArray, name) {
+      let clipArray = objectOrClipArray;
+      if (!Array.isArray(objectOrClipArray)) {
+        const o = objectOrClipArray;
+        clipArray = o.geometry && o.geometry.animations || o.animations;
+      }
+      for (let i = 0; i < clipArray.length; i++) {
+        if (clipArray[i].name === name) {
+          return clipArray[i];
+        }
+      }
+      return null;
+    }
+    /**
+     * Returns an array of new AnimationClips created from the morph target
+     * sequences of a geometry, trying to sort morph target names into
+     * animation-group-based patterns like "Walk_001, Walk_002, Run_001, Run_002...".
+     *
+     * See {@link MD2Loader#parse} as an example for how the method should be used.
+     *
+     * @static
+     * @param {Array<Object>} morphTargets - A sequence of morph targets.
+     * @param {number} fps - The Frames-Per-Second value.
+     * @param {boolean} noLoop - Whether the clip should be no loop or not.
+     * @return {Array<AnimationClip>} An array of new animation clips.
+     */
+    static CreateClipsFromMorphTargetSequences(morphTargets, fps, noLoop) {
+      const animationToMorphTargets = {};
+      const pattern = /^([\w-]*?)([\d]+)$/;
+      for (let i = 0, il = morphTargets.length; i < il; i++) {
+        const morphTarget = morphTargets[i];
+        const parts = morphTarget.name.match(pattern);
+        if (parts && parts.length > 1) {
+          const name = parts[1];
+          let animationMorphTargets = animationToMorphTargets[name];
+          if (!animationMorphTargets) {
+            animationToMorphTargets[name] = animationMorphTargets = [];
+          }
+          animationMorphTargets.push(morphTarget);
+        }
+      }
+      const clips = [];
+      for (const name in animationToMorphTargets) {
+        clips.push(this.CreateFromMorphTargetSequence(name, animationToMorphTargets[name], fps, noLoop));
+      }
+      return clips;
+    }
+    /**
+     * Parses the `animation.hierarchy` format and returns a new animation clip.
+     *
+     * @static
+     * @deprecated since r175.
+     * @param {Object} animation - A serialized animation clip as JSON.
+     * @param {Array<Bones>} bones - An array of bones.
+     * @return {?AnimationClip} The new animation clip.
+     */
+    static parseAnimation(animation, bones) {
+      console.warn("THREE.AnimationClip: parseAnimation() is deprecated and will be removed with r185");
+      if (!animation) {
+        console.error("THREE.AnimationClip: No animation in JSONLoader data.");
+        return null;
+      }
+      const addNonemptyTrack = function(trackType, trackName, animationKeys, propertyName, destTracks) {
+        if (animationKeys.length !== 0) {
+          const times = [];
+          const values = [];
+          flattenJSON(animationKeys, times, values, propertyName);
+          if (times.length !== 0) {
+            destTracks.push(new trackType(trackName, times, values));
+          }
+        }
+      };
+      const tracks = [];
+      const clipName = animation.name || "default";
+      const fps = animation.fps || 30;
+      const blendMode = animation.blendMode;
+      let duration = animation.length || -1;
+      const hierarchyTracks = animation.hierarchy || [];
+      for (let h = 0; h < hierarchyTracks.length; h++) {
+        const animationKeys = hierarchyTracks[h].keys;
+        if (!animationKeys || animationKeys.length === 0) continue;
+        if (animationKeys[0].morphTargets) {
+          const morphTargetNames = {};
+          let k;
+          for (k = 0; k < animationKeys.length; k++) {
+            if (animationKeys[k].morphTargets) {
+              for (let m = 0; m < animationKeys[k].morphTargets.length; m++) {
+                morphTargetNames[animationKeys[k].morphTargets[m]] = -1;
+              }
+            }
+          }
+          for (const morphTargetName in morphTargetNames) {
+            const times = [];
+            const values = [];
+            for (let m = 0; m !== animationKeys[k].morphTargets.length; ++m) {
+              const animationKey = animationKeys[k];
+              times.push(animationKey.time);
+              values.push(animationKey.morphTarget === morphTargetName ? 1 : 0);
+            }
+            tracks.push(new NumberKeyframeTrack(".morphTargetInfluence[" + morphTargetName + "]", times, values));
+          }
+          duration = morphTargetNames.length * fps;
+        } else {
+          const boneName = ".bones[" + bones[h].name + "]";
+          addNonemptyTrack(
+            VectorKeyframeTrack,
+            boneName + ".position",
+            animationKeys,
+            "pos",
+            tracks
+          );
+          addNonemptyTrack(
+            QuaternionKeyframeTrack,
+            boneName + ".quaternion",
+            animationKeys,
+            "rot",
+            tracks
+          );
+          addNonemptyTrack(
+            VectorKeyframeTrack,
+            boneName + ".scale",
+            animationKeys,
+            "scl",
+            tracks
+          );
+        }
+      }
+      if (tracks.length === 0) {
+        return null;
+      }
+      const clip = new this(clipName, duration, tracks, blendMode);
+      return clip;
+    }
+    /**
+     * Sets the duration of this clip to the duration of its longest keyframe track.
+     *
+     * @return {AnimationClip} A reference to this animation clip.
+     */
+    resetDuration() {
+      const tracks = this.tracks;
+      let duration = 0;
+      for (let i = 0, n = tracks.length; i !== n; ++i) {
+        const track = this.tracks[i];
+        duration = Math.max(duration, track.times[track.times.length - 1]);
+      }
+      this.duration = duration;
+      return this;
+    }
+    /**
+     * Trims all tracks to the clip's duration.
+     *
+     * @return {AnimationClip} A reference to this animation clip.
+     */
+    trim() {
+      for (let i = 0; i < this.tracks.length; i++) {
+        this.tracks[i].trim(0, this.duration);
+      }
+      return this;
+    }
+    /**
+     * Performs minimal validation on each track in the clip. Returns `true` if all
+     * tracks are valid.
+     *
+     * @return {boolean} Whether the clip's keyframes are valid or not.
+     */
+    validate() {
+      let valid = true;
+      for (let i = 0; i < this.tracks.length; i++) {
+        valid = valid && this.tracks[i].validate();
+      }
+      return valid;
+    }
+    /**
+     * Optimizes each track by removing equivalent sequential keys (which are
+     * common in morph target sequences).
+     *
+     * @return {AnimationClip} A reference to this animation clip.
+     */
+    optimize() {
+      for (let i = 0; i < this.tracks.length; i++) {
+        this.tracks[i].optimize();
+      }
+      return this;
+    }
+    /**
+     * Returns a new animation clip with copied values from this instance.
+     *
+     * @return {AnimationClip} A clone of this instance.
+     */
+    clone() {
+      const tracks = [];
+      for (let i = 0; i < this.tracks.length; i++) {
+        tracks.push(this.tracks[i].clone());
+      }
+      return new this.constructor(this.name, this.duration, tracks, this.blendMode);
+    }
+    /**
+     * Serializes this animation clip into JSON.
+     *
+     * @return {Object} The JSON object.
+     */
+    toJSON() {
+      return this.constructor.toJSON(this);
+    }
+  };
+  function getTrackTypeForValueTypeName(typeName) {
+    switch (typeName.toLowerCase()) {
+      case "scalar":
+      case "double":
+      case "float":
+      case "number":
+      case "integer":
+        return NumberKeyframeTrack;
+      case "vector":
+      case "vector2":
+      case "vector3":
+      case "vector4":
+        return VectorKeyframeTrack;
+      case "color":
+        return ColorKeyframeTrack;
+      case "quaternion":
+        return QuaternionKeyframeTrack;
+      case "bool":
+      case "boolean":
+        return BooleanKeyframeTrack;
+      case "string":
+        return StringKeyframeTrack;
+    }
+    throw new Error("THREE.KeyframeTrack: Unsupported typeName: " + typeName);
+  }
+  function parseKeyframeTrack(json) {
+    if (json.type === void 0) {
+      throw new Error("THREE.KeyframeTrack: track type undefined, can not parse");
+    }
+    const trackType = getTrackTypeForValueTypeName(json.type);
+    if (json.times === void 0) {
+      const times = [], values = [];
+      flattenJSON(json.keys, times, values, "value");
+      json.times = times;
+      json.values = values;
+    }
+    if (trackType.parse !== void 0) {
+      return trackType.parse(json);
+    } else {
+      return new trackType(json.name, json.times, json.values, json.interpolation);
+    }
+  }
   var LoadingManager = class {
     /**
      * Constructs a new loading manager.
@@ -14180,6 +15236,322 @@
     }
   };
   Loader.DEFAULT_MATERIAL_NAME = "__DEFAULT";
+  var Light = class extends Object3D {
+    /**
+     * Constructs a new light.
+     *
+     * @param {(number|Color|string)} [color=0xffffff] - The light's color.
+     * @param {number} [intensity=1] - The light's strength/intensity.
+     */
+    constructor(color2, intensity = 1) {
+      super();
+      this.isLight = true;
+      this.type = "Light";
+      this.color = new Color(color2);
+      this.intensity = intensity;
+    }
+    /**
+     * Frees the GPU-related resources allocated by this instance. Call this
+     * method whenever this instance is no longer used in your app.
+     */
+    dispose() {
+    }
+    copy(source, recursive) {
+      super.copy(source, recursive);
+      this.color.copy(source.color);
+      this.intensity = source.intensity;
+      return this;
+    }
+    toJSON(meta) {
+      const data = super.toJSON(meta);
+      data.object.color = this.color.getHex();
+      data.object.intensity = this.intensity;
+      if (this.groundColor !== void 0) data.object.groundColor = this.groundColor.getHex();
+      if (this.distance !== void 0) data.object.distance = this.distance;
+      if (this.angle !== void 0) data.object.angle = this.angle;
+      if (this.decay !== void 0) data.object.decay = this.decay;
+      if (this.penumbra !== void 0) data.object.penumbra = this.penumbra;
+      if (this.shadow !== void 0) data.object.shadow = this.shadow.toJSON();
+      if (this.target !== void 0) data.object.target = this.target.uuid;
+      return data;
+    }
+  };
+  var _projScreenMatrix$1 = /* @__PURE__ */ new Matrix4();
+  var _lightPositionWorld$1 = /* @__PURE__ */ new Vector3();
+  var _lookTarget$1 = /* @__PURE__ */ new Vector3();
+  var LightShadow = class {
+    /**
+     * Constructs a new light shadow.
+     *
+     * @param {Camera} camera - The light's view of the world.
+     */
+    constructor(camera) {
+      this.camera = camera;
+      this.intensity = 1;
+      this.bias = 0;
+      this.normalBias = 0;
+      this.radius = 1;
+      this.blurSamples = 8;
+      this.mapSize = new Vector2(512, 512);
+      this.mapType = UnsignedByteType;
+      this.map = null;
+      this.mapPass = null;
+      this.matrix = new Matrix4();
+      this.autoUpdate = true;
+      this.needsUpdate = false;
+      this._frustum = new Frustum();
+      this._frameExtents = new Vector2(1, 1);
+      this._viewportCount = 1;
+      this._viewports = [
+        new Vector4(0, 0, 1, 1)
+      ];
+    }
+    /**
+     * Used internally by the renderer to get the number of viewports that need
+     * to be rendered for this shadow.
+     *
+     * @return {number} The viewport count.
+     */
+    getViewportCount() {
+      return this._viewportCount;
+    }
+    /**
+     * Gets the shadow cameras frustum. Used internally by the renderer to cull objects.
+     *
+     * @return {Frustum} The shadow camera frustum.
+     */
+    getFrustum() {
+      return this._frustum;
+    }
+    /**
+     * Update the matrices for the camera and shadow, used internally by the renderer.
+     *
+     * @param {Light} light - The light for which the shadow is being rendered.
+     */
+    updateMatrices(light) {
+      const shadowCamera = this.camera;
+      const shadowMatrix = this.matrix;
+      _lightPositionWorld$1.setFromMatrixPosition(light.matrixWorld);
+      shadowCamera.position.copy(_lightPositionWorld$1);
+      _lookTarget$1.setFromMatrixPosition(light.target.matrixWorld);
+      shadowCamera.lookAt(_lookTarget$1);
+      shadowCamera.updateMatrixWorld();
+      _projScreenMatrix$1.multiplyMatrices(shadowCamera.projectionMatrix, shadowCamera.matrixWorldInverse);
+      this._frustum.setFromProjectionMatrix(_projScreenMatrix$1);
+      shadowMatrix.set(
+        0.5,
+        0,
+        0,
+        0.5,
+        0,
+        0.5,
+        0,
+        0.5,
+        0,
+        0,
+        0.5,
+        0.5,
+        0,
+        0,
+        0,
+        1
+      );
+      shadowMatrix.multiply(_projScreenMatrix$1);
+    }
+    /**
+     * Returns a viewport definition for the given viewport index.
+     *
+     * @param {number} viewportIndex - The viewport index.
+     * @return {Vector4} The viewport.
+     */
+    getViewport(viewportIndex) {
+      return this._viewports[viewportIndex];
+    }
+    /**
+     * Returns the frame extends.
+     *
+     * @return {Vector2} The frame extends.
+     */
+    getFrameExtents() {
+      return this._frameExtents;
+    }
+    /**
+     * Frees the GPU-related resources allocated by this instance. Call this
+     * method whenever this instance is no longer used in your app.
+     */
+    dispose() {
+      if (this.map) {
+        this.map.dispose();
+      }
+      if (this.mapPass) {
+        this.mapPass.dispose();
+      }
+    }
+    /**
+     * Copies the values of the given light shadow instance to this instance.
+     *
+     * @param {LightShadow} source - The light shadow to copy.
+     * @return {LightShadow} A reference to this light shadow instance.
+     */
+    copy(source) {
+      this.camera = source.camera.clone();
+      this.intensity = source.intensity;
+      this.bias = source.bias;
+      this.radius = source.radius;
+      this.autoUpdate = source.autoUpdate;
+      this.needsUpdate = source.needsUpdate;
+      this.normalBias = source.normalBias;
+      this.blurSamples = source.blurSamples;
+      this.mapSize.copy(source.mapSize);
+      return this;
+    }
+    /**
+     * Returns a new light shadow instance with copied values from this instance.
+     *
+     * @return {LightShadow} A clone of this instance.
+     */
+    clone() {
+      return new this.constructor().copy(this);
+    }
+    /**
+     * Serializes the light shadow into JSON.
+     *
+     * @return {Object} A JSON object representing the serialized light shadow.
+     * @see {@link ObjectLoader#parse}
+     */
+    toJSON() {
+      const object = {};
+      if (this.intensity !== 1) object.intensity = this.intensity;
+      if (this.bias !== 0) object.bias = this.bias;
+      if (this.normalBias !== 0) object.normalBias = this.normalBias;
+      if (this.radius !== 1) object.radius = this.radius;
+      if (this.mapSize.x !== 512 || this.mapSize.y !== 512) object.mapSize = this.mapSize.toArray();
+      object.camera = this.camera.toJSON(false).object;
+      delete object.camera.matrix;
+      return object;
+    }
+  };
+  var _projScreenMatrix = /* @__PURE__ */ new Matrix4();
+  var _lightPositionWorld = /* @__PURE__ */ new Vector3();
+  var _lookTarget = /* @__PURE__ */ new Vector3();
+  var PointLightShadow = class extends LightShadow {
+    /**
+     * Constructs a new point light shadow.
+     */
+    constructor() {
+      super(new PerspectiveCamera(90, 1, 0.5, 500));
+      this.isPointLightShadow = true;
+      this._frameExtents = new Vector2(4, 2);
+      this._viewportCount = 6;
+      this._viewports = [
+        // These viewports map a cube-map onto a 2D texture with the
+        // following orientation:
+        //
+        //  xzXZ
+        //   y Y
+        //
+        // X - Positive x direction
+        // x - Negative x direction
+        // Y - Positive y direction
+        // y - Negative y direction
+        // Z - Positive z direction
+        // z - Negative z direction
+        // positive X
+        new Vector4(2, 1, 1, 1),
+        // negative X
+        new Vector4(0, 1, 1, 1),
+        // positive Z
+        new Vector4(3, 1, 1, 1),
+        // negative Z
+        new Vector4(1, 1, 1, 1),
+        // positive Y
+        new Vector4(3, 0, 1, 1),
+        // negative Y
+        new Vector4(1, 0, 1, 1)
+      ];
+      this._cubeDirections = [
+        new Vector3(1, 0, 0),
+        new Vector3(-1, 0, 0),
+        new Vector3(0, 0, 1),
+        new Vector3(0, 0, -1),
+        new Vector3(0, 1, 0),
+        new Vector3(0, -1, 0)
+      ];
+      this._cubeUps = [
+        new Vector3(0, 1, 0),
+        new Vector3(0, 1, 0),
+        new Vector3(0, 1, 0),
+        new Vector3(0, 1, 0),
+        new Vector3(0, 0, 1),
+        new Vector3(0, 0, -1)
+      ];
+    }
+    /**
+     * Update the matrices for the camera and shadow, used internally by the renderer.
+     *
+     * @param {Light} light - The light for which the shadow is being rendered.
+     * @param {number} [viewportIndex=0] - The viewport index.
+     */
+    updateMatrices(light, viewportIndex = 0) {
+      const camera = this.camera;
+      const shadowMatrix = this.matrix;
+      const far = light.distance || camera.far;
+      if (far !== camera.far) {
+        camera.far = far;
+        camera.updateProjectionMatrix();
+      }
+      _lightPositionWorld.setFromMatrixPosition(light.matrixWorld);
+      camera.position.copy(_lightPositionWorld);
+      _lookTarget.copy(camera.position);
+      _lookTarget.add(this._cubeDirections[viewportIndex]);
+      camera.up.copy(this._cubeUps[viewportIndex]);
+      camera.lookAt(_lookTarget);
+      camera.updateMatrixWorld();
+      shadowMatrix.makeTranslation(-_lightPositionWorld.x, -_lightPositionWorld.y, -_lightPositionWorld.z);
+      _projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+      this._frustum.setFromProjectionMatrix(_projScreenMatrix);
+    }
+  };
+  var PointLight = class extends Light {
+    /**
+     * Constructs a new point light.
+     *
+     * @param {(number|Color|string)} [color=0xffffff] - The light's color.
+     * @param {number} [intensity=1] - The light's strength/intensity measured in candela (cd).
+     * @param {number} [distance=0] - Maximum range of the light. `0` means no limit.
+     * @param {number} [decay=2] - The amount the light dims along the distance of the light.
+     */
+    constructor(color2, intensity, distance = 0, decay = 2) {
+      super(color2, intensity);
+      this.isPointLight = true;
+      this.type = "PointLight";
+      this.distance = distance;
+      this.decay = decay;
+      this.shadow = new PointLightShadow();
+    }
+    /**
+     * The light's power. Power is the luminous power of the light measured in lumens (lm).
+     * Changing the power will also change the light's intensity.
+     *
+     * @type {number}
+     */
+    get power() {
+      return this.intensity * 4 * Math.PI;
+    }
+    set power(power) {
+      this.intensity = power / (4 * Math.PI);
+    }
+    dispose() {
+      this.shadow.dispose();
+    }
+    copy(source, recursive) {
+      super.copy(source, recursive);
+      this.distance = source.distance;
+      this.decay = source.decay;
+      this.shadow = source.shadow.clone();
+      return this;
+    }
+  };
   var OrthographicCamera = class extends Camera {
     /**
      * Constructs a new orthographic camera.
@@ -14296,6 +15668,41 @@
       return data;
     }
   };
+  var DirectionalLightShadow = class extends LightShadow {
+    /**
+     * Constructs a new directional light shadow.
+     */
+    constructor() {
+      super(new OrthographicCamera(-5, 5, 5, -5, 0.5, 500));
+      this.isDirectionalLightShadow = true;
+    }
+  };
+  var DirectionalLight = class extends Light {
+    /**
+     * Constructs a new directional light.
+     *
+     * @param {(number|Color|string)} [color=0xffffff] - The light's color.
+     * @param {number} [intensity=1] - The light's strength/intensity.
+     */
+    constructor(color2, intensity) {
+      super(color2, intensity);
+      this.isDirectionalLight = true;
+      this.type = "DirectionalLight";
+      this.position.copy(Object3D.DEFAULT_UP);
+      this.updateMatrix();
+      this.target = new Object3D();
+      this.shadow = new DirectionalLightShadow();
+    }
+    dispose() {
+      this.shadow.dispose();
+    }
+    copy(source) {
+      super.copy(source);
+      this.target = source.target.clone();
+      this.shadow = source.shadow.clone();
+      return this;
+    }
+  };
   var ArrayCamera = class extends PerspectiveCamera {
     /**
      * Constructs a new array camera.
@@ -14307,6 +15714,182 @@
       this.isArrayCamera = true;
       this.isMultiViewCamera = false;
       this.cameras = array;
+    }
+  };
+  var PropertyMixer = class {
+    /**
+     * Constructs a new property mixer.
+     *
+     * @param {PropertyBinding} binding - The property binding.
+     * @param {string} typeName - The keyframe track type name.
+     * @param {number} valueSize - The keyframe track value size.
+     */
+    constructor(binding, typeName, valueSize) {
+      this.binding = binding;
+      this.valueSize = valueSize;
+      let mixFunction, mixFunctionAdditive, setIdentity;
+      switch (typeName) {
+        case "quaternion":
+          mixFunction = this._slerp;
+          mixFunctionAdditive = this._slerpAdditive;
+          setIdentity = this._setAdditiveIdentityQuaternion;
+          this.buffer = new Float64Array(valueSize * 6);
+          this._workIndex = 5;
+          break;
+        case "string":
+        case "bool":
+          mixFunction = this._select;
+          mixFunctionAdditive = this._select;
+          setIdentity = this._setAdditiveIdentityOther;
+          this.buffer = new Array(valueSize * 5);
+          break;
+        default:
+          mixFunction = this._lerp;
+          mixFunctionAdditive = this._lerpAdditive;
+          setIdentity = this._setAdditiveIdentityNumeric;
+          this.buffer = new Float64Array(valueSize * 5);
+      }
+      this._mixBufferRegion = mixFunction;
+      this._mixBufferRegionAdditive = mixFunctionAdditive;
+      this._setIdentity = setIdentity;
+      this._origIndex = 3;
+      this._addIndex = 4;
+      this.cumulativeWeight = 0;
+      this.cumulativeWeightAdditive = 0;
+      this.useCount = 0;
+      this.referenceCount = 0;
+    }
+    /**
+     * Accumulates data in the `incoming` region into `accu<i>`.
+     *
+     * @param {number} accuIndex - The accumulation index.
+     * @param {number} weight - The weight.
+     */
+    accumulate(accuIndex, weight) {
+      const buffer = this.buffer, stride = this.valueSize, offset = accuIndex * stride + stride;
+      let currentWeight = this.cumulativeWeight;
+      if (currentWeight === 0) {
+        for (let i = 0; i !== stride; ++i) {
+          buffer[offset + i] = buffer[i];
+        }
+        currentWeight = weight;
+      } else {
+        currentWeight += weight;
+        const mix = weight / currentWeight;
+        this._mixBufferRegion(buffer, offset, 0, mix, stride);
+      }
+      this.cumulativeWeight = currentWeight;
+    }
+    /**
+     * Accumulates data in the `incoming` region into `add`.
+     *
+     * @param {number} weight - The weight.
+     */
+    accumulateAdditive(weight) {
+      const buffer = this.buffer, stride = this.valueSize, offset = stride * this._addIndex;
+      if (this.cumulativeWeightAdditive === 0) {
+        this._setIdentity();
+      }
+      this._mixBufferRegionAdditive(buffer, offset, 0, weight, stride);
+      this.cumulativeWeightAdditive += weight;
+    }
+    /**
+     * Applies the state of `accu<i>` to the binding when accus differ.
+     *
+     * @param {number} accuIndex - The accumulation index.
+     */
+    apply(accuIndex) {
+      const stride = this.valueSize, buffer = this.buffer, offset = accuIndex * stride + stride, weight = this.cumulativeWeight, weightAdditive = this.cumulativeWeightAdditive, binding = this.binding;
+      this.cumulativeWeight = 0;
+      this.cumulativeWeightAdditive = 0;
+      if (weight < 1) {
+        const originalValueOffset = stride * this._origIndex;
+        this._mixBufferRegion(
+          buffer,
+          offset,
+          originalValueOffset,
+          1 - weight,
+          stride
+        );
+      }
+      if (weightAdditive > 0) {
+        this._mixBufferRegionAdditive(buffer, offset, this._addIndex * stride, 1, stride);
+      }
+      for (let i = stride, e = stride + stride; i !== e; ++i) {
+        if (buffer[i] !== buffer[i + stride]) {
+          binding.setValue(buffer, offset);
+          break;
+        }
+      }
+    }
+    /**
+     * Remembers the state of the bound property and copy it to both accus.
+     */
+    saveOriginalState() {
+      const binding = this.binding;
+      const buffer = this.buffer, stride = this.valueSize, originalValueOffset = stride * this._origIndex;
+      binding.getValue(buffer, originalValueOffset);
+      for (let i = stride, e = originalValueOffset; i !== e; ++i) {
+        buffer[i] = buffer[originalValueOffset + i % stride];
+      }
+      this._setIdentity();
+      this.cumulativeWeight = 0;
+      this.cumulativeWeightAdditive = 0;
+    }
+    /**
+     * Applies the state previously taken via {@link PropertyMixer#saveOriginalState} to the binding.
+     */
+    restoreOriginalState() {
+      const originalValueOffset = this.valueSize * 3;
+      this.binding.setValue(this.buffer, originalValueOffset);
+    }
+    // internals
+    _setAdditiveIdentityNumeric() {
+      const startIndex = this._addIndex * this.valueSize;
+      const endIndex = startIndex + this.valueSize;
+      for (let i = startIndex; i < endIndex; i++) {
+        this.buffer[i] = 0;
+      }
+    }
+    _setAdditiveIdentityQuaternion() {
+      this._setAdditiveIdentityNumeric();
+      this.buffer[this._addIndex * this.valueSize + 3] = 1;
+    }
+    _setAdditiveIdentityOther() {
+      const startIndex = this._origIndex * this.valueSize;
+      const targetIndex = this._addIndex * this.valueSize;
+      for (let i = 0; i < this.valueSize; i++) {
+        this.buffer[targetIndex + i] = this.buffer[startIndex + i];
+      }
+    }
+    // mix functions
+    _select(buffer, dstOffset, srcOffset, t, stride) {
+      if (t >= 0.5) {
+        for (let i = 0; i !== stride; ++i) {
+          buffer[dstOffset + i] = buffer[srcOffset + i];
+        }
+      }
+    }
+    _slerp(buffer, dstOffset, srcOffset, t) {
+      Quaternion.slerpFlat(buffer, dstOffset, buffer, dstOffset, buffer, srcOffset, t);
+    }
+    _slerpAdditive(buffer, dstOffset, srcOffset, t, stride) {
+      const workOffset = this._workIndex * stride;
+      Quaternion.multiplyQuaternionsFlat(buffer, workOffset, buffer, dstOffset, buffer, srcOffset);
+      Quaternion.slerpFlat(buffer, dstOffset, buffer, dstOffset, buffer, workOffset, t);
+    }
+    _lerp(buffer, dstOffset, srcOffset, t, stride) {
+      const s = 1 - t;
+      for (let i = 0; i !== stride; ++i) {
+        const j = dstOffset + i;
+        buffer[j] = buffer[j] * s + buffer[srcOffset + i] * t;
+      }
+    }
+    _lerpAdditive(buffer, dstOffset, srcOffset, t, stride) {
+      for (let i = 0; i !== stride; ++i) {
+        const j = dstOffset + i;
+        buffer[j] = buffer[j] + buffer[srcOffset + i] * t;
+      }
     }
   };
   var _RESERVED_CHARS_RE = "\\[\\]\\.:\\/";
@@ -14734,7 +16317,936 @@
       PropertyBinding.prototype._setValue_fromArray_setMatrixWorldNeedsUpdate
     ]
   ];
+  var AnimationAction = class {
+    /**
+     * Constructs a new animation action.
+     *
+     * @param {AnimationMixer} mixer - The mixer that is controlled by this action.
+     * @param {AnimationClip} clip - The animation clip that holds the actual keyframes.
+     * @param {?Object3D} [localRoot=null] - The root object on which this action is performed.
+     * @param {(NormalAnimationBlendMode|AdditiveAnimationBlendMode)} [blendMode] - The blend mode.
+     */
+    constructor(mixer, clip, localRoot = null, blendMode = clip.blendMode) {
+      this._mixer = mixer;
+      this._clip = clip;
+      this._localRoot = localRoot;
+      this.blendMode = blendMode;
+      const tracks = clip.tracks, nTracks = tracks.length, interpolants = new Array(nTracks);
+      const interpolantSettings = {
+        endingStart: ZeroCurvatureEnding,
+        endingEnd: ZeroCurvatureEnding
+      };
+      for (let i = 0; i !== nTracks; ++i) {
+        const interpolant = tracks[i].createInterpolant(null);
+        interpolants[i] = interpolant;
+        interpolant.settings = interpolantSettings;
+      }
+      this._interpolantSettings = interpolantSettings;
+      this._interpolants = interpolants;
+      this._propertyBindings = new Array(nTracks);
+      this._cacheIndex = null;
+      this._byClipCacheIndex = null;
+      this._timeScaleInterpolant = null;
+      this._weightInterpolant = null;
+      this.loop = LoopRepeat;
+      this._loopCount = -1;
+      this._startTime = null;
+      this.time = 0;
+      this.timeScale = 1;
+      this._effectiveTimeScale = 1;
+      this.weight = 1;
+      this._effectiveWeight = 1;
+      this.repetitions = Infinity;
+      this.paused = false;
+      this.enabled = true;
+      this.clampWhenFinished = false;
+      this.zeroSlopeAtStart = true;
+      this.zeroSlopeAtEnd = true;
+    }
+    /**
+     * Starts the playback of the animation.
+     *
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    play() {
+      this._mixer._activateAction(this);
+      return this;
+    }
+    /**
+     * Stops the playback of the animation.
+     *
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    stop() {
+      this._mixer._deactivateAction(this);
+      return this.reset();
+    }
+    /**
+     * Resets the playback of the animation.
+     *
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    reset() {
+      this.paused = false;
+      this.enabled = true;
+      this.time = 0;
+      this._loopCount = -1;
+      this._startTime = null;
+      return this.stopFading().stopWarping();
+    }
+    /**
+     * Returns `true` if the animation is running.
+     *
+     * @return {boolean} Whether the animation is running or not.
+     */
+    isRunning() {
+      return this.enabled && !this.paused && this.timeScale !== 0 && this._startTime === null && this._mixer._isActiveAction(this);
+    }
+    /**
+     * Returns `true` when {@link AnimationAction#play} has been called.
+     *
+     * @return {boolean} Whether the animation is scheduled or not.
+     */
+    isScheduled() {
+      return this._mixer._isActiveAction(this);
+    }
+    /**
+     * Defines the time when the animation should start.
+     *
+     * @param {number} time - The start time in seconds.
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    startAt(time) {
+      this._startTime = time;
+      return this;
+    }
+    /**
+     * Configures the loop settings for this action.
+     *
+     * @param {(LoopRepeat|LoopOnce|LoopPingPong)} mode - The loop mode.
+     * @param {number} repetitions - The number of repetitions.
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    setLoop(mode, repetitions) {
+      this.loop = mode;
+      this.repetitions = repetitions;
+      return this;
+    }
+    /**
+     * Sets the effective weight of this action.
+     *
+     * An action has no effect and thus an effective weight of zero when the
+     * action is disabled.
+     *
+     * @param {number} weight - The weight to set.
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    setEffectiveWeight(weight) {
+      this.weight = weight;
+      this._effectiveWeight = this.enabled ? weight : 0;
+      return this.stopFading();
+    }
+    /**
+     * Returns the effective weight of this action.
+     *
+     * @return {number} The effective weight.
+     */
+    getEffectiveWeight() {
+      return this._effectiveWeight;
+    }
+    /**
+     * Fades the animation in by increasing its weight gradually from `0` to `1`,
+     * within the passed time interval.
+     *
+     * @param {number} duration - The duration of the fade.
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    fadeIn(duration) {
+      return this._scheduleFading(duration, 0, 1);
+    }
+    /**
+     * Fades the animation out by decreasing its weight gradually from `1` to `0`,
+     * within the passed time interval.
+     *
+     * @param {number} duration - The duration of the fade.
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    fadeOut(duration) {
+      return this._scheduleFading(duration, 1, 0);
+    }
+    /**
+     * Causes this action to fade in and the given action to fade out,
+     * within the passed time interval.
+     *
+     * @param {AnimationAction} fadeOutAction - The animation action to fade out.
+     * @param {number} duration - The duration of the fade.
+     * @param {boolean} [warp=false] - Whether warping should be used or not.
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    crossFadeFrom(fadeOutAction, duration, warp = false) {
+      fadeOutAction.fadeOut(duration);
+      this.fadeIn(duration);
+      if (warp === true) {
+        const fadeInDuration = this._clip.duration, fadeOutDuration = fadeOutAction._clip.duration, startEndRatio = fadeOutDuration / fadeInDuration, endStartRatio = fadeInDuration / fadeOutDuration;
+        fadeOutAction.warp(1, startEndRatio, duration);
+        this.warp(endStartRatio, 1, duration);
+      }
+      return this;
+    }
+    /**
+     * Causes this action to fade out and the given action to fade in,
+     * within the passed time interval.
+     *
+     * @param {AnimationAction} fadeInAction - The animation action to fade in.
+     * @param {number} duration - The duration of the fade.
+     * @param {boolean} [warp=false] - Whether warping should be used or not.
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    crossFadeTo(fadeInAction, duration, warp = false) {
+      return fadeInAction.crossFadeFrom(this, duration, warp);
+    }
+    /**
+     * Stops any fading which is applied to this action.
+     *
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    stopFading() {
+      const weightInterpolant = this._weightInterpolant;
+      if (weightInterpolant !== null) {
+        this._weightInterpolant = null;
+        this._mixer._takeBackControlInterpolant(weightInterpolant);
+      }
+      return this;
+    }
+    /**
+     * Sets the effective time scale of this action.
+     *
+     * An action has no effect and thus an effective time scale of zero when the
+     * action is paused.
+     *
+     * @param {number} timeScale - The time scale to set.
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    setEffectiveTimeScale(timeScale) {
+      this.timeScale = timeScale;
+      this._effectiveTimeScale = this.paused ? 0 : timeScale;
+      return this.stopWarping();
+    }
+    /**
+     * Returns the effective time scale of this action.
+     *
+     * @return {number} The effective time scale.
+     */
+    getEffectiveTimeScale() {
+      return this._effectiveTimeScale;
+    }
+    /**
+     * Sets the duration for a single loop of this action.
+     *
+     * @param {number} duration - The duration to set.
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    setDuration(duration) {
+      this.timeScale = this._clip.duration / duration;
+      return this.stopWarping();
+    }
+    /**
+     * Synchronizes this action with the passed other action.
+     *
+     * @param {AnimationAction} action - The action to sync with.
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    syncWith(action) {
+      this.time = action.time;
+      this.timeScale = action.timeScale;
+      return this.stopWarping();
+    }
+    /**
+     * Decelerates this animation's speed to `0` within the passed time interval.
+     *
+     * @param {number} duration - The duration.
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    halt(duration) {
+      return this.warp(this._effectiveTimeScale, 0, duration);
+    }
+    /**
+     * Changes the playback speed, within the passed time interval, by modifying
+     * {@link AnimationAction#timeScale} gradually from `startTimeScale` to
+     * `endTimeScale`.
+     *
+     * @param {number} startTimeScale - The start time scale.
+     * @param {number} endTimeScale - The end time scale.
+     * @param {number} duration - The duration.
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    warp(startTimeScale, endTimeScale, duration) {
+      const mixer = this._mixer, now = mixer.time, timeScale = this.timeScale;
+      let interpolant = this._timeScaleInterpolant;
+      if (interpolant === null) {
+        interpolant = mixer._lendControlInterpolant();
+        this._timeScaleInterpolant = interpolant;
+      }
+      const times = interpolant.parameterPositions, values = interpolant.sampleValues;
+      times[0] = now;
+      times[1] = now + duration;
+      values[0] = startTimeScale / timeScale;
+      values[1] = endTimeScale / timeScale;
+      return this;
+    }
+    /**
+     * Stops any scheduled warping which is applied to this action.
+     *
+     * @return {AnimationAction} A reference to this animation action.
+     */
+    stopWarping() {
+      const timeScaleInterpolant = this._timeScaleInterpolant;
+      if (timeScaleInterpolant !== null) {
+        this._timeScaleInterpolant = null;
+        this._mixer._takeBackControlInterpolant(timeScaleInterpolant);
+      }
+      return this;
+    }
+    /**
+     * Returns the animation mixer of this animation action.
+     *
+     * @return {AnimationMixer} The animation mixer.
+     */
+    getMixer() {
+      return this._mixer;
+    }
+    /**
+     * Returns the animation clip of this animation action.
+     *
+     * @return {AnimationClip} The animation clip.
+     */
+    getClip() {
+      return this._clip;
+    }
+    /**
+     * Returns the root object of this animation action.
+     *
+     * @return {Object3D} The root object.
+     */
+    getRoot() {
+      return this._localRoot || this._mixer._root;
+    }
+    // Interna
+    _update(time, deltaTime, timeDirection, accuIndex) {
+      if (!this.enabled) {
+        this._updateWeight(time);
+        return;
+      }
+      const startTime = this._startTime;
+      if (startTime !== null) {
+        const timeRunning = (time - startTime) * timeDirection;
+        if (timeRunning < 0 || timeDirection === 0) {
+          deltaTime = 0;
+        } else {
+          this._startTime = null;
+          deltaTime = timeDirection * timeRunning;
+        }
+      }
+      deltaTime *= this._updateTimeScale(time);
+      const clipTime = this._updateTime(deltaTime);
+      const weight = this._updateWeight(time);
+      if (weight > 0) {
+        const interpolants = this._interpolants;
+        const propertyMixers = this._propertyBindings;
+        switch (this.blendMode) {
+          case AdditiveAnimationBlendMode:
+            for (let j = 0, m = interpolants.length; j !== m; ++j) {
+              interpolants[j].evaluate(clipTime);
+              propertyMixers[j].accumulateAdditive(weight);
+            }
+            break;
+          case NormalAnimationBlendMode:
+          default:
+            for (let j = 0, m = interpolants.length; j !== m; ++j) {
+              interpolants[j].evaluate(clipTime);
+              propertyMixers[j].accumulate(accuIndex, weight);
+            }
+        }
+      }
+    }
+    _updateWeight(time) {
+      let weight = 0;
+      if (this.enabled) {
+        weight = this.weight;
+        const interpolant = this._weightInterpolant;
+        if (interpolant !== null) {
+          const interpolantValue = interpolant.evaluate(time)[0];
+          weight *= interpolantValue;
+          if (time > interpolant.parameterPositions[1]) {
+            this.stopFading();
+            if (interpolantValue === 0) {
+              this.enabled = false;
+            }
+          }
+        }
+      }
+      this._effectiveWeight = weight;
+      return weight;
+    }
+    _updateTimeScale(time) {
+      let timeScale = 0;
+      if (!this.paused) {
+        timeScale = this.timeScale;
+        const interpolant = this._timeScaleInterpolant;
+        if (interpolant !== null) {
+          const interpolantValue = interpolant.evaluate(time)[0];
+          timeScale *= interpolantValue;
+          if (time > interpolant.parameterPositions[1]) {
+            this.stopWarping();
+            if (timeScale === 0) {
+              this.paused = true;
+            } else {
+              this.timeScale = timeScale;
+            }
+          }
+        }
+      }
+      this._effectiveTimeScale = timeScale;
+      return timeScale;
+    }
+    _updateTime(deltaTime) {
+      const duration = this._clip.duration;
+      const loop = this.loop;
+      let time = this.time + deltaTime;
+      let loopCount = this._loopCount;
+      const pingPong = loop === LoopPingPong;
+      if (deltaTime === 0) {
+        if (loopCount === -1) return time;
+        return pingPong && (loopCount & 1) === 1 ? duration - time : time;
+      }
+      if (loop === LoopOnce) {
+        if (loopCount === -1) {
+          this._loopCount = 0;
+          this._setEndings(true, true, false);
+        }
+        handle_stop: {
+          if (time >= duration) {
+            time = duration;
+          } else if (time < 0) {
+            time = 0;
+          } else {
+            this.time = time;
+            break handle_stop;
+          }
+          if (this.clampWhenFinished) this.paused = true;
+          else this.enabled = false;
+          this.time = time;
+          this._mixer.dispatchEvent({
+            type: "finished",
+            action: this,
+            direction: deltaTime < 0 ? -1 : 1
+          });
+        }
+      } else {
+        if (loopCount === -1) {
+          if (deltaTime >= 0) {
+            loopCount = 0;
+            this._setEndings(true, this.repetitions === 0, pingPong);
+          } else {
+            this._setEndings(this.repetitions === 0, true, pingPong);
+          }
+        }
+        if (time >= duration || time < 0) {
+          const loopDelta = Math.floor(time / duration);
+          time -= duration * loopDelta;
+          loopCount += Math.abs(loopDelta);
+          const pending = this.repetitions - loopCount;
+          if (pending <= 0) {
+            if (this.clampWhenFinished) this.paused = true;
+            else this.enabled = false;
+            time = deltaTime > 0 ? duration : 0;
+            this.time = time;
+            this._mixer.dispatchEvent({
+              type: "finished",
+              action: this,
+              direction: deltaTime > 0 ? 1 : -1
+            });
+          } else {
+            if (pending === 1) {
+              const atStart = deltaTime < 0;
+              this._setEndings(atStart, !atStart, pingPong);
+            } else {
+              this._setEndings(false, false, pingPong);
+            }
+            this._loopCount = loopCount;
+            this.time = time;
+            this._mixer.dispatchEvent({
+              type: "loop",
+              action: this,
+              loopDelta
+            });
+          }
+        } else {
+          this.time = time;
+        }
+        if (pingPong && (loopCount & 1) === 1) {
+          return duration - time;
+        }
+      }
+      return time;
+    }
+    _setEndings(atStart, atEnd, pingPong) {
+      const settings = this._interpolantSettings;
+      if (pingPong) {
+        settings.endingStart = ZeroSlopeEnding;
+        settings.endingEnd = ZeroSlopeEnding;
+      } else {
+        if (atStart) {
+          settings.endingStart = this.zeroSlopeAtStart ? ZeroSlopeEnding : ZeroCurvatureEnding;
+        } else {
+          settings.endingStart = WrapAroundEnding;
+        }
+        if (atEnd) {
+          settings.endingEnd = this.zeroSlopeAtEnd ? ZeroSlopeEnding : ZeroCurvatureEnding;
+        } else {
+          settings.endingEnd = WrapAroundEnding;
+        }
+      }
+    }
+    _scheduleFading(duration, weightNow, weightThen) {
+      const mixer = this._mixer, now = mixer.time;
+      let interpolant = this._weightInterpolant;
+      if (interpolant === null) {
+        interpolant = mixer._lendControlInterpolant();
+        this._weightInterpolant = interpolant;
+      }
+      const times = interpolant.parameterPositions, values = interpolant.sampleValues;
+      times[0] = now;
+      values[0] = weightNow;
+      times[1] = now + duration;
+      values[1] = weightThen;
+      return this;
+    }
+  };
   var _controlInterpolantsResultBuffer = new Float32Array(1);
+  var AnimationMixer = class extends EventDispatcher {
+    /**
+     * Constructs a new animation mixer.
+     *
+     * @param {Object3D} root - The object whose animations shall be played by this mixer.
+     */
+    constructor(root) {
+      super();
+      this._root = root;
+      this._initMemoryManager();
+      this._accuIndex = 0;
+      this.time = 0;
+      this.timeScale = 1;
+    }
+    _bindAction(action, prototypeAction) {
+      const root = action._localRoot || this._root, tracks = action._clip.tracks, nTracks = tracks.length, bindings = action._propertyBindings, interpolants = action._interpolants, rootUuid = root.uuid, bindingsByRoot = this._bindingsByRootAndName;
+      let bindingsByName = bindingsByRoot[rootUuid];
+      if (bindingsByName === void 0) {
+        bindingsByName = {};
+        bindingsByRoot[rootUuid] = bindingsByName;
+      }
+      for (let i = 0; i !== nTracks; ++i) {
+        const track = tracks[i], trackName = track.name;
+        let binding = bindingsByName[trackName];
+        if (binding !== void 0) {
+          ++binding.referenceCount;
+          bindings[i] = binding;
+        } else {
+          binding = bindings[i];
+          if (binding !== void 0) {
+            if (binding._cacheIndex === null) {
+              ++binding.referenceCount;
+              this._addInactiveBinding(binding, rootUuid, trackName);
+            }
+            continue;
+          }
+          const path = prototypeAction && prototypeAction._propertyBindings[i].binding.parsedPath;
+          binding = new PropertyMixer(
+            PropertyBinding.create(root, trackName, path),
+            track.ValueTypeName,
+            track.getValueSize()
+          );
+          ++binding.referenceCount;
+          this._addInactiveBinding(binding, rootUuid, trackName);
+          bindings[i] = binding;
+        }
+        interpolants[i].resultBuffer = binding.buffer;
+      }
+    }
+    _activateAction(action) {
+      if (!this._isActiveAction(action)) {
+        if (action._cacheIndex === null) {
+          const rootUuid = (action._localRoot || this._root).uuid, clipUuid = action._clip.uuid, actionsForClip = this._actionsByClip[clipUuid];
+          this._bindAction(
+            action,
+            actionsForClip && actionsForClip.knownActions[0]
+          );
+          this._addInactiveAction(action, clipUuid, rootUuid);
+        }
+        const bindings = action._propertyBindings;
+        for (let i = 0, n = bindings.length; i !== n; ++i) {
+          const binding = bindings[i];
+          if (binding.useCount++ === 0) {
+            this._lendBinding(binding);
+            binding.saveOriginalState();
+          }
+        }
+        this._lendAction(action);
+      }
+    }
+    _deactivateAction(action) {
+      if (this._isActiveAction(action)) {
+        const bindings = action._propertyBindings;
+        for (let i = 0, n = bindings.length; i !== n; ++i) {
+          const binding = bindings[i];
+          if (--binding.useCount === 0) {
+            binding.restoreOriginalState();
+            this._takeBackBinding(binding);
+          }
+        }
+        this._takeBackAction(action);
+      }
+    }
+    // Memory manager
+    _initMemoryManager() {
+      this._actions = [];
+      this._nActiveActions = 0;
+      this._actionsByClip = {};
+      this._bindings = [];
+      this._nActiveBindings = 0;
+      this._bindingsByRootAndName = {};
+      this._controlInterpolants = [];
+      this._nActiveControlInterpolants = 0;
+      const scope = this;
+      this.stats = {
+        actions: {
+          get total() {
+            return scope._actions.length;
+          },
+          get inUse() {
+            return scope._nActiveActions;
+          }
+        },
+        bindings: {
+          get total() {
+            return scope._bindings.length;
+          },
+          get inUse() {
+            return scope._nActiveBindings;
+          }
+        },
+        controlInterpolants: {
+          get total() {
+            return scope._controlInterpolants.length;
+          },
+          get inUse() {
+            return scope._nActiveControlInterpolants;
+          }
+        }
+      };
+    }
+    // Memory management for AnimationAction objects
+    _isActiveAction(action) {
+      const index = action._cacheIndex;
+      return index !== null && index < this._nActiveActions;
+    }
+    _addInactiveAction(action, clipUuid, rootUuid) {
+      const actions = this._actions, actionsByClip = this._actionsByClip;
+      let actionsForClip = actionsByClip[clipUuid];
+      if (actionsForClip === void 0) {
+        actionsForClip = {
+          knownActions: [action],
+          actionByRoot: {}
+        };
+        action._byClipCacheIndex = 0;
+        actionsByClip[clipUuid] = actionsForClip;
+      } else {
+        const knownActions = actionsForClip.knownActions;
+        action._byClipCacheIndex = knownActions.length;
+        knownActions.push(action);
+      }
+      action._cacheIndex = actions.length;
+      actions.push(action);
+      actionsForClip.actionByRoot[rootUuid] = action;
+    }
+    _removeInactiveAction(action) {
+      const actions = this._actions, lastInactiveAction = actions[actions.length - 1], cacheIndex = action._cacheIndex;
+      lastInactiveAction._cacheIndex = cacheIndex;
+      actions[cacheIndex] = lastInactiveAction;
+      actions.pop();
+      action._cacheIndex = null;
+      const clipUuid = action._clip.uuid, actionsByClip = this._actionsByClip, actionsForClip = actionsByClip[clipUuid], knownActionsForClip = actionsForClip.knownActions, lastKnownAction = knownActionsForClip[knownActionsForClip.length - 1], byClipCacheIndex = action._byClipCacheIndex;
+      lastKnownAction._byClipCacheIndex = byClipCacheIndex;
+      knownActionsForClip[byClipCacheIndex] = lastKnownAction;
+      knownActionsForClip.pop();
+      action._byClipCacheIndex = null;
+      const actionByRoot = actionsForClip.actionByRoot, rootUuid = (action._localRoot || this._root).uuid;
+      delete actionByRoot[rootUuid];
+      if (knownActionsForClip.length === 0) {
+        delete actionsByClip[clipUuid];
+      }
+      this._removeInactiveBindingsForAction(action);
+    }
+    _removeInactiveBindingsForAction(action) {
+      const bindings = action._propertyBindings;
+      for (let i = 0, n = bindings.length; i !== n; ++i) {
+        const binding = bindings[i];
+        if (--binding.referenceCount === 0) {
+          this._removeInactiveBinding(binding);
+        }
+      }
+    }
+    _lendAction(action) {
+      const actions = this._actions, prevIndex = action._cacheIndex, lastActiveIndex = this._nActiveActions++, firstInactiveAction = actions[lastActiveIndex];
+      action._cacheIndex = lastActiveIndex;
+      actions[lastActiveIndex] = action;
+      firstInactiveAction._cacheIndex = prevIndex;
+      actions[prevIndex] = firstInactiveAction;
+    }
+    _takeBackAction(action) {
+      const actions = this._actions, prevIndex = action._cacheIndex, firstInactiveIndex = --this._nActiveActions, lastActiveAction = actions[firstInactiveIndex];
+      action._cacheIndex = firstInactiveIndex;
+      actions[firstInactiveIndex] = action;
+      lastActiveAction._cacheIndex = prevIndex;
+      actions[prevIndex] = lastActiveAction;
+    }
+    // Memory management for PropertyMixer objects
+    _addInactiveBinding(binding, rootUuid, trackName) {
+      const bindingsByRoot = this._bindingsByRootAndName, bindings = this._bindings;
+      let bindingByName = bindingsByRoot[rootUuid];
+      if (bindingByName === void 0) {
+        bindingByName = {};
+        bindingsByRoot[rootUuid] = bindingByName;
+      }
+      bindingByName[trackName] = binding;
+      binding._cacheIndex = bindings.length;
+      bindings.push(binding);
+    }
+    _removeInactiveBinding(binding) {
+      const bindings = this._bindings, propBinding = binding.binding, rootUuid = propBinding.rootNode.uuid, trackName = propBinding.path, bindingsByRoot = this._bindingsByRootAndName, bindingByName = bindingsByRoot[rootUuid], lastInactiveBinding = bindings[bindings.length - 1], cacheIndex = binding._cacheIndex;
+      lastInactiveBinding._cacheIndex = cacheIndex;
+      bindings[cacheIndex] = lastInactiveBinding;
+      bindings.pop();
+      delete bindingByName[trackName];
+      if (Object.keys(bindingByName).length === 0) {
+        delete bindingsByRoot[rootUuid];
+      }
+    }
+    _lendBinding(binding) {
+      const bindings = this._bindings, prevIndex = binding._cacheIndex, lastActiveIndex = this._nActiveBindings++, firstInactiveBinding = bindings[lastActiveIndex];
+      binding._cacheIndex = lastActiveIndex;
+      bindings[lastActiveIndex] = binding;
+      firstInactiveBinding._cacheIndex = prevIndex;
+      bindings[prevIndex] = firstInactiveBinding;
+    }
+    _takeBackBinding(binding) {
+      const bindings = this._bindings, prevIndex = binding._cacheIndex, firstInactiveIndex = --this._nActiveBindings, lastActiveBinding = bindings[firstInactiveIndex];
+      binding._cacheIndex = firstInactiveIndex;
+      bindings[firstInactiveIndex] = binding;
+      lastActiveBinding._cacheIndex = prevIndex;
+      bindings[prevIndex] = lastActiveBinding;
+    }
+    // Memory management of Interpolants for weight and time scale
+    _lendControlInterpolant() {
+      const interpolants = this._controlInterpolants, lastActiveIndex = this._nActiveControlInterpolants++;
+      let interpolant = interpolants[lastActiveIndex];
+      if (interpolant === void 0) {
+        interpolant = new LinearInterpolant(
+          new Float32Array(2),
+          new Float32Array(2),
+          1,
+          _controlInterpolantsResultBuffer
+        );
+        interpolant.__cacheIndex = lastActiveIndex;
+        interpolants[lastActiveIndex] = interpolant;
+      }
+      return interpolant;
+    }
+    _takeBackControlInterpolant(interpolant) {
+      const interpolants = this._controlInterpolants, prevIndex = interpolant.__cacheIndex, firstInactiveIndex = --this._nActiveControlInterpolants, lastActiveInterpolant = interpolants[firstInactiveIndex];
+      interpolant.__cacheIndex = firstInactiveIndex;
+      interpolants[firstInactiveIndex] = interpolant;
+      lastActiveInterpolant.__cacheIndex = prevIndex;
+      interpolants[prevIndex] = lastActiveInterpolant;
+    }
+    /**
+     * Returns an instance of {@link AnimationAction} for the passed clip.
+     *
+     * If an action fitting the clip and root parameters doesn't yet exist, it
+     * will be created by this method. Calling this method several times with the
+     * same clip and root parameters always returns the same action.
+     *
+     * @param {AnimationClip|string} clip - An animation clip or alternatively the name of the animation clip.
+     * @param {Object3D} [optionalRoot] - An alternative root object.
+     * @param {(NormalAnimationBlendMode|AdditiveAnimationBlendMode)} [blendMode] - The blend mode.
+     * @return {?AnimationAction} The animation action.
+     */
+    clipAction(clip, optionalRoot, blendMode) {
+      const root = optionalRoot || this._root, rootUuid = root.uuid;
+      let clipObject = typeof clip === "string" ? AnimationClip.findByName(root, clip) : clip;
+      const clipUuid = clipObject !== null ? clipObject.uuid : clip;
+      const actionsForClip = this._actionsByClip[clipUuid];
+      let prototypeAction = null;
+      if (blendMode === void 0) {
+        if (clipObject !== null) {
+          blendMode = clipObject.blendMode;
+        } else {
+          blendMode = NormalAnimationBlendMode;
+        }
+      }
+      if (actionsForClip !== void 0) {
+        const existingAction = actionsForClip.actionByRoot[rootUuid];
+        if (existingAction !== void 0 && existingAction.blendMode === blendMode) {
+          return existingAction;
+        }
+        prototypeAction = actionsForClip.knownActions[0];
+        if (clipObject === null)
+          clipObject = prototypeAction._clip;
+      }
+      if (clipObject === null) return null;
+      const newAction = new AnimationAction(this, clipObject, optionalRoot, blendMode);
+      this._bindAction(newAction, prototypeAction);
+      this._addInactiveAction(newAction, clipUuid, rootUuid);
+      return newAction;
+    }
+    /**
+     * Returns an existing animation action for the passed clip.
+     *
+     * @param {AnimationClip|string} clip - An animation clip or alternatively the name of the animation clip.
+     * @param {Object3D} [optionalRoot] - An alternative root object.
+     * @return {?AnimationAction} The animation action. Returns `null` if no action was found.
+     */
+    existingAction(clip, optionalRoot) {
+      const root = optionalRoot || this._root, rootUuid = root.uuid, clipObject = typeof clip === "string" ? AnimationClip.findByName(root, clip) : clip, clipUuid = clipObject ? clipObject.uuid : clip, actionsForClip = this._actionsByClip[clipUuid];
+      if (actionsForClip !== void 0) {
+        return actionsForClip.actionByRoot[rootUuid] || null;
+      }
+      return null;
+    }
+    /**
+     * Deactivates all previously scheduled actions on this mixer.
+     *
+     * @return {AnimationMixer} A reference to thi animation mixer.
+     */
+    stopAllAction() {
+      const actions = this._actions, nActions = this._nActiveActions;
+      for (let i = nActions - 1; i >= 0; --i) {
+        actions[i].stop();
+      }
+      return this;
+    }
+    /**
+     * Advances the global mixer time and updates the animation.
+     *
+     * This is usually done in the render loop by passing the delta
+     * time from {@link Clock} or {@link Timer}.
+     *
+     * @param {number} deltaTime - The delta time in seconds.
+     * @return {AnimationMixer} A reference to thi animation mixer.
+     */
+    update(deltaTime) {
+      deltaTime *= this.timeScale;
+      const actions = this._actions, nActions = this._nActiveActions, time = this.time += deltaTime, timeDirection = Math.sign(deltaTime), accuIndex = this._accuIndex ^= 1;
+      for (let i = 0; i !== nActions; ++i) {
+        const action = actions[i];
+        action._update(time, deltaTime, timeDirection, accuIndex);
+      }
+      const bindings = this._bindings, nBindings = this._nActiveBindings;
+      for (let i = 0; i !== nBindings; ++i) {
+        bindings[i].apply(accuIndex);
+      }
+      return this;
+    }
+    /**
+     * Sets the global mixer to a specific time and updates the animation accordingly.
+     *
+     * This is useful when you need to jump to an exact time in an animation. The
+     * input parameter will be scaled by {@link AnimationMixer#timeScale}
+     *
+     * @param {number} time - The time to set in seconds.
+     * @return {AnimationMixer} A reference to thi animation mixer.
+     */
+    setTime(time) {
+      this.time = 0;
+      for (let i = 0; i < this._actions.length; i++) {
+        this._actions[i].time = 0;
+      }
+      return this.update(time);
+    }
+    /**
+     * Returns this mixer's root object.
+     *
+     * @return {Object3D} The mixer's root object.
+     */
+    getRoot() {
+      return this._root;
+    }
+    /**
+     * Deallocates all memory resources for a clip. Before using this method make
+     * sure to call {@link AnimationAction#stop} for all related actions.
+     *
+     * @param {AnimationClip} clip - The clip to uncache.
+     */
+    uncacheClip(clip) {
+      const actions = this._actions, clipUuid = clip.uuid, actionsByClip = this._actionsByClip, actionsForClip = actionsByClip[clipUuid];
+      if (actionsForClip !== void 0) {
+        const actionsToRemove = actionsForClip.knownActions;
+        for (let i = 0, n = actionsToRemove.length; i !== n; ++i) {
+          const action = actionsToRemove[i];
+          this._deactivateAction(action);
+          const cacheIndex = action._cacheIndex, lastInactiveAction = actions[actions.length - 1];
+          action._cacheIndex = null;
+          action._byClipCacheIndex = null;
+          lastInactiveAction._cacheIndex = cacheIndex;
+          actions[cacheIndex] = lastInactiveAction;
+          actions.pop();
+          this._removeInactiveBindingsForAction(action);
+        }
+        delete actionsByClip[clipUuid];
+      }
+    }
+    /**
+     * Deallocates all memory resources for a root object. Before using this
+     * method make sure to call {@link AnimationAction#stop} for all related
+     * actions or alternatively {@link AnimationMixer#stopAllAction} when the
+     * mixer operates on a single root.
+     *
+     * @param {Object3D} root - The root object to uncache.
+     */
+    uncacheRoot(root) {
+      const rootUuid = root.uuid, actionsByClip = this._actionsByClip;
+      for (const clipUuid in actionsByClip) {
+        const actionByRoot = actionsByClip[clipUuid].actionByRoot, action = actionByRoot[rootUuid];
+        if (action !== void 0) {
+          this._deactivateAction(action);
+          this._removeInactiveAction(action);
+        }
+      }
+      const bindingsByRoot = this._bindingsByRootAndName, bindingByName = bindingsByRoot[rootUuid];
+      if (bindingByName !== void 0) {
+        for (const trackName in bindingByName) {
+          const binding = bindingByName[trackName];
+          binding.restoreOriginalState();
+          this._removeInactiveBinding(binding);
+        }
+      }
+    }
+    /**
+     * Deallocates all memory resources for an action. The action is identified by the
+     * given clip and an optional root object. Before using this method make
+     * sure to call {@link AnimationAction#stop} to deactivate the action.
+     *
+     * @param {AnimationClip|string} clip - An animation clip or alternatively the name of the animation clip.
+     * @param {Object3D} [optionalRoot] - An alternative root object.
+     */
+    uncacheAction(clip, optionalRoot) {
+      const action = this.existingAction(clip, optionalRoot);
+      if (action !== null) {
+        this._deactivateAction(action);
+        this._removeInactiveAction(action);
+      }
+    }
+  };
   function getByteLength(width, height, format, type) {
     const typeByteLength = getTextureTypeByteLength(type);
     switch (format) {
@@ -23479,7 +25991,7 @@ void main() {
       let _clippingEnabled = false;
       let _localClippingEnabled = false;
       const _currentProjectionMatrix = new Matrix4();
-      const _projScreenMatrix = new Matrix4();
+      const _projScreenMatrix2 = new Matrix4();
       const _vector3 = new Vector3();
       const _vector4 = new Vector4();
       const _emptyScene = { background: null, fog: null, environment: null, overrideMaterial: null, isScene: true };
@@ -23988,8 +26500,8 @@ void main() {
         currentRenderState = renderStates.get(scene, renderStateStack.length);
         currentRenderState.init(camera);
         renderStateStack.push(currentRenderState);
-        _projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-        _frustum.setFromProjectionMatrix(_projScreenMatrix);
+        _projScreenMatrix2.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+        _frustum.setFromProjectionMatrix(_projScreenMatrix2);
         _localClippingEnabled = this.localClippingEnabled;
         _clippingEnabled = clipping.init(this.clippingPlanes, _localClippingEnabled);
         currentRenderList = renderLists.get(scene, renderListStack.length);
@@ -24075,7 +26587,7 @@ void main() {
           } else if (object.isSprite) {
             if (!object.frustumCulled || _frustum.intersectsSprite(object)) {
               if (sortObjects) {
-                _vector4.setFromMatrixPosition(object.matrixWorld).applyMatrix4(_projScreenMatrix);
+                _vector4.setFromMatrixPosition(object.matrixWorld).applyMatrix4(_projScreenMatrix2);
               }
               const geometry = objects.update(object);
               const material = object.material;
@@ -24095,7 +26607,7 @@ void main() {
                   if (geometry.boundingSphere === null) geometry.computeBoundingSphere();
                   _vector4.copy(geometry.boundingSphere.center);
                 }
-                _vector4.applyMatrix4(object.matrixWorld).applyMatrix4(_projScreenMatrix);
+                _vector4.applyMatrix4(object.matrixWorld).applyMatrix4(_projScreenMatrix2);
               }
               if (Array.isArray(material)) {
                 const groups = geometry.groups;
@@ -25075,9 +27587,9 @@ void main() {
       this.ambient_light = null;
       this.hemisphere_light = null;
       this.objects = {};
+      this.animations = {};
       this.tc = document.createElement("canvas");
       this.tc.className = "RenderTheWorld";
-      this.renderer = null;
       let index = this.ext.runtime.renderer._groupOrdering.indexOf("video");
       this.ext.runtime.renderer._groupOrdering.splice(
         index + 1,
@@ -25132,6 +27644,248 @@ void main() {
     }
   };
 
+  // src/utils/RTWTools.js
+  function addRTWStyle(newStyle) {
+    let _RTWStyle = !window.RTWStyle;
+    window.RTWStyle = document.getElementById("RTWStyle");
+    if (!window.RTWStyle) {
+      window.RTWStyle = document.createElement("style");
+      window.RTWStyle.type = "text/css";
+      window.RTWStyle.id = "RTWStyle";
+      if (_RTWStyle)
+        document.getElementsByTagName("head")[0].appendChild(window.RTWStyle);
+    }
+    window.RTWStyle.appendChild(document.createTextNode(newStyle));
+  }
+  addRTWStyle(`
+.RTW-visualReport-body {
+    float: left;
+    width: 100%;
+}
+.RTW-visualReport-head {
+    justify-content: space-between;
+    display: flex;
+}
+.RTW-visualReport-property {
+    display: flex;
+}
+.RTW-visualReport-property》label {
+    min-width: 50px;
+}
+.RTW-visualReport-head>*, .RTW-visualReport-property>*, .RTW-visualReport-childrenViewButton>span {
+    margin-right: 15px;
+    text-align: left;
+}
+.RTW-visualReport-head>*:last-child, .RTW-visualReport-childrenViewButton>span:last-child {
+    margin-right: 0px;
+}
+.RTW-visualReport-button {
+    cursor: pointer;
+}
+.RTW-visualReport-button:hover {
+    text-shadow: 0px 0px 5px #aaaaaa;
+}
+.RTW-visualReport-childrenViewItem {
+    display: list-item;
+}
+.RTW-visualReport-childrenView {
+    margin-left: 8px;
+    text-align: left;
+    width: 100%;
+}
+
+.RTW-visualReport-childrenViewButton {
+    display: flex;
+}
+.blocklyDropDownContent:has(.RTW-visualReport-body) {
+    max-width: 100%;
+    max-height: 100%;
+}
+`);
+  var _RTWVisualReport = class {
+    constructor() {
+    }
+    Body(title, parts, isInMonitor, childMoreView = false) {
+      const body = document.createElement("div");
+      body.classList.add("RTW-visualReport-body");
+      const head = document.createElement("div");
+      head.classList.add("RTW-visualReport-head");
+      head.appendChild(title);
+      const more = document.createElement("div");
+      more.style.minWidth = "300px";
+      more.classList.add("RTW-visualReport-body");
+      more.style.display = "none";
+      if (!isInMonitor) {
+        const showMore = this.Button(this.Opacity("详情", 0.7));
+        more.append(...parts);
+        showMore.addEventListener("click", (e) => {
+          if (e.button === 0) {
+            more.style.display = "block";
+            head.style.display = "none";
+          }
+        });
+        head.appendChild(showMore);
+      }
+      body.appendChild(head);
+      body.appendChild(more);
+      return body;
+    }
+    Title(text) {
+      const _title = document.createElement("div");
+      _title.textContent = text;
+      return _title;
+    }
+    Button(text) {
+      const _button = document.createElement("span");
+      _button.append(text);
+      _button.classList.add("RTW-visualReport-button");
+      return _button;
+    }
+    Property(name_, value_) {
+      const _property = document.createElement("div");
+      _property.classList.add("RTW-visualReport-property");
+      const _name = document.createElement("label");
+      const _value = document.createElement("div");
+      _name.append(name_);
+      _value.append(value_);
+      _property.append(_name);
+      _property.append(_value);
+      return _property;
+    }
+    Opacity(text, opacity) {
+      const _color2 = document.createElement("span");
+      _color2.append(text);
+      _color2.style.opacity = opacity;
+      return _color2;
+    }
+    childrenView(models) {
+      const _childrenView = document.createElement("div");
+      _childrenView.classList.add("RTW-visualReport-childrenView");
+      if (models.length === 0) {
+        _childrenView.append(this.Opacity("无子物体", 0.7));
+      } else {
+        models.forEach((child_) => {
+          const _child = this.Button(child_.type + (child_.name ? " (" + child_.name + ")" : ""));
+          _child.classList.add("RTW-visualReport-childrenViewItem");
+          const _childBox = document.createElement("div");
+          _childBox.classList.add("RTW-visualReport-childrenViewButton");
+          _childBox.appendChild(_child);
+          const __childrenView = document.createElement("div");
+          let _moreView = null;
+          __childrenView.classList.add("RTW-visualReport-childrenView");
+          _child.addEventListener("click", (e) => {
+            if (e.button === 0) {
+              if (_moreView === null) {
+                _moreView = this.childrenView(child_.children);
+                __childrenView.appendChild(_moreView);
+              } else {
+                if (_moreView.style.display === "none") {
+                  _moreView.style.display = "";
+                } else {
+                  _moreView.style.display = "none";
+                }
+              }
+            }
+          });
+          __childrenView.appendChild(_childBox);
+          _childrenView.appendChild(__childrenView);
+        });
+      }
+      return _childrenView;
+    }
+  };
+  var RTWVisualReport = new _RTWVisualReport();
+  var RTW_Model_Box = class {
+    constructor(model, ismaterial, isobj, isgltf, animations) {
+      this.model = model;
+      this.ismaterial = ismaterial;
+      this.isobj = isobj;
+      this.isgltf = isgltf;
+      this.animations = animations;
+    }
+    toString() {
+      let text = "";
+      if (this.isobj) {
+        text = `objfile: "${this.model.objfile}" mtlfile: "${this.model.mtlfile}`;
+      } else if (this.isgltf) {
+        text = `gltffile: "${this.model.gltffile}"`;
+      } else if (this.ismaterial) {
+        text = `material: "${this.model["type"] ?? String(this.model)}"`;
+      } else {
+        text = `model: "${this.model["type"] ?? String(this.model)}"`;
+      }
+      if (this.model instanceof Group) {
+        text += ` ${JSON.stringify(this.model.children.map((x) => x.type))}`;
+      }
+      return text;
+    }
+    getHTML(isInMonitor = false) {
+      return RTWVisualReport.Body(
+        RTWVisualReport.Title(this.toString()),
+        this.isobj ? [
+          RTWVisualReport.Property("OBJ文件:", this.model.objfile),
+          RTWVisualReport.Property("MTL文件:", this.model.mtlfile)
+        ] : this.isgltf ? [RTWVisualReport.Property("GLTF文件:", this.model.gltffile)] : this.ismaterial ? [RTWVisualReport.Property("材质", "")] : this.model instanceof OrbitControls ? [RTWVisualReport.Property("轨道控制器:", "")] : [
+          RTWVisualReport.Property("对象详情", ""),
+          RTWVisualReport.Property(
+            "类型:",
+            this.model["type"] ?? String(this.model)
+          ),
+          RTWVisualReport.Property(
+            "子物体:",
+            RTWVisualReport.childrenView(this.model.children)
+          )
+        ],
+        isInMonitor
+      );
+    }
+    // displayInstance(element) {
+    //     // 显示model属性
+    //     this.createPropertyElement(element, 'Material:', this.model.type);
+    //     if (this.ismaterial) {
+    //         this.createPropertyElement(element, 'Material:', this.model.type);
+    //     } else if (this.isobj) {
+    //         this.createPropertyElement(element, 'OBJ File:', this.model.objfile);
+    //         this.createPropertyElement(element, 'MTL File:', this.model.mtlfile);
+    //     } else if (this.isgltf) {
+    //         this.createPropertyElement(element, 'GLTF File:', this.model.gltffile);
+    //     }
+    //     // 显示animations属性
+    //     if (this.animations) {
+    //         this.createPropertyElement(element, 'Animations:', '');
+    //         this.createPropertyElement(element, 'Mixer:', this.animations.mixer);
+    //         this.createPropertyElement(element, 'Clips:', `${this.animations.clips.length} clips`);
+    //         this.createPropertyElement(element, 'Actions:', `${Object.keys(this.animations.action).length} actions`);
+    //     }
+    // }
+  };
+  var Wrapper = class _Wrapper extends String {
+    /**
+     * Construct a wrapped value.
+     * @param value Value to wrap.
+     */
+    constructor(value) {
+      super(value);
+      this.value = value;
+    }
+    /**
+     * Unwraps a wrapped object.
+     * @param value Wrapped object.
+     * @returnss Unwrapped object.
+     */
+    static unwrap(value) {
+      return value instanceof _Wrapper ? value.value : value;
+    }
+    /**
+     * toString method for Scratch monitors.
+     * @returnss String display.
+     */
+    toString() {
+      return String(this.value);
+    }
+  };
+  var PATCHES_ID2 = "__patches_" + chen_RenderTheWorld_extensionId;
+
   // src/core/main.js
   var Extension = class {
     /**
@@ -25168,6 +27922,93 @@ void main() {
       return this.isWebglAvailable;
     }
     /**
+         * 清除材质
+         * @param {THREE.Material} material
+         */
+    __disposeMaterial(material) {
+      if (material.isMaterial) {
+        Object.keys(material).forEach((prop) => {
+          if (!material[prop]) return;
+          if (typeof material[prop].dispose === "function")
+            material[prop].dispose();
+        });
+        material.dispose();
+      }
+    }
+    /**
+     * 清除物体
+     * @param {THREE.Object3D} obj
+     */
+    __disposeObject(obj) {
+      if (obj.geometry) {
+        obj.geometry.dispose();
+      }
+      if (obj.material) {
+        if (Array.isArray(obj.material)) {
+          obj.material.forEach((material) => {
+            this.__disposeMaterial(material);
+          });
+        } else {
+          this.__disposeMaterial(obj.material);
+        }
+      }
+      if (obj.texture) {
+        obj.texture.dispose();
+      }
+    }
+    /**
+     * @param {THREE.Object3D} model
+     */
+    _disposeObject(model) {
+      if (model.isObject3D) {
+        if (model.parent !== null) {
+          model.parent.remove(model);
+        }
+        let disposeObjects = [model];
+        if (model.isGroup) {
+          model.traverse((obj) => {
+            disposeObjects.push(obj);
+          });
+        }
+        disposeObjects.forEach((obj) => {
+          if (obj.parent !== null) {
+            obj.parent.remove(obj);
+          }
+          this.__disposeObject(obj);
+        });
+      } else if (model.ismaterial) {
+        this.__disposeMaterial(model);
+      }
+    }
+    /**
+     * @param {string} name
+     */
+    releaseDuplicates(name) {
+      let model = this._getModel(name);
+      if (model === -1) return;
+      name = this.Scratch.Cast.toString(name);
+      if (name in this.render_engine.animations) {
+        if (this.render_engine.animations[name].mixer) {
+          this.render_engine.animations[name].mixer.stopAllAction();
+        }
+        this.render_engine.animations[name] = {};
+      }
+      this._disposeObject(model);
+    }
+    /**
+     * 获取模型对象
+     * @param {string | Wrapper} obj
+     * @returns {THREE.Object3D | -1}
+     */
+    _getModel(obj) {
+      obj = Wrapper.unwrap(obj);
+      if (obj instanceof RTW_Model_Box && obj.model != void 0 && (obj.model.isObject3D || obj.model instanceof OrbitControls)) {
+        return obj.model;
+      } else if (this.Scratch.Cast.toString(obj) in this.render_engine.objects) {
+        return this.render_engine.objects[this.Scratch.Cast.toString(obj)];
+      } else return -1;
+    }
+    /**
      * 初始化
      * @param {object} args
      * @param {number} args.color  背景颜色
@@ -25185,6 +28026,1046 @@ void main() {
         shadowMapType
       );
     }
+    /**
+         * 设置3d渲染器状态
+         * @param {object} args
+         * @param {string} args.state
+         */
+    set3dState({ state }) {
+      if (this.Scratch.Cast.toString(state) === "display") {
+        this.isTcShow = true;
+        this.threeSkin.setContent(this.render_engine.tc);
+      } else {
+        this.isTcShow = false;
+        this.threeSkin.setContent(this.NullCanvas);
+      }
+    }
+    get3dState(args) {
+      return this.isTcShow;
+    }
+    /**
+     * 创建材质
+     * @param {object} args
+     * @returns {_Wrapper}
+     */
+    makeMaterial(args, util) {
+      const thread = util.thread;
+      if (typeof util.stackFrame._inlineLastReturn !== "undefined") {
+        util.stackFrame._inlineLastReturn = void 0;
+        this.threadInfo[thread.topBlock.concat(thread.target.id)].pop();
+        return util.stackFrame._inlineReturn;
+      } else if (typeof util.stackFrame._inlineReturn !== "undefined") {
+        const returnValue = util.stackFrame._inlineReturn;
+        util.thread.popStack();
+        util.stackFrame._inlineLastReturn = true;
+        util.stackFrame._inlineReturn = returnValue;
+        this.threadInfo[thread.topBlock.concat(thread.target.id)].pop();
+        return returnValue;
+      } else {
+        if (util.stackFrame._inlineLoopRan) {
+          thread.popStack();
+          return "";
+        }
+        if (this.threadInfo[thread.topBlock.concat(thread.target.id)] && this.threadInfo[thread.topBlock.concat(thread.target.id)].length > 0) {
+          this.threadInfo[thread.topBlock.concat(thread.target.id)].push({
+            color: 0,
+            fog: true
+          });
+        } else {
+          this.threadInfo[thread.topBlock.concat(thread.target.id)] = [{ color: 0, fog: true }];
+        }
+        const stackFrame = thread.peekStackFrame();
+        const oldGoToNextBlock = thread.goToNextBlock;
+        const resetGoToNext = function() {
+          thread.goToNextBlock = oldGoToNextBlock;
+        };
+        const blockGlowInFrame = thread.blockGlowInFrame;
+        const resetGlowInFrame = function() {
+          delete thread.blockGlowInFrame;
+          thread.blockGlowInFrame = blockGlowInFrame;
+        };
+        const trap = () => {
+          thread.status = thread.constructor.STATUS_RUNNING;
+          const realBlockId = stackFrame.reporting;
+          thread.pushStack(realBlockId);
+          util.stackFrame._inlineLoopRan = true;
+          this.stepToBranchWithBlockId(realBlockId, thread, 1, true);
+        };
+        thread.goToNextBlock = function() {
+          resetGlowInFrame();
+          trap();
+          thread.goToNextBlock = oldGoToNextBlock;
+          oldGoToNextBlock.call(this);
+          resetGoToNext();
+        };
+        Object.defineProperty(thread, "blockGlowInFrame", {
+          get() {
+            return blockGlowInFrame;
+          },
+          set(newValue) {
+            resetGoToNext();
+            trap();
+            resetGlowInFrame();
+          },
+          enumerable: true,
+          configurable: true
+        });
+        return { then: () => {
+        } };
+      }
+    }
+    // 实现stepToBranchWithBlockId方法，用于跳转到指定分支的块
+    stepToBranchWithBlockId(blockId, thread, branchNum, isLoop) {
+      if (!branchNum) {
+        branchNum = 1;
+      }
+      const currentBlockId = blockId;
+      const branchId = thread.target.blocks.getBranch(
+        currentBlockId,
+        branchNum
+      );
+      thread.peekStackFrame().isLoop = isLoop;
+      if (branchId) {
+        thread.pushStack(branchId);
+      } else {
+        thread.pushStack(null);
+      }
+    }
+    setMaterialColor({ color: color2 }, util) {
+      const thread = util.thread;
+      try {
+        if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1] === void 0)
+          return "⚠️请在“创建材质”积木中使用！";
+        if (Number(this.Scratch.Cast.toString(color2)) == Number(this.Scratch.Cast.toString(color2))) {
+          this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]["color"] = Number(this.Scratch.Cast.toString(color2));
+        } else {
+          this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]["color"] = this.Scratch.Cast.toString(color2);
+        }
+      } catch (err) {
+        return "⚠️请在“创建材质”积木中运行！";
+      }
+    }
+    setMaterialFog({ YN }, util) {
+      const thread = util.thread;
+      try {
+        if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1] === void 0)
+          return "⚠️请在“创建材质”积木中使用！";
+        if (this.Scratch.Cast.toString(YN) === "ture") {
+          this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]["fog"] = true;
+        } else {
+          this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]["fog"] = false;
+        }
+      } catch (err) {
+        return "⚠️请在“创建材质”积木中运行！";
+      }
+    }
+    // 实现return方法，用于处理返回值
+    returnm({ material }, util) {
+      material = this.Scratch.Cast.toString(material);
+      const thread = util.thread;
+      if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)]] !== void 0 && this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1] === void 0)
+        return "⚠️请在“创建材质”积木中使用！";
+      let blockID = thread.peekStack();
+      while (blockID) {
+        const block = thread.target.blocks.getBlock(blockID);
+        if (block && block.opcode === chen_RenderTheWorld_extensionId + "_makeMaterial") {
+          break;
+        }
+        thread.popStack();
+        blockID = thread.peekStack();
+      }
+      if (thread.stack.length === 0) {
+        thread.requestScriptGlowInFrame = false;
+        thread.status = thread.constructor.STATUS_DONE;
+      } else {
+        let _material = "";
+        if (material === "Basic") {
+          _material = new MeshBasicMaterial();
+        } else if (material === "Lambert") {
+          _material = new MeshLambertMaterial();
+        } else if (material === "Phong") {
+          _material = new MeshPhongMaterial();
+        } else {
+          _material = new MeshBasicMaterial();
+        }
+        _material.fog = true;
+        if (this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]) {
+          for (let key in this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1]) {
+            if (key === "color") {
+              _material.color.set(
+                this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1][key]
+              );
+            }
+            if (key === "fog") {
+              _material.fog = this.threadInfo[thread.topBlock.concat(thread.target.id)][this.threadInfo[thread.topBlock.concat(thread.target.id)].length - 1][key];
+            }
+          }
+        }
+        util.stackFrame._inlineReturn = new Wrapper(
+          new RTW_Model_Box(_material, true, false, false, void 0)
+        );
+        thread.status = thread.constructor.STATUS_RUNNING;
+      }
+    }
+    /**
+     * 创建或重置模型
+     * @param {object} args
+     * @param {string} args.name
+     * @param {_Wrapper} args.model
+     */
+    async importModel({ name, model }) {
+      if (model === void 0) {
+        return "⚠️模型加载失败！";
+      }
+      model = Wrapper.unwrap(model);
+      if (!(model instanceof RTW_Model_Box)) {
+        return "⚠️传入的模型无法识别";
+      }
+      let init_porject_time = this._init_porject_time;
+      name = this.Scratch.Cast.toString(name);
+      this.releaseDuplicates(name);
+      if (model.model != void 0 && model.model.isObject3D) {
+        this.render_engine.objects[name] = model.model;
+        if (model.animations != void 0) {
+          this.render_engine.animations[name] = model.animations;
+        }
+        let r = this.runtime.startHatsWithParams(
+          chen_RenderTheWorld_extensionId + "_objectLoadingCompleted",
+          {
+            parameters: {
+              name
+            }
+          }
+        );
+        r && r.forEach((e) => {
+          this.runtime.sequencer.stepThread(e);
+        });
+        if (init_porject_time == this._init_porject_time) {
+          this.render_engine.scene.add(this.render_engine.objects[name]);
+          this.render_engine.render();
+        }
+      } else if (model.isobj) {
+        this._objModel(
+          name,
+          model.model["objfile"],
+          model.model["mtlfile"],
+          init_porject_time
+        );
+      } else if (model.isgltf) {
+        this._gltfModel(
+          name,
+          model.model["gltffile"],
+          init_porject_time
+        );
+      }
+    }
+    shadowSettings({ name, YN, YN2 }) {
+      let model = this._getModel(name);
+      if (model !== -1) {
+        if (this.Scratch.Cast.toString(YN) == "true") {
+          model.castShadow = true;
+          model.traverse(function(node) {
+            if (node.isMesh) {
+              node.castShadow = true;
+            }
+          });
+        } else {
+          model.castShadow = false;
+          model.traverse(function(node) {
+            if (node.isMesh) {
+              node.castShadow = false;
+            }
+          });
+        }
+        if (this.Scratch.Cast.toString(YN2) == "true") {
+          model.receiveShadow = true;
+          model.traverse(function(node) {
+            if (node.isMesh) {
+              node.receiveShadow = true;
+            }
+          });
+        } else {
+          model.receiveShadow = false;
+          model.traverse(function(node) {
+            if (node.isMesh) {
+              node.receiveShadow = false;
+            }
+          });
+        }
+      }
+    }
+    groupModel(args) {
+      let _group = new Group();
+      const dynamicArgs = getDynamicArgs(args);
+      dynamicArgs.forEach((_model) => {
+        _model = this._getModel(_model);
+        if (_model === -1) return;
+        _group.add(_model);
+      });
+      return new Wrapper(
+        new RTW_Model_Box(_group, false, false, false, void 0)
+      );
+    }
+    cubeModel({ a, b, h, material }) {
+      material = Wrapper.unwrap(material);
+      if (material !== void 0) {
+        if (!material.ismaterial) {
+          return "⚠️材质无效！";
+        }
+        material = material["model"];
+      }
+      let geometry = new BoxGeometry(
+        this.Scratch.Cast.toNumber(a),
+        this.Scratch.Cast.toNumber(b),
+        this.Scratch.Cast.toNumber(h)
+      );
+      return new Wrapper(
+        new RTW_Model_Box(
+          new Mesh(geometry, material),
+          false,
+          false,
+          false,
+          void 0
+        )
+      );
+    }
+    sphereModel({ radius, w, h, material }) {
+      material = Wrapper.unwrap(material);
+      if (material !== void 0) {
+        if (!material.ismaterial) {
+          return "⚠️材质无效！";
+        }
+        material = material["model"];
+      }
+      let geometry = new SphereGeometry(
+        this.Scratch.Cast.toNumber(radius),
+        this.Scratch.Cast.toNumber(w),
+        this.Scratch.Cast.toNumber(h)
+      );
+      return new Wrapper(
+        new RTW_Model_Box(
+          new Mesh(geometry, material),
+          false,
+          false,
+          false,
+          void 0
+        )
+      );
+    }
+    planeModel({ a, b, material }) {
+      material = Wrapper.unwrap(material);
+      if (material !== void 0) {
+        if (!material.ismaterial) {
+          return "⚠️材质无效！";
+        }
+        material = material["model"];
+      }
+      let geometry = new PlaneGeometry(
+        this.Scratch.Cast.toNumber(a),
+        this.Scratch.Cast.toNumber(b)
+      );
+      return new Wrapper(
+        new RTW_Model_Box(
+          new Mesh(geometry, material),
+          false,
+          false,
+          false,
+          void 0
+        )
+      );
+    }
+    objModel({ objfile, mtlfile }) {
+      return new Wrapper(
+        new RTW_Model_Box(
+          {
+            objfile,
+            mtlfile
+          },
+          false,
+          true,
+          false,
+          void 0
+        )
+      );
+    }
+    _objModel(name, objfile, mtlfile, init_porject_time) {
+      name = this.Scratch.Cast.toString(name);
+      const objLoader = new OBJLoader();
+      const mtlLoader = new MTLLoader();
+      mtlLoader.load(this.getFileURL(this.Scratch.Cast.toString(mtlfile)), (mtl) => {
+        mtl.preload();
+        objLoader.setMaterials(mtl);
+        objLoader.load(
+          this.getFileURL(this.Scratch.Cast.toString(objfile)),
+          (root) => {
+            this.render_engine.objects[name] = root;
+            let r = this.runtime.startHatsWithParams(
+              chen_RenderTheWorld_extensionId + "_objectLoadingCompleted",
+              {
+                parameters: {
+                  name
+                }
+              }
+            );
+            r && r.forEach((e) => {
+              this.runtime.sequencer.stepThread(e);
+            });
+            if (init_porject_time == this._init_porject_time) {
+              this.render_engine.scene.add(this.render_engine.objects[name]);
+              this.render_engine.render();
+            }
+          }
+        );
+      });
+    }
+    gltfModel({ gltffile }) {
+      return new Wrapper(
+        new RTW_Model_Box(
+          {
+            gltffile
+          },
+          false,
+          false,
+          true,
+          void 0
+        )
+      );
+    }
+    _gltfModel(name, gltffile, init_porject_time) {
+      name = this.Scratch.Cast.toString(name);
+      const gltfLoader = new GLTFLoader();
+      const url = this.getFileURL(this.Scratch.Cast.toString(gltffile));
+      gltfLoader.load(url, (gltf) => {
+        const root = gltf.scene;
+        let mixer = new AnimationMixer(root);
+        let clips = gltf.animations;
+        this.render_engine.animations[name] = {
+          mixer,
+          clips,
+          action: {}
+        };
+        this.render_engine.objects[name] = root;
+        let r = this.runtime.startHatsWithParams(
+          chen_RenderTheWorld_extensionId + "_objectLoadingCompleted",
+          {
+            parameters: {
+              name
+            }
+          }
+        );
+        r && r.forEach((e) => {
+          this.runtime.sequencer.stepThread(e);
+        });
+        if (init_porject_time == this._init_porject_time) {
+          this.render_engine.scene.add(this.render_engine.objects[name]);
+          this.render_engine.render();
+        }
+      });
+    }
+    /**
+         * 启动动画
+         * @param {object} args
+         * @param {string} args.name
+         * @param {string} args.animationName
+         */
+    playAnimation(args) {
+      let name = this.Scratch.Cast.toString(args.name);
+      const dynamicArgs = getDynamicArgs(args);
+      let animationNames = [Cast.toString(args.animationName)].concat(
+        dynamicArgs
+      );
+      if (name in this.render_engine.animations && this.render_engine.animations[name].mixer) {
+        animationNames.forEach((animationName) => {
+          const cilp = AnimationClip.findByName(
+            this.render_engine.animations[name].clips,
+            animationName
+          );
+          if (cilp) {
+            this.render_engine.animations[name].action[animationName] = this.render_engine.animations[name].mixer.clipAction(cilp);
+            this.render_engine.animations[name].action[animationName].play();
+          }
+        });
+      }
+    }
+    /**
+     * 停止动画
+     * @param {object} args
+     * @param {string} args.name
+     * @param {string} args.animationName
+     */
+    stopAnimation(args) {
+      let name = this.Scratch.Cast.toString(args.name);
+      const dynamicArgs = getDynamicArgs(args);
+      let animationNames = [Cast.toString(args.animationName)].concat(
+        dynamicArgs
+      );
+      if (name in this.render_engine.animations) {
+        animationNames.forEach((animationName) => {
+          if (animationName in this.render_engine.animations[name].action) {
+            this.render_engine.animations[name].action[animationName].stop();
+          }
+        });
+      }
+    }
+    /**
+     * 推进并更新动画
+     * @param {object} args
+     * @param {string} args.name
+     * @param {number} args.time
+     */
+    updateAnimation({ name, time }) {
+      name = this.Scratch.Cast.toString(name);
+      time = this.Scratch.Cast.toNumber(time);
+      if (name in this.render_engine.animations && this.render_engine.animations[name].mixer) {
+        this.render_engine.animations[name].mixer.update(time);
+      }
+    }
+    /**
+     * 获取物体所有的动画
+     * @param {object} args
+     * @param {string} args.name
+     */
+    getAnimation({ name }) {
+      name = this.Scratch.Cast.toString(name);
+      if (name in this.render_engine.animations && this.render_engine.animations[name].clips) {
+        const clips = [];
+        for (let i = 0; i < this.render_engine.animations[name].clips.length; i++) {
+          clips.push(this.render_engine.animations[name].clips[i].name);
+        }
+        return JSON.stringify(clips);
+      } else {
+        return "[]";
+      }
+    }
+    /**
+     * 销毁物体
+     * @param {object} args
+     * @param {string} args.name
+     */
+    destroyObject(args) {
+      const dynamicArgs = getDynamicArgs(args);
+      this.releaseDuplicates(args.name);
+      dynamicArgs.forEach((_name) => {
+        this.releaseDuplicates(_name);
+      });
+      this.render_engine.render();
+    }
+    /**
+     * 通过导入时设置的名称获取物体
+     * @param {object} args
+     * @param {string} args.name
+     * @returns {Wrapper | ''}
+     */
+    getObjectByNmae({ name }) {
+      name = this.Scratch.Cast.toString(name);
+      if (name in this.render_engine.objects) {
+        let _animations = void 0;
+        if (name in this.render_engine.animations) {
+          _animations = this.render_engine.animations[name];
+        }
+        return new Wrapper(
+          new RTW_Model_Box(
+            this.render_engine.objects[name],
+            false,
+            false,
+            false,
+            _animations
+          )
+        );
+      } else return "";
+    }
+    rotationObject({ name, x, y, z }) {
+      let model = this._getModel(name);
+      if (model === -1) return "⚠️传入的名称或物体有误！";
+      model.rotation.set(
+        MathUtils.degToRad(this.Scratch.Cast.toNumber(x)),
+        MathUtils.degToRad(this.Scratch.Cast.toNumber(y)),
+        MathUtils.degToRad(this.Scratch.Cast.toNumber(z))
+      );
+      this.render_engine.render();
+    }
+    moveObject({ name, x, y, z }) {
+      let model = this._getModel(name);
+      if (model === -1) return "⚠️传入的名称或物体有误！";
+      model.position.set(
+        this.Scratch.Cast.toNumber(x),
+        this.Scratch.Cast.toNumber(y),
+        this.Scratch.Cast.toNumber(z)
+      );
+      this.render_engine.render();
+    }
+    scaleObject({ name, x, y, z }) {
+      let model = this._getModel(name);
+      if (model === -1) return "⚠️传入的名称或物体有误！";
+      model.scale.set(
+        this.Scratch.Cast.toNumber(x),
+        this.Scratch.Cast.toNumber(y),
+        this.Scratch.Cast.toNumber(z)
+      );
+    }
+    /**
+     * 获取物体坐标
+     * @param {object} args
+     * @param {string} args.name
+     * @param {string} args.xyz
+     */
+    getObjectPos({ name, xyz }) {
+      let model = this._getModel(name);
+      if (model === -1) return "⚠️传入的名称或物体有误！";
+      switch (this.Scratch.Cast.toString(xyz)) {
+        case "x":
+          return model.position.x;
+        case "y":
+          return model.position.y;
+        case "z":
+          return model.position.z;
+      }
+    }
+    /**
+     * 获取物体旋转角度
+     * @param {object} args
+     * @param {string} args.name
+     * @param {string} args.xyz
+     */
+    getObjectRotation({ name, xyz }) {
+      let model = this._getModel(name);
+      if (model === -1) return "⚠️传入的名称或物体有误！";
+      switch (this.Scratch.Cast.toString(xyz)) {
+        case "x":
+          return MathUtils.radToDeg(model.rotation.x);
+        case "y":
+          return MathUtils.radToDeg(model.rotation.y);
+        case "z":
+          return MathUtils.radToDeg(model.rotation.z);
+      }
+    }
+    /**
+     * 获取物体缩放
+     * @param {object} args
+     * @param {string} args.name
+     * @param {string} args.xyz
+     */
+    getObjectScale({ name, xyz }) {
+      let model = this._getModel(name);
+      if (model === -1) return "⚠️传入的名称或物体有误！";
+      switch (this.Scratch.Cast.toString(xyz)) {
+        case "x":
+          return model.scale.x;
+        case "y":
+          return model.scale.y;
+        case "z":
+          return model.scale.z;
+      }
+    }
+    /**
+     * 获取物体子物体数量
+     * @param {object} args
+     * @param {string} args.name
+     * @returns {number}
+     */
+    getChildrenNumInObject({ name }) {
+      let model = this._getModel(name);
+      if (model === -1) return -1;
+      return model.children.length;
+    }
+    /**
+     * 获取物体子物体
+     * @param {object} args
+     * @param {string} args.name
+     * @param {number} args.num
+     * @returns {Wrapper | ''}
+     */
+    getChildrenInObject(args) {
+      let model = this._getModel(args.name), num = [Cast.toNumber(args.num)].concat(getDynamicArgs(args)), cnt = 0;
+      while (model !== -1 && cnt < num.length) {
+        let _num = num[cnt++] - 1;
+        if (_num >= 0 && model.children[_num]) {
+          model = model.children[_num];
+        }
+      }
+      return model === -1 ? "" : new Wrapper(
+        new RTW_Model_Box(model, false, false, false, void 0)
+      );
+    }
+    getChildrenInObjectByName({ name, name2 }) {
+      let model = this._getModel(name);
+      if (model === -1) return "";
+      let child = model.getObjectByName(this.Scratch.Cast.toString(name2));
+      return child === void 0 ? "" : new Wrapper(
+        new RTW_Model_Box(child, false, false, false, void 0)
+      );
+    }
+    addChildren({ name, name2 }) {
+      let model = this._getModel(name);
+      if (model === -1) return "⚠️要添加子物体的物体不正确";
+      let model2 = this._getModel(name2);
+      if (model2 === -1) return "⚠️要添加的子物体不正确";
+      model.add(model2);
+    }
+    removeChildren({ name, name2 }) {
+      let model = this._getModel(name);
+      if (model === -1) return "⚠️要删除子物体的物体不正确";
+      let model2 = this._getModel(name2);
+      if (model2 === -1) return "⚠️要删除的子物体不正确";
+      model.remove(model2);
+    }
+    getScene() {
+      return this.render_engine.scene === null ? null : new Wrapper(
+        new RTW_Model_Box(
+          this.render_engine.scene,
+          false,
+          false,
+          false,
+          void 0
+        )
+      );
+    }
+    pointLight({ color: color2, intensity, x, y, z, decay, YN }) {
+      let _point_light = new PointLight(
+        this.Scratch.Cast.toNumber(color2),
+        this.Scratch.Cast.toNumber(intensity),
+        0,
+        this.Scratch.Cast.toNumber(decay)
+      );
+      _point_light.position.set(
+        this.Scratch.Cast.toNumber(x),
+        this.Scratch.Cast.toNumber(y),
+        this.Scratch.Cast.toNumber(z)
+      );
+      _point_light.shadow.bias = -5e-5;
+      if (this.Scratch.Cast.toString(YN) == "true") {
+        _point_light.castShadow = true;
+      }
+      return new Wrapper(
+        new RTW_Model_Box(_point_light, false, false, false, void 0)
+      );
+    }
+    directionalLight({ color: color2, intensity, x, y, z, x2, y2, z2, YN }) {
+      let _directional_light = new DirectionalLight(
+        this.Scratch.Cast.toNumber(color2),
+        this.Scratch.Cast.toNumber(intensity)
+      );
+      _directional_light.position.set(
+        this.Scratch.Cast.toNumber(x),
+        this.Scratch.Cast.toNumber(y),
+        this.Scratch.Cast.toNumber(z)
+      );
+      _directional_light.target.position.set(
+        this.Scratch.Cast.toNumber(x),
+        this.Scratch.Cast.toNumber(y),
+        this.Scratch.Cast.toNumber(z)
+      );
+      _directional_light.shadow.bias = -5e-5;
+      if (this.Scratch.Cast.toString(YN) == "true") {
+        _directional_light.castShadow = true;
+      }
+      _directional_light.shadow.camera.left = -20;
+      _directional_light.shadow.camera.right = 20;
+      _directional_light.shadow.camera.top = 20;
+      _directional_light.shadow.camera.bottom = -20;
+      _directional_light.shadow.camera.near = 0.1;
+      _directional_light.shadow.camera.far = 1e3;
+      return new Wrapper(
+        new RTW_Model_Box(
+          _directional_light,
+          false,
+          false,
+          false,
+          void 0
+        )
+      );
+    }
+    /**
+     * 设置平行光的阴影投射范围
+     * @param {object} args
+     * @param {string} args.name
+     * @param {number} args.left
+     * @param {number} args.right
+     * @param {number} args.top
+     * @param {number} args.bottom
+     */
+    setDirectionalLightShawdowCamera({
+      name,
+      left,
+      right,
+      top,
+      bottom,
+      near,
+      far
+    }) {
+      let model = this._getModel(name);
+      if (model === -1) return "⚠️传入的名称或物体有误！";
+      if (model.type === "DirectionalLight") {
+        model.shadow.camera.left = this.Scratch.Cast.toNumber(left);
+        model.shadow.camera.right = this.Scratch.Cast.toNumber(right);
+        model.shadow.camera.top = this.Scratch.Cast.toNumber(top);
+        model.shadow.camera.bottom = this.Scratch.Cast.toNumber(bottom);
+        model.shadow.camera.near = this.Scratch.Cast.toNumber(near);
+        model.shadow.camera.far = this.Scratch.Cast.toNumber(far);
+      } else {
+        return "⚠️'" + Cast.toString(name) + "'不是平行光！";
+      }
+    }
+    /**
+     * 设置光源阴影贴图大小
+     * @param {object} args
+     * @param {string} args.name
+     * @param {number} args.xsize
+     * @param {number} args.ysize
+     */
+    setLightMapSize({ name, xsize, ysize }) {
+      let model = this._getModel(name);
+      if (model === -1) return "⚠️传入的名称或物体有误！";
+      if (model.isLight) {
+        model.shadow.mapSize.set(
+          this.Scratch.Cast.toNumber(xsize),
+          this.Scratch.Cast.toNumber(ysize)
+        );
+      } else {
+        return "⚠️'" + Cast.toString(name) + "'不是光源！";
+      }
+    }
+    /**
+     * 设置环境光颜色
+     * @param {object} args
+     * @param {number} args.color
+     * @param {number} args.intensity
+     */
+    setAmbientLightColor({ color: color2, intensity }) {
+      this.ambient_light.color = new Color(this.Scratch.Cast.toNumber(color2));
+      this.ambient_light.intensity = this.Scratch.Cast.toNumber(intensity);
+      this.render_engine.render();
+    }
+    /**
+     * 设置环境光颜色
+     * @param {object} args
+     * @param {number} args.skyColor
+     * @param {number} args.groundColor
+     * @param {number} args.intensity
+     */
+    setHemisphereLightColor({ skyColor, groundColor, intensity }) {
+      this.hemisphere_light.color = new Color(
+        this.Scratch.Cast.toNumber(skyColor)
+      );
+      this.hemisphere_light.groundColor = new Color(
+        this.Scratch.Cast.toNumber(groundColor)
+      );
+      this.hemisphere_light.intensity = this.Scratch.Cast.toNumber(intensity);
+      this.render_engine.render();
+    }
+    useCamera({ camera }) {
+      let model = this._getModel(camera);
+      if (model === -1) return "⚠️传入的相机有误！";
+      this.camera = model;
+    }
+    perspectiveCamera({ fov: fov2, aspect: aspect2, near, far }) {
+      return new Wrapper(
+        new RTW_Model_Box(
+          new PerspectiveCamera(
+            this.Scratch.Cast.toNumber(fov2),
+            this.Scratch.Cast.toNumber(aspect2),
+            this.Scratch.Cast.toNumber(near),
+            this.Scratch.Cast.toNumber(far)
+          ),
+          false,
+          false,
+          false,
+          void 0
+        )
+      );
+    }
+    /**
+     * 移动相机
+     * @param {object} args
+     * @param {number} args.x
+     * @param {number} args.y
+     * @param {number} args.z
+     */
+    moveCamera({ x, y, z }) {
+      this.camera.position.set(
+        this.Scratch.Cast.toNumber(x),
+        this.Scratch.Cast.toNumber(y),
+        this.Scratch.Cast.toNumber(z)
+      );
+    }
+    /**
+     * 旋转相机
+     * @param {object} args
+     * @param {number} args.x
+     * @param {number} args.y
+     * @param {number} args.z
+     */
+    rotationCamera({ x, y, z }) {
+      this.camera.rotation.set(
+        MathUtils.degToRad(this.Scratch.Cast.toNumber(x)),
+        MathUtils.degToRad(this.Scratch.Cast.toNumber(y)),
+        MathUtils.degToRad(this.Scratch.Cast.toNumber(z))
+      );
+    }
+    /**
+     * 让相机面向
+     * @param {object} args
+     * @param {number} args.x
+     * @param {number} args.y
+     * @param {number} args.z
+     */
+    cameraLookAt({ x, y, z }) {
+      this.camera.lookAt(
+        this.Scratch.Cast.toNumber(x),
+        this.Scratch.Cast.toNumber(y),
+        this.Scratch.Cast.toNumber(z)
+      );
+    }
+    /**
+     * 获取相机坐标
+     * @param {object} args
+     * @param {string} args.xyz
+     */
+    getCameraPos({ xyz }) {
+      if (!this.camera) {
+        return;
+      }
+      switch (this.Scratch.Cast.toString(xyz)) {
+        case "x":
+          return this.camera.position.x;
+        case "y":
+          return this.camera.position.y;
+        case "z":
+          return this.camera.position.z;
+      }
+    }
+    /**
+     * 获取相机旋转角度
+     * @param {object} args
+     * @param {string} args.xyz
+     */
+    getCameraRotation({ xyz }) {
+      if (!this.camera) {
+        return;
+      }
+      switch (this.Scratch.Cast.toString(xyz)) {
+        case "x":
+          return MathUtils.radToDeg(this.camera.rotation.x);
+        case "y":
+          return MathUtils.radToDeg(this.camera.rotation.y);
+        case "z":
+          return MathUtils.radToDeg(this.camera.rotation.z);
+      }
+    }
+    mouseControl({ name, yn1, yn2, yn3 }) {
+      let model = this._getModel(name);
+      if (model === -1 || !model.update) return "⚠️设置的控制器有误！";
+      let enablePan = false;
+      let enableZoom = false;
+      let enableRotate = false;
+      if (yn1 == "true") {
+        enablePan = true;
+      }
+      if (yn2 == "true") {
+        enableZoom = true;
+      }
+      if (yn3 == "true") {
+        enableRotate = true;
+      }
+      model.enablePan = enablePan;
+      model.enableZoom = enableZoom;
+      model.enableRotate = enableRotate;
+      model.update();
+    }
+    createOrbitControls({ name }) {
+      let model = this._getModel(name);
+      if (model === -1) return "⚠️绑定的对象有误！";
+      let _orbitControls = new OrbitControls(
+        model,
+        this.runtime.renderer.canvas
+      );
+      _orbitControls.update();
+      return new Wrapper(
+        new RTW_Model_Box(
+          _orbitControls,
+          false,
+          false,
+          false,
+          void 0
+        )
+      );
+    }
+    updateControls({ name }) {
+      let model = this._getModel(name);
+      if (model === -1 || !model.update) return "⚠️更新的控制器有误！";
+      model.update();
+    }
+    setControlState({ name, YN }) {
+      let model = this._getModel(name);
+      if (model === -1 || !model.update) return "⚠️设置的控制器有误！";
+      if (this.Scratch.Cast.toString(YN) == "true") {
+        model.enabled = true;
+      } else {
+        model.enabled = false;
+      }
+      model.update();
+    }
+    mouseCanControl({ name }) {
+      let model = this._getModel(name);
+      if (model === -1 || !model.update) return "⚠️设置的控制器有误！";
+      return model.enabled;
+    }
+    setControlDamping({ name, YN2 }) {
+      let model = this._getModel(name);
+      if (model === -1 || !model.update) return "⚠️设置的控制器有误！";
+      if (this.Scratch.Cast.toString(YN2) == "yes") {
+        model.enableDamping = true;
+      } else {
+        model.enableDamping = false;
+      }
+    }
+    setControlDampingNum({ name, num }) {
+      let model = this._getModel(name);
+      if (model === -1 || !model.update) return "⚠️设置的控制器有误！";
+      model.dampingFactor = this.Scratch.Cast.toNumber(num);
+    }
+    setOrbitControlsTarget({ name, x, y, z }) {
+      let model = this._getModel(name);
+      if (model === -1 || !model.update || !(model.target instanceof Vector3)) return "⚠️设置的轨道控制器有误！";
+      model.target.set(
+        this.Scratch.Cast.toNumber(x),
+        this.Scratch.Cast.toNumber(y),
+        this.Scratch.Cast.toNumber(z)
+      );
+    }
+    /**
+     * 启用雾效果并设置雾颜色
+     * @param {object} args
+     * @param {number} args.color
+     * @param {number} args.near
+     * @param {number} args.far
+     */
+    enableFogEffect({ color: color2, near, far }) {
+      this.render_engine.scene.fog = new Fog(
+        this.Scratch.Cast.toNumber(color2),
+        this.Scratch.Cast.toNumber(near),
+        this.Scratch.Cast.toNumber(far)
+      );
+      this.render_engine.render();
+    }
+    /**
+     * 禁用雾效果
+     */
+    disableFogEffect(args) {
+      this.render_engine.scene.fog = null;
+      this.render_engine.render();
+    }
+    /**
+     * 处理颜色
+     * @param {object} args
+     * @param {number} args.R
+     * @param {number} args.G
+     * @param {number} args.B
+     * @returns {number}
+     */
+    color_RGB({ R, G, B }) {
+      return Math.min(Math.max(this.Scratch.Cast.toNumber(R), 0), 255) * 65536 + Math.min(Math.max(this.Scratch.Cast.toNumber(G), 0), 255) * 256 + Math.min(Math.max(this.Scratch.Cast.toNumber(B), 0), 255);
+    }
   };
 
   // src/index.js
@@ -25199,7 +29080,7 @@ void main() {
       ArgumentType,
       BlockType,
       TargetType,
-      Cast,
+      Cast: Cast2,
       translate,
       extensions,
       runtime
@@ -25216,6 +29097,7 @@ void main() {
         this._core = new ExtensionCore(this, this.vm, this.ScratchBlocks);
         this._core.loadformat(l10n_default);
         this.render_engine = new RenderEngine(this);
+        this.threadInfo = {};
       }
       /**
        * 翻译 translate

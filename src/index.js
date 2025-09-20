@@ -55,6 +55,8 @@ import { Extension } from './core/main.js';
             this._core.loadformat(l10n);
 
             this.render_engine = new RenderEngine(this);
+
+            this.threadInfo = {};
         }
 
         /**
