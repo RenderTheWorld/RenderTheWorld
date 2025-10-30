@@ -26,6 +26,9 @@ class Extension {
         this._core;
         /** @type {RenderEngine} */
         this.render_engine;
+
+        /** @type {THREE} */
+        this._threejs = THREE;
     }
 
     /**
@@ -53,9 +56,9 @@ class Extension {
     }
 
     /**
-         * 清除材质
-         * @param {THREE.Material} material
-         */
+     * 清除材质
+     * @param {THREE.Material} material
+     */
     __disposeMaterial(material) {
         if (material.isMaterial) {
             Object.keys(material).forEach((prop) => {
@@ -178,16 +181,16 @@ class Extension {
         // }
 
         if (this.Scratch.Cast.toString(state) === 'display') {
-            this.isTcShow = true;
-            this.threeSkin.setContent(this.render_engine.tc);
+            this.render_engine.isTcShow = true;
+            this.render_engine.threeSkin.setContent(this.render_engine.tc);
         } else {
-            this.isTcShow = false;
-            this.threeSkin.setContent(this.NullCanvas);
+            this.render_engine.isTcShow = false;
+            this.render_engine.threeSkin.setContent(this.render_engine.NullCanvas);
         }
     }
 
     get3dState(args) {
-        return this.isTcShow;
+        return this.render_engine.isTcShow;
     }
 
     /**

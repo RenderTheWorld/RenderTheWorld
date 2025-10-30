@@ -125,6 +125,8 @@ class RenderEngine {
         /** @type {HTMLDivElement} */
         this.tc = document.createElement('canvas');
         this.tc.className = 'RenderTheWorld';
+        this.isTcShow = false;
+        this.NullCanvas = document.createElement('canvas');
 
         // threejs skin
         let index = this.ext.runtime.renderer._groupOrdering.indexOf('video');
@@ -150,7 +152,7 @@ class RenderEngine {
             this.threeSkinId,
             this.ext.runtime.renderer,
         );
-        this.threeSkin.setContent(this.tc);
+        this.threeSkin.setContent(this.NullCanvas);
         // this.threeSkin.setContent(this.NullCanvas); // 修复一加载扩展物体就显示画布的问题
         this.ext.runtime.renderer._allSkins[this.threeSkinId] = this.threeSkin;
 
@@ -174,13 +176,19 @@ class RenderEngine {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(color);
 
+        this.renderer.setAnimationLoop(this.render);
         this.render();
     }
 
     render() {
-        this.renderer.render(this.scene, this.camera);
-        this.threeSkin.setContent(this.tc);
-        this.ext.runtime.requestRedraw();
+        if (this.isTcShow) {
+            this.renderer.render(this.scene, this.camera);
+            this.threeSkin.setContent(this.tc);
+            this.ext.runtime.requestRedraw();
+        } else {
+            this.threeSkin.setContent(this.NullCanvas);
+            this.ext.runtime.requestRedraw();
+        }
     }
 
     /**
