@@ -1,0 +1,42 @@
+{
+  "name": "RenderTheWorld",
+  "version": "1.0.0",
+  "description": "积木渲染世界",
+  "main": "dist/RenderTheWorld.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint ./src",
+    "lint:type": "tsc --noEmit -p ./tsconfig.json",
+    "fix": "eslint ./src --fix",
+    "start": "tsup && http-server ./dist -p 8080 --cors",
+    "build": "tsup",
+    "build:turbowarp": "tsup && (npx prettier --config turbowarp/.prettierrc --parser acorn < dist/index.global.js) > dist/index.global.formatted.js",
+    "format": "prettier ./src -c -w",
+    "lint:format": "prettier ./src -c"
+  },
+  "author": "xiaochen004hao",
+  "license": "LGPL-3.0 license",
+  "devDependencies": {
+    "@babel/core": "^7.26.10",
+    "@babel/preset-env": "^7.26.9",
+    "@turbowarp/types": "^0.0.12",
+    "@types/three": "^0.179.0",
+    "@typescript-eslint/eslint-plugin": "^7.4.0",
+    "@typescript-eslint/parser": "^7.4.0",
+    "babel-loader": "^10.0.0",
+    "esbuild": "^0.25.1",
+    "eslint": "^8.57.1",
+    "glob": "^11.0.3",
+    "http-server": "^14.1.1",
+    "prettier": "^3.2.5",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.4.0",
+    "typescript": "^5.4.3",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1"
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "dependencies": {
+    "three": "^0.178.0"
+  }
+}
