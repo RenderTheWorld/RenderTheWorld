@@ -1,8 +1,4 @@
 import FormatMessager from './format.js';
-import * as THREE from 'three';
-
-import { Skins } from '../utils/canvasSkin';
-import { color, color_secondary } from '../assets/index.js'
 
 
 class ExtensionCore {
@@ -60,33 +56,4 @@ class ExtensionCore {
     }
 }
 
-class RenderEngine {
-    constructor(ext) {
-        this.ext = ext;
-        console.log(
-            `%c RTW Developer %c ${this.inMainWorkspace() ? '🔓ON' : '🔒OFF'} `,
-            `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: ${color}; font-weight: bold; height: 100%;`,
-            `padding: 2px 1px; border-radius: 0 3px 3px 0; color: #fff; background: ${this.inMainWorkspace() ? color_secondary : color}; font-weight: bold; height: 100%;`,
-        );
-
-    }
-
-    init(color, sizex, sizey, ed, shadowMapType) {
-
-    }
-
-    render() {
-
-    }
-
-    /**
-     * 改编自系统工具
-     */
-    inMainWorkspace() {
-        const ur1 = window.location.pathname;
-        const rege = /\/(?:gandi|creator)(?:\/|$)/;
-        return rege.test(ur1) && this.ext.ScratchBlocks.getMainWorkspace() !== null;
-    };
-}
-
-export { ExtensionCore, RenderEngine };
+export default ExtensionCore;

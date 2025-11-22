@@ -4,7 +4,8 @@ import {
     chen_RenderTheWorld_extensionId,
 } from '../assets/index.js';
 import { Wrapper, RTW_Model_Box } from '../utils/RTWTools.js';
-import { ExtensionCore, RenderEngine } from './engine';
+import RenderEngine from './renderengine.js';
+import ExtensionCore from './extcore.js';
 import { patch } from '../utils/injector.js';
 
 
@@ -21,12 +22,12 @@ class Extension {
         this.Scratch;
 
         /** @type {ExtensionCore} */
-        this._core;
+        this.core;
         /** @type {RenderEngine} */
-        this.render_engine;
+        this.renderEngine;
 
         /** @type {THREE} */
-        this._threejs;
+        this.threejs;
     }
     
     /**
@@ -43,8 +44,17 @@ class Extension {
 
         this.Scratch = Scratch;
 
-        this._threejs = THREE
+        this.threejs = THREE
     }
+
+    /**
+     * 改编自系统工具
+     */
+    $inMainWorkspace() {
+        const ur1 = window.location.pathname;
+        const rege = /\/(?:gandi|creator)(?:\/|$)/;
+        return rege.test(ur1) && this.ext.ScratchBlocks.getMainWorkspace() !== null;
+    };
 
     test(args, util, realBlockInfo) {
         console.log(this, args, util, realBlockInfo);
@@ -52,4 +62,4 @@ class Extension {
     }
 }
 
-export { Extension };
+export default Extension;

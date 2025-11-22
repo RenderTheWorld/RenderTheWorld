@@ -9,14 +9,12 @@ import {
     chen_RenderTheWorld_extensionId,
     chen_RenderTheWorld_picture,
     chen_RenderTheWorld_icon,
-    rightSelectButton,
-    rightButton,
-    leftButton,
 } from './assets/index.js';
 import { getVM, getScratchBlocks } from './utils/injector.js';
 import l10nInit from './l10n/index.js';
-import { ExtensionCore, RenderEngine } from './core/engine.js';
-import { Extension } from './core/main.js';
+import RenderEngine from './renderengine.js';
+import ExtensionCore from './extcore.js';
+import Extension from './core/main.js';
 
 
 (function (Scratch) {
@@ -50,10 +48,10 @@ import { Extension } from './core/main.js';
             extension.$initExtension(_runtime ?? Scratch?.vm?.runtime, vm, ScratchBlocks, Scratch);
             if (!extension.runtime) return;
 
-            extension._core = new ExtensionCore(extension, extension.vm, extension.ScratchBlocks);
-            l10nInit(extension._core);
+            extension.core = new ExtensionCore(extension, extension.vm, extension.ScratchBlocks);
+            l10nInit(extension.core);
 
-            extension.render_engine = new RenderEngine(extension);
+            extension.renderEngine = new RenderEngine(extension);
         }
 
         /**
@@ -62,7 +60,7 @@ import { Extension } from './core/main.js';
          * @returns {string}
          */
         $formatMessage(id) {
-            return extension._core.translate(id, translate.language);
+            return extension.core.translate(id, translate.language);
         }
 
         $func(args, util, realBlockInfo) {
@@ -70,7 +68,7 @@ import { Extension } from './core/main.js';
         }
 
         $loadMenus() {
-            extension._core.cleanMenus();
+            extension.core.cleanMenus();
             // extension._core.
             //     registerMenu(
             //         'file_list',
@@ -125,31 +123,34 @@ import { Extension } from './core/main.js';
         }
 
         $loadBlocks() {
-            extension._core.cleanBlocks();
-            extension._core.
-                registerBlock(
+            extension.core.cleanBlocks();
+            extension.core.
+                registerBlock( // API文档跳转按钮
                     {
                         blockType: BlockType.BUTTON,
-                        text: this.$formatMessage('apidocs'),
                         onClick: this.docs,
                     }
-                ).registerBlock(
+                ).registerBlock( // 测试积木
                     {
                         opcode: "test",
                         blockType: BlockType.COMMAND,
-                        text: this.$formatMessage('test'),
                         def: extension.test,
                     }
-                ).registerBlockFinish((e) => {
-                if (typeof e !== 'string' && e.blockType != BlockType.LABEL) {
-                    e.tooltip = this.$formatMessage(
-                        ''.concat(e.opcode).concat('.tooltip'),
-                    );
-                    if (e.opcode && e.def) {
-                        e.func = "$func"
+                ).registerBlockFinish((e) => { // 统一处理，减少行数
+                    if (typeof e !== 'string' && e.blockType != BlockType.LABEL) {
+                        e.tooltip = this.$formatMessage(
+                            ''.concat(e.opcode).concat('.tooltip'),
+                        );
+                        if (e.opcode) {
+                            if (e.def) {
+                                e.func = "$func"
+                            }
+                            if (!e.text) {
+                                e.text = this.$formatMessage(e.opcode);
+                            }
+                        }
                     }
-                }
-            });
+                });
         }
 
         getInfo(args) {
@@ -165,8 +166,8 @@ import { Extension } from './core/main.js';
                 color1: color,
                 color2: color_secondary,
                 color3: color_tertiary,
-                blocks: extension?._core.blocks,
-                menus: extension?._core.menus,
+                blocks: extension?.core.blocks,
+                menus: extension?.core.menus,
             };
         }
 
