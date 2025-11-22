@@ -13,8 +13,33 @@ class RenderEngine {
         this.ext = ext;
         this.THREE = THREE;
 
-        // threejs canvas
-        this.tc = 
+        this.tc = document.createElement('canvas');
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, canvas: this.tc });
+
+        const fov = 75;
+        const aspect = 2;  // 相机默认值
+        const near = 0.1;
+        const far = 5;
+        this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+
+        this.camera.position.z = 2;
+
+        this.scene = new THREE.Scene();
+
+        const boxWidth = 1;
+        const boxHeight = 1;
+        const boxDepth = 1;
+        const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
+
+        const material = new THREE.MeshBasicMaterial({ color: 0x44aa88 });
+
+        const cube = new THREE.Mesh(geometry, material);
+
+        this.scene.add(cube);
+
+        
+
+        requestAnimationFrame(this.render);
 
         console.log(
             `%c    RenderTheWorld%c by xiaochen004hao\n      https://github.com/RenderTheWorld/RenderTheWorld\n      Version: ${this.ext.$version}`,
@@ -79,8 +104,15 @@ class RenderEngine {
 
     }
 
-    render() {
+    render(time) {
+        time *= 0.001;  // 将时间单位变为秒
 
+        cube.rotation.x = time;
+        cube.rotation.y = time;
+
+        renderer.render(this.scene, this.camera);
+
+        requestAnimationFrame(this.render);
     }
 }
 

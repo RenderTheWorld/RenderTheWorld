@@ -154,7 +154,7 @@ import Extension from './core/main.js';
                 });
         }
 
-        getInfo(args) {
+        getInfo() {
             this.$loadMenus();
             this.$loadBlocks();
 
