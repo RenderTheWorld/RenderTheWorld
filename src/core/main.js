@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-
 import {
     chen_RenderTheWorld_extensionId,
 } from '../assets/index.js';
@@ -44,8 +42,6 @@ class Extension {
         this.ScratchBlocks = ScratchBlocks;
 
         this.Scratch = Scratch;
-
-        this.threejs = THREE
     }
 
     /**
@@ -54,11 +50,10 @@ class Extension {
     $inMainWorkspace() {
         const ur1 = window.location.pathname;
         const rege = /\/(?:gandi|creator)(?:\/|$)/;
-        return rege.test(ur1) && this.ext.ScratchBlocks.getMainWorkspace() !== null;
+        return rege.test(ur1) && this.ScratchBlocks.getMainWorkspace() !== null;
     };
 
     test(args, util, realBlockInfo) {
-        console.log(this, args, util, realBlockInfo);
         
     }
 }

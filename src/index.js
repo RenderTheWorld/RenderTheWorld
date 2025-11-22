@@ -12,8 +12,8 @@ import {
 } from './assets/index.js';
 import { getVM, getScratchBlocks } from './utils/injector.js';
 import l10nInit from './l10n/index.js';
-import RenderEngine from './renderengine.js';
-import ExtensionCore from './extcore.js';
+import RenderEngine from './core/renderengine.js';
+import ExtensionCore from './core/extcore.js';
 import Extension from './core/main.js';
 
 

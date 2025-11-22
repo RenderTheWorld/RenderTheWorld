@@ -1,4 +1,4 @@
-import { ExtensionCore } from "src/core/renderengine";
+import ExtensionCore from "../core/extcore";
 
 /**
  * l10n Init
