@@ -10,6 +10,8 @@ import { patch } from '../utils/injector.js';
 
 class Extension {
     constructor() {
+        this.$version = "Alpha 0.0.1";
+
         /** @type {import('scratch-vm').Runtime} */
         this.runtime;
         /** @type {import('scratch-vm')} */

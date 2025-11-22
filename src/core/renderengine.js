@@ -13,8 +13,11 @@ class RenderEngine {
         this.ext = ext;
         this.THREE = THREE;
 
+        // threejs canvas
+        this.tc = 
+
         console.log(
-            '%c    RenderTheWorld%cby xiaochen004hao',
+            `%c    RenderTheWorld%c by xiaochen004hao\n      https://github.com/RenderTheWorld/RenderTheWorld\n      Version: ${this.ext.$version}`,
             `background-image: url("${chen_RenderTheWorld_icon}");
              background-size: contain;
              background-repeat: no-repeat;
@@ -26,7 +29,6 @@ class RenderEngine {
             `,
             'color: #aaa;',
         );
-
         if (this.ext.$inMainWorkspace()) {
             globalThis.RTW = {
                 THREE: THREE,
@@ -41,28 +43,28 @@ class RenderEngine {
                 `padding: 2px 1px; border: 1.5px solid ${color_secondary}; border-left: none; border-radius: 0 3px 3px 0; color: #fff; background: ${color}; font-weight: bold;`
             );
             console.log(
-                "%c Three JS: %c        (RTW.THREE) \n %o",
-                `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: linear-gradient(to right, ${color_secondary}, rgba(0, 0, 0, 0))`,
-                'color: #aaa;',
-                RTW.THREE
-            );
-            console.log(
-                "%c Inner Extension: %c (RTW.Extension) \n %o",
+                "%c Internal RTW Extension: %c (RTW.Extension) \n %o",
                 `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: linear-gradient(to right, ${color_secondary}, rgba(0, 0, 0, 0))`,
                 'color: #aaa;',
                 RTW.Extension
             );
             console.log(
-                "%c Scratch VM: %c      (RTW.VM) \n %o",
+                "%c Three JS: %c               (RTW.THREE) \n %o",
                 `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: linear-gradient(to right, ${color_secondary}, rgba(0, 0, 0, 0))`,
                 'color: #aaa;',
-                RTW.VM
+                RTW.THREE
             );
             console.log(
-                "%c Scratch Blocks: %c  (RTW.ScratchBlocks) \n %o",
+                "%c Scratch Blocks: %c         (RTW.ScratchBlocks) \n %o",
                 `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: linear-gradient(to right, ${color_secondary}, rgba(0, 0, 0, 0))`,
                 'color: #aaa;',
                 RTW.ScratchBlocks
+            );
+            console.log(
+                "%c Scratch VM: %c             (RTW.VM) \n %o",
+                `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: linear-gradient(to right, ${color_secondary}, rgba(0, 0, 0, 0))`,
+                'color: #aaa;',
+                RTW.VM
             );
         } else {
             console.log(
@@ -71,7 +73,6 @@ class RenderEngine {
                 `padding: 2px 1px; border-radius: 0 3px 3px 0; color: #fff; background: ${color}; font-weight: bold;`
             );
         }
-
     }
 
     init(color, sizex, sizey, ed, shadowMapType) {

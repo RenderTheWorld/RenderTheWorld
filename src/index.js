@@ -48,6 +48,7 @@ import Extension from './core/main.js';
             extension.$initExtension(_runtime ?? Scratch?.vm?.runtime, vm, ScratchBlocks, Scratch);
             if (!extension.runtime) return;
 
+            this.version = extension.$version
             extension.core = new ExtensionCore(extension, extension.vm, extension.ScratchBlocks);
             l10nInit(extension.core);
 
