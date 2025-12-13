@@ -14,32 +14,68 @@ class RenderEngine {
         this.THREE = THREE;
 
         this.tc = document.createElement('canvas');
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, canvas: this.tc });
+        this.tc.width = 1287;
+        this.tc.height = 724;
 
-        const fov = 75;
-        const aspect = 2;  // 相机默认值
-        const near = 0.1;
-        const far = 5;
-        this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+        // 样式优化：防止 canvas 干扰布局，通常作为纹理源它可以是隐藏的，
+        // 除非你需要捕获它的鼠标事件。
+        this.tc.style.display = 'none'; 
+        this.ext.runtime.renderer.canvas.parentElement.append(this.tc);
 
-        this.camera.position.z = 2;
-
-        this.scene = new THREE.Scene();
-
-        const boxWidth = 1;
-        const boxHeight = 1;
-        const boxDepth = 1;
-        const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
-
-        const material = new THREE.MeshBasicMaterial({ color: 0x44aa88 });
-
-        const cube = new THREE.Mesh(geometry, material);
-
-        this.scene.add(cube);
-
+        // 插入渲染层级
+        let index = this.ext.runtime.renderer._groupOrdering.indexOf('video');
+        if (index === -1) index = 0; // 防止找不到 video 层报错
         
+        this.ext.runtime.renderer._groupOrdering.splice(
+            index + 1,
+            0,
+            'RenderTheWorld',
+        );
 
-        requestAnimationFrame(this.render);
+        // 初始化层级组
+        // 注意：这里需要确保 video layerGroup 存在
+        const videoLayer = this.ext.runtime.renderer._layerGroups['video'];
+        const drawListOffset = videoLayer ? videoLayer.drawListOffset : 0;
+
+        this.ext.runtime.renderer._layerGroups['RenderTheWorld'] = {
+            groupIndex: index + 1,
+            drawListOffset: drawListOffset,
+        };
+
+        // 更新后续层级的索引
+        for (let i = 0; i < this.ext.runtime.renderer._groupOrdering.length; i++) {
+            const groupName = this.ext.runtime.renderer._groupOrdering[i];
+            if(this.ext.runtime.renderer._layerGroups[groupName]) {
+                 this.ext.runtime.renderer._layerGroups[groupName].groupIndex = i;
+            }
+        }
+
+        // Create drawable and skin
+        this.threeSkinId = this.ext.runtime.renderer._nextSkinId++;
+        let SkinsClass = new Skins(this.ext.runtime);
+        this.threeSkin = new SkinsClass.CanvasSkin(
+            this.threeSkinId,
+            this.ext.runtime.renderer,
+        );
+        
+        // 初始化设置内容
+        this.threeSkin.setContent(this.tc); 
+        this.ext.runtime.renderer._allSkins[this.threeSkinId] = this.threeSkin;
+
+        // threejs drawable layer
+        this.threeDrawableId = this.ext.runtime.renderer.createDrawable('RenderTheWorld');
+        this.ext.runtime.renderer.updateDrawableSkinId(
+            this.threeDrawableId,
+            this.threeSkinId,
+        );
+
+        // 设置 Skin 的大小和缩放，确保它覆盖整个舞台
+        // WebGL 坐标系中心是 [0,0]，通常不需要额外设置位置，只需设置大小和Ghost
+        const drawable = this.ext.runtime.renderer._allDrawables[this.threeDrawableId];
+        if (drawable) {
+            // 确保它可见
+             drawable.updateVisible(true);
+        }
 
         console.log(
             `%c    RenderTheWorld%c by xiaochen004hao\n      https://github.com/RenderTheWorld/RenderTheWorld\n      Version: ${this.ext.$version}`,
@@ -105,14 +141,6 @@ class RenderEngine {
     }
 
     render(time) {
-        time *= 0.001;  // 将时间单位变为秒
-
-        cube.rotation.x = time;
-        cube.rotation.y = time;
-
-        renderer.render(this.scene, this.camera);
-
-        requestAnimationFrame(this.render);
     }
 }
 

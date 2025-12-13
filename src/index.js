@@ -65,7 +65,7 @@ import Extension from './core/main.js';
         }
 
         $func(args, util, realBlockInfo) {
-            realBlockInfo.def.call(extension, args, util, realBlockInfo)
+            realBlockInfo.def(args, util, realBlockInfo);
         }
 
         $loadMenus() {
@@ -145,6 +145,7 @@ import Extension from './core/main.js';
                         if (e.opcode) {
                             if (e.def) {
                                 e.func = "$func"
+                                e.def = e.def.bind(extension);
                             }
                             if (!e.text) {
                                 e.text = this.$formatMessage(e.opcode);
