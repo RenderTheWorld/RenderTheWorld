@@ -3,7 +3,7 @@
 /* eslint-disable max-classes-per-file */
 import { chen_RenderTheWorld_extensionId } from '../assets';
 import * as THREE from 'three';
-// import { OrbitControls } from '../assets/threejs_ext/OrbitControls.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 function addRTWStyle(newStyle) {
     let _RTWStyle = !window.RTWStyle;
@@ -18,9 +18,6 @@ function addRTWStyle(newStyle) {
                 .getElementsByTagName('head')[0]
                 .appendChild(window.RTWStyle);
     }
-    // window.RTWStyle.childNodes.forEach((child) => {
-    //     window.RTWStyle.removeChild(child);
-    // });
     window.RTWStyle.appendChild(document.createTextNode(newStyle));
 }
 
@@ -177,8 +174,6 @@ class RTW_Model_Box {
 
     toString() {
         let text = '';
-        // html.style.color = this.color;
-        // html.style.fontSize = String(this.size) + "px";
         if (this.isobj) {
             text = `objfile: "${this.model.objfile}" mtlfile: "${this.model.mtlfile}`;
         } else if (this.isgltf) {
@@ -220,74 +215,35 @@ class RTW_Model_Box {
             isInMonitor,
         );
     }
-
-    // displayInstance(element) {
-    //     // 显示model属性
-    //     this.createPropertyElement(element, 'Material:', this.model.type);
-    //     if (this.ismaterial) {
-    //         this.createPropertyElement(element, 'Material:', this.model.type);
-    //     } else if (this.isobj) {
-    //         this.createPropertyElement(element, 'OBJ File:', this.model.objfile);
-    //         this.createPropertyElement(element, 'MTL File:', this.model.mtlfile);
-    //     } else if (this.isgltf) {
-    //         this.createPropertyElement(element, 'GLTF File:', this.model.gltffile);
-    //     }
-
-    //     // 显示animations属性
-    //     if (this.animations) {
-    //         this.createPropertyElement(element, 'Animations:', '');
-    //         this.createPropertyElement(element, 'Mixer:', this.animations.mixer);
-    //         this.createPropertyElement(element, 'Clips:', `${this.animations.clips.length} clips`);
-    //         this.createPropertyElement(element, 'Actions:', `${Object.keys(this.animations.action).length} actions`);
-    //     }
-    // }
 }
 
 let Wrapper = class _Wrapper extends String {
-    /**
-     * Construct a wrapped value.
-     * @param value Value to wrap.
-     */
     constructor(value) {
         super(value);
         this.value = value;
     }
-    /**
-     * Unwraps a wrapped object.
-     * @param value Wrapped object.
-     * @returnss Unwrapped object.
-     */
     static unwrap(value) {
         return value instanceof _Wrapper ? value.value : value;
     }
-    /**
-     * toString method for Scratch monitors.
-     * @returnss String display.
-     */
     toString() {
         return String(this.value);
     }
 };
 
-// 定义用于存储原始函数的属性名
 const PATCHES_ID = '__patches_' + chen_RenderTheWorld_extensionId;
 
-// 定义patch函数，用于修改对象的方法
 const patch = (obj, functions) => {
     if (obj[PATCHES_ID]) return;
     obj[PATCHES_ID] = {};
     for (const name in functions) {
-        // 保存原始函数
         const original = obj[name];
         obj[PATCHES_ID][name] = obj[name];
         if (original) {
-            // 替换原函数，增加自定义逻辑
             obj[name] = function (...args) {
                 const callOriginal = (...args) => original.call(this, ...args);
                 return functions[name].call(this, callOriginal, ...args);
             };
         } else {
-            // 如果原函数不存在，直接定义新函数
             obj[name] = function (...args) {
                 return functions[name].call(this, () => { }, ...args);
             };

@@ -1,9 +1,8 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 
 import { Skins } from '../utils/canvasSkin.js';
 import { chen_RenderTheWorld_icon, color, color_secondary } from '../assets/index.js'
 import Extension from './main.js';
-
 
 class RenderEngine {
     /**
@@ -13,44 +12,63 @@ class RenderEngine {
         this.ext = ext;
         this.THREE = THREE;
 
+        // 渲染状态
+        this.isRendering = false;
+        this.renderReqId = null;
+
+        // 1. 创建离屏 Canvas
         this.tc = document.createElement('canvas');
         this.tc.width = 1287;
         this.tc.height = 724;
-
-        // 样式优化：防止 canvas 干扰布局，通常作为纹理源它可以是隐藏的，
-        // 除非你需要捕获它的鼠标事件。
         this.tc.style.display = 'none'; 
-        this.ext.runtime.renderer.canvas.parentElement.append(this.tc);
-
-        // 插入渲染层级
-        let index = this.ext.runtime.renderer._groupOrdering.indexOf('video');
-        if (index === -1) index = 0; // 防止找不到 video 层报错
         
-        this.ext.runtime.renderer._groupOrdering.splice(
-            index + 1,
-            0,
-            'RenderTheWorld',
-        );
+        // 挂载到 DOM 以防万一（某些浏览器策略），虽然 display none
+        if (this.ext.runtime.renderer.canvas.parentElement) {
+            this.ext.runtime.renderer.canvas.parentElement.append(this.tc);
+        }
 
-        // 初始化层级组
-        // 注意：这里需要确保 video layerGroup 存在
-        const videoLayer = this.ext.runtime.renderer._layerGroups['video'];
+        // 2. 插入 Scratch 渲染层级
+        this._injectLayer();
+
+        // 3. 创建 Scratch Skin 和 Drawable
+        this._createSkin();
+
+        // 4. 初始化 Three.js 基础组件 (延迟到 init 调用或首次使用)
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+
+        this._logDebugInfo();
+    }
+
+    _injectLayer() {
+        const renderer = this.ext.runtime.renderer;
+        let index = renderer._groupOrdering.indexOf('video');
+        if (index === -1) index = 0; 
+        
+        // 防止重复添加
+        if (renderer._groupOrdering.indexOf('RenderTheWorld') === -1) {
+            renderer._groupOrdering.splice(index + 1, 0, 'RenderTheWorld');
+        }
+
+        const videoLayer = renderer._layerGroups['video'];
         const drawListOffset = videoLayer ? videoLayer.drawListOffset : 0;
 
-        this.ext.runtime.renderer._layerGroups['RenderTheWorld'] = {
+        renderer._layerGroups['RenderTheWorld'] = {
             groupIndex: index + 1,
             drawListOffset: drawListOffset,
         };
 
-        // 更新后续层级的索引
-        for (let i = 0; i < this.ext.runtime.renderer._groupOrdering.length; i++) {
-            const groupName = this.ext.runtime.renderer._groupOrdering[i];
-            if(this.ext.runtime.renderer._layerGroups[groupName]) {
-                 this.ext.runtime.renderer._layerGroups[groupName].groupIndex = i;
+        // 更新后续层级索引
+        for (let i = 0; i < renderer._groupOrdering.length; i++) {
+            const groupName = renderer._groupOrdering[i];
+            if(renderer._layerGroups[groupName]) {
+                 renderer._layerGroups[groupName].groupIndex = i;
             }
         }
+    }
 
-        // Create drawable and skin
+    _createSkin() {
         this.threeSkinId = this.ext.runtime.renderer._nextSkinId++;
         let SkinsClass = new Skins(this.ext.runtime);
         this.threeSkin = new SkinsClass.CanvasSkin(
@@ -58,25 +76,22 @@ class RenderEngine {
             this.ext.runtime.renderer,
         );
         
-        // 初始化设置内容
         this.threeSkin.setContent(this.tc); 
         this.ext.runtime.renderer._allSkins[this.threeSkinId] = this.threeSkin;
 
-        // threejs drawable layer
         this.threeDrawableId = this.ext.runtime.renderer.createDrawable('RenderTheWorld');
         this.ext.runtime.renderer.updateDrawableSkinId(
             this.threeDrawableId,
             this.threeSkinId,
         );
 
-        // 设置 Skin 的大小和缩放，确保它覆盖整个舞台
-        // WebGL 坐标系中心是 [0,0]，通常不需要额外设置位置，只需设置大小和Ghost
         const drawable = this.ext.runtime.renderer._allDrawables[this.threeDrawableId];
         if (drawable) {
-            // 确保它可见
              drawable.updateVisible(true);
         }
+    }
 
+    _logDebugInfo() {
         console.log(
             `%c    RenderTheWorld%c by xiaochen004hao\n      https://github.com/RenderTheWorld/RenderTheWorld\n      Version: ${this.ext.$version}`,
             `background-image: url("${chen_RenderTheWorld_icon}");
@@ -136,11 +151,63 @@ class RenderEngine {
         }
     }
 
-    init(color, sizex, sizey, ed, shadowMapType) {
+    /**
+     * 初始化 Three.js 环境
+     */
+    init() {
+        if (this.renderer) return; // 防止重复初始化
 
+        // 渲染器
+        this.renderer = new THREE.WebGPURenderer({
+            canvas: this.tc,
+            context: this.tc.getContext('webgl2'),
+            antialias: true,
+            alpha: true,
+            powerPreference: "high-performance"
+        });
+        this.renderer.setSize(1287, 724); // 匹配 Scratch 舞台
+
+        // 场景
+        this.scene = new THREE.Scene();
+
+        // 摄像机
+        this.camera = new THREE.PerspectiveCamera(75, 480 / 360, 0.1, 1000);
+        this.camera.position.z = 5;
     }
 
-    render(time) {
+    /**
+     * 开启渲染循环
+     */
+    startRenderLoop() {
+        if (this.isRendering) return;
+        this.isRendering = true;
+        this._loop();
+    }
+
+    _loop() {
+        if (!this.isRendering) return;
+
+        this.render();
+        this.renderReqId = requestAnimationFrame(this._loop.bind(this));
+    }
+
+    /**
+     * 单帧渲染逻辑
+     */
+    render() {
+        if (!this.renderer || !this.scene || !this.camera) return;
+
+        // 1. Three.js 渲染场景
+        this.renderer.render(this.scene, this.camera);
+
+        // 2. 更新 Scratch 皮肤 (关键步骤)
+        if (this.threeSkin) {
+            // 这里的 setContent 会调用 canvasSkin.js 中的优化逻辑 (texSubImage2D)
+            this.threeSkin.setContent(this.tc);
+        }
+        
+        // 3. 触发 Scratch 重绘 (如果需要)
+        this.ext.runtime.requestRedraw();
     }
 }
 
