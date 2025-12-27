@@ -3,6 +3,8 @@ import * as THREE from 'three/webgpu';
 import { Skins } from '../utils/canvasSkin.js';
 import { chen_RenderTheWorld_icon, color, color_secondary } from '../assets/index.js'
 import Extension from './main.js';
+import RendererAdapter from '../adapters/rendererAdapter.js';
+import DOMUtils from '../utils/dom.js';
 
 class RenderEngine {
     /**
@@ -12,20 +14,19 @@ class RenderEngine {
         this.ext = ext;
         this.THREE = THREE;
 
+        // 初始化适配器
+        this.rendererAdapter = new RendererAdapter(ext.runtime);
+        this.domUtils = new DOMUtils();
+
         // 渲染状态
         this.isRendering = false;
         this.renderReqId = null;
 
         // 1. 创建离屏 Canvas
-        this.tc = document.createElement('canvas');
-        this.tc.width = 1287;
-        this.tc.height = 724;
-        this.tc.style.display = 'none'; 
+        this.tc = this.domUtils.createCanvas(1287, 724, true);
         
         // 挂载到 DOM 以防万一（某些浏览器策略），虽然 display none
-        if (this.ext.runtime.renderer.canvas.parentElement) {
-            this.ext.runtime.renderer.canvas.parentElement.append(this.tc);
-        }
+        this.domUtils.appendTo(this.tc, this.ext.runtime.renderer.canvas.parentElement);
 
         // 2. 插入 Scratch 渲染层级
         this._injectLayer();
@@ -42,53 +43,28 @@ class RenderEngine {
     }
 
     _injectLayer() {
-        const renderer = this.ext.runtime.renderer;
-        let index = renderer._groupOrdering.indexOf('video');
-        if (index === -1) index = 0; 
-        
-        // 防止重复添加
-        if (renderer._groupOrdering.indexOf('RenderTheWorld') === -1) {
-            renderer._groupOrdering.splice(index + 1, 0, 'RenderTheWorld');
-        }
-
-        const videoLayer = renderer._layerGroups['video'];
-        const drawListOffset = videoLayer ? videoLayer.drawListOffset : 0;
-
-        renderer._layerGroups['RenderTheWorld'] = {
-            groupIndex: index + 1,
-            drawListOffset: drawListOffset,
-        };
-
-        // 更新后续层级索引
-        for (let i = 0; i < renderer._groupOrdering.length; i++) {
-            const groupName = renderer._groupOrdering[i];
-            if(renderer._layerGroups[groupName]) {
-                 renderer._layerGroups[groupName].groupIndex = i;
-            }
-        }
+        this.rendererAdapter.injectLayer('RenderTheWorld', 'video');
     }
 
     _createSkin() {
-        this.threeSkinId = this.ext.runtime.renderer._nextSkinId++;
+        this.threeSkinId = this.rendererAdapter.createSkinId();
         let SkinsClass = new Skins(this.ext.runtime);
         this.threeSkin = new SkinsClass.CanvasSkin(
             this.threeSkinId,
             this.ext.runtime.renderer,
         );
         
-        this.threeSkin.setContent(this.tc); 
-        this.ext.runtime.renderer._allSkins[this.threeSkinId] = this.threeSkin;
+        this.rendererAdapter.registerSkin(this.threeSkinId, this.threeSkin);
 
-        this.threeDrawableId = this.ext.runtime.renderer.createDrawable('RenderTheWorld');
-        this.ext.runtime.renderer.updateDrawableSkinId(
+        this.threeDrawableId = this.rendererAdapter.createDrawable('RenderTheWorld');
+        this.rendererAdapter.updateDrawableSkinId(
             this.threeDrawableId,
             this.threeSkinId,
         );
 
-        const drawable = this.ext.runtime.renderer._allDrawables[this.threeDrawableId];
-        if (drawable) {
-             drawable.updateVisible(true);
-        }
+        this.threeSkin.setContent(this.tc); 
+
+        this.rendererAdapter.setDrawableVisible(this.threeDrawableId, true);
     }
 
     _logDebugInfo() {
@@ -106,12 +82,13 @@ class RenderEngine {
             'color: #aaa;',
         );
         if (this.ext.$inMainWorkspace()) {
-            globalThis.RTW = {
+            this.domUtils.setGlobal('RTW', {
                 THREE: THREE,
                 Extension: this.ext,
                 VM: this.ext.vm,
                 ScratchBlocks: this.ext.ScratchBlocks,
-            };
+                scratchInstance: this.ext.Scratch,
+            }, true);
 
             console.log(
                 '%c RTW Developer %c 🔓ON ',
@@ -207,7 +184,7 @@ class RenderEngine {
         }
         
         // 3. 触发 Scratch 重绘 (如果需要)
-        this.ext.runtime.requestRedraw();
+        this.rendererAdapter.requestRedraw();
     }
 }
 

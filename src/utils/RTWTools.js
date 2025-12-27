@@ -4,21 +4,12 @@
 import { chen_RenderTheWorld_extensionId } from '../assets';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import DOMUtils from './dom.js';
+
+const domUtils = new DOMUtils();
 
 function addRTWStyle(newStyle) {
-    let _RTWStyle = !window.RTWStyle;
-    window.RTWStyle = document.getElementById('RTWStyle');
-
-    if (!window.RTWStyle) {
-        window.RTWStyle = document.createElement('style');
-        window.RTWStyle.type = 'text/css';
-        window.RTWStyle.id = 'RTWStyle';
-        if (_RTWStyle)
-            document
-                .getElementsByTagName('head')[0]
-                .appendChild(window.RTWStyle);
-    }
-    window.RTWStyle.appendChild(document.createTextNode(newStyle));
+    domUtils.createAndAppendStyle(newStyle, 'RTWStyle');
 }
 
 addRTWStyle(`
