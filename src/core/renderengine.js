@@ -38,8 +38,6 @@ class RenderEngine {
         this.scene = null;
         this.camera = null;
         this.renderer = null;
-
-        this._logDebugInfo();
     }
 
     _injectLayer() {
@@ -67,89 +65,84 @@ class RenderEngine {
         this.rendererAdapter.setDrawableVisible(this.threeDrawableId, true);
     }
 
-    _logDebugInfo() {
-        console.log(
-            `%c    RenderTheWorld%c by xiaochen004hao\n      https://github.com/RenderTheWorld/RenderTheWorld\n      Version: ${this.ext.$version}`,
-            `background-image: url("${chen_RenderTheWorld_icon}");
-             background-size: contain;
-             background-repeat: no-repeat;
-             padding: 10px;
-             color: #def;
-             font-weight: bold;
-             font-size: 25px;
-             font-family: serif;
-            `,
-            'color: #aaa;',
-        );
-        if (this.ext.$inMainWorkspace()) {
-            this.domUtils.setGlobal('RTW', {
-                THREE: THREE,
-                Extension: this.ext,
-                VM: this.ext.vm,
-                ScratchBlocks: this.ext.ScratchBlocks,
-                scratchInstance: this.ext.Scratch,
-            }, true);
-
-            console.log(
-                '%c RTW Developer %c 🔓ON ',
-                `padding: 2px 1px; border: 1.5px solid ${color_secondary}; border-right: none; border-radius: 3px 0 0 3px; color: #fff; background: linear-gradient(to right, ${color_secondary}, ${color}); font-weight: bold;`,
-                `padding: 2px 1px; border: 1.5px solid ${color_secondary}; border-left: none; border-radius: 0 3px 3px 0; color: #fff; background: ${color}; font-weight: bold;`
-            );
-            console.log(
-                "%c Internal RTW Extension: %c (RTW.Extension) \n %o",
-                `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: linear-gradient(to right, ${color_secondary}, rgba(0, 0, 0, 0))`,
-                'color: #aaa;',
-                RTW.Extension
-            );
-            console.log(
-                "%c Three JS: %c               (RTW.THREE) \n %o",
-                `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: linear-gradient(to right, ${color_secondary}, rgba(0, 0, 0, 0))`,
-                'color: #aaa;',
-                RTW.THREE
-            );
-            console.log(
-                "%c Scratch Blocks: %c         (RTW.ScratchBlocks) \n %o",
-                `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: linear-gradient(to right, ${color_secondary}, rgba(0, 0, 0, 0))`,
-                'color: #aaa;',
-                RTW.ScratchBlocks
-            );
-            console.log(
-                "%c Scratch VM: %c             (RTW.VM) \n %o",
-                `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: linear-gradient(to right, ${color_secondary}, rgba(0, 0, 0, 0))`,
-                'color: #aaa;',
-                RTW.VM
-            );
-        } else {
-            console.log(
-                '%c RTW Developer %c 🔒OFF ',
-                `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: ${color}; font-weight: bold;`,
-                `padding: 2px 1px; border-radius: 0 3px 3px 0; color: #fff; background: ${color}; font-weight: bold;`
-            );
-        }
-    }
-
     /**
-     * 初始化 Three.js 环境
+     * 初始化 Three.js 环境 - 优化版本
      */
     init() {
         if (this.renderer) return; // 防止重复初始化
 
-        // 渲染器
-        this.renderer = new THREE.WebGPURenderer({
-            canvas: this.tc,
-            context: this.tc.getContext('webgl2'),
-            antialias: true,
-            alpha: true,
-            powerPreference: "high-performance"
-        });
-        this.renderer.setSize(1287, 724); // 匹配 Scratch 舞台
+        try {
+            // 渲染器 - 优化配置
+            this.renderer = new THREE.WebGPURenderer({
+                canvas: this.tc,
+                context: this.tc.getContext('webgl2'),
+                antialias: false, // 禁用抗锯齿以提升性能
+                alpha: true,
+                powerPreference: "high-performance",
+                precision: "mediump" // 使用中等精度
+            });
+            this.renderer.setSize(1287, 724);
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制像素比例
 
-        // 场景
-        this.scene = new THREE.Scene();
+            // 场景 - 启用视锥剔除
+            this.scene = new THREE.Scene();
+            this.scene.matrixAutoUpdate = false; // 手动控制矩阵更新
 
-        // 摄像机
-        this.camera = new THREE.PerspectiveCamera(75, 480 / 360, 0.1, 1000);
-        this.camera.position.z = 5;
+            // 摄像机 - 优化参数
+            this.camera = new THREE.PerspectiveCamera(75, 1287 / 724, 0.1, 1000);
+            this.camera.position.z = 5;
+            this.camera.matrixAutoUpdate = false; // 手动控制矩阵更新
+
+        } catch (error) {
+            console.error('RenderTheWorld: Failed to initialize Three.js:', error);
+            this.dispose();
+            throw error;
+        }
+    }
+
+    /**
+     * 清理资源
+     */
+    dispose() {
+        // 停止渲染循环
+        this.stopRenderLoop();
+
+        // 清理 Three.js 资源
+        if (this.renderer) {
+            this.renderer.dispose();
+            this.renderer = null;
+        }
+
+        // 清理场景
+        if (this.scene) {
+            // 清理场景中的所有对象
+            this.scene.traverse((object) => {
+                if (object.geometry) {
+                    object.geometry.dispose();
+                }
+                if (object.material) {
+                    if (Array.isArray(object.material)) {
+                        object.material.forEach(material => material.dispose());
+                    } else {
+                        object.material.dispose();
+                    }
+                }
+            });
+            this.scene = null;
+        }
+
+        this.camera = null;
+    }
+
+    /**
+     * 停止渲染循环
+     */
+    stopRenderLoop() {
+        this.isRendering = false;
+        if (this.renderReqId) {
+            cancelAnimationFrame(this.renderReqId);
+            this.renderReqId = null;
+        }
     }
 
     /**
@@ -158,32 +151,36 @@ class RenderEngine {
     startRenderLoop() {
         if (this.isRendering) return;
         this.isRendering = true;
+        this.lastFrameTime = 0;
         this._loop();
     }
 
-    _loop() {
+    _loop = (currentTime = 0) => {
         if (!this.isRendering) return;
 
-        this.render();
-        this.renderReqId = requestAnimationFrame(this._loop.bind(this));
+        // 简单的帧率控制 (约60fps)
+        if (currentTime - this.lastFrameTime >= 16.67) {
+            this.render();
+            this.lastFrameTime = currentTime;
+        }
+
+        this.renderReqId = requestAnimationFrame(this._loop);
     }
 
     /**
-     * 单帧渲染逻辑
+     * 单帧渲染逻辑 - 优化版本
      */
     render() {
-        if (!this.renderer || !this.scene || !this.camera) return;
+        // 快速检查是否需要渲染
+        if (!this.renderer || !this.scene || !this.camera || !this.threeSkin) return;
 
         // 1. Three.js 渲染场景
         this.renderer.render(this.scene, this.camera);
 
         // 2. 更新 Scratch 皮肤 (关键步骤)
-        if (this.threeSkin) {
-            // 这里的 setContent 会调用 canvasSkin.js 中的优化逻辑 (texSubImage2D)
-            this.threeSkin.setContent(this.tc);
-        }
+        this.threeSkin.setContent(this.tc);
         
-        // 3. 触发 Scratch 重绘 (如果需要)
+        // 3. 触发 Scratch 重绘
         this.rendererAdapter.requestRedraw();
     }
 }

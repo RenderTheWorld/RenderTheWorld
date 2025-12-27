@@ -276,12 +276,7 @@ import Color from './utils/gandi-color.js';
                             blockType: BlockType.BUTTON,
                             onClick: this.docs,
                         }
-                    ).registerBlock( // 测试积木
-                        {
-                            opcode: "test",
-                            blockType: BlockType.COMMAND,
-                            def: extension.test,
-                        }
+
                     ).registerBlockFinish((e) => { // 统一处理，减少行数
                         if (typeof e !== 'string' && e.blockType != BlockType.LABEL) {
                             e.tooltip = this.$formatMessage(
