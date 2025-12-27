@@ -26,6 +26,10 @@ export default function l10nInit(core) {
 
         core.loadformat(l10n);
     })({
+        "name": {
+            "zh-cn": "渲染世界",
+            "en": "Render The World"
+        },
         "apidocs": {
             "zh-cn": "📖API文档",
             "en": "📖API Docs",
@@ -42,5 +46,7 @@ export default function l10nInit(core) {
                 "en": "Test",
             }
         },
-    })
+    });
+
+    return core;
 }

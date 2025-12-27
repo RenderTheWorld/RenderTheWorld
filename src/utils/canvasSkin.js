@@ -13,6 +13,7 @@ class Skins {
         class CanvasSkin extends Skin {
             constructor(id, renderer) {
                 super(id, renderer);
+                if (!this._renderer) this._renderer = renderer;  // gandi老旧的Skin实现
                 this.gl = renderer._gl;
                 this._texture = this.gl.createTexture();
                 this._textureSize = [0, 0]; // 记录当前纹理尺寸
@@ -84,8 +85,8 @@ class Skins {
                         textureData
                     );
                 }
-
-                this.emit(Skin.Events.WasAltered);
+                
+                this._renderer._allDrawables[this.id]._skinWasAltered()
             }
         }
 

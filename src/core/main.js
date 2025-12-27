@@ -40,21 +40,16 @@ class Extension {
      * @param {import('scratch-blocks')} ScratchBlocks 
      * @param {Scratch} Scratch 
      */
-    $initExtension(_runtime, vm, ScratchBlocks, Scratch) {
-        this.runtime = vm?.runtime ?? _runtime ?? Scratch?.vm?.runtime;
-        this.vm = vm;
-        this.ScratchBlocks = ScratchBlocks;
+    $initExtension(Scratch) {
+        this.runtime = Scratch.runtime;
+        this.vm = Scratch.vm;
+        this.ScratchBlocks = Scratch.ScratchBlocks;
 
         this.Scratch = Scratch;
     }
 
-    /**
-     * 改编自系统工具
-     */
     $inMainWorkspace() {
-        const ur1 = window.location.pathname;
-        const rege = /\/(?:gandi|creator)(?:\/|$)/;
-        return rege.test(ur1) && this.ScratchBlocks.getMainWorkspace() !== null;
+        return this.ScratchBlocks.getMainWorkspace() !== null;
     };
 
     test(args, util, realBlockInfo) {

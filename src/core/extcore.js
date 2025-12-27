@@ -2,10 +2,10 @@ import FormatMessager from './format.js';
 
 
 class ExtensionCore {
-    constructor(ext, vm, ScratchBlocks) {
+    constructor(ext) {
         this.ext = ext;
-        this.vm = vm;
-        this.ScratchBlocks = ScratchBlocks;
+        this.vm = ext.vm;
+        this.ScratchBlocks = ext.ScratchBlocks;
         this._format = new FormatMessager();
         this._blocks = [];
         this._menus = {};
