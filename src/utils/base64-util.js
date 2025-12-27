@@ -1,5 +1,6 @@
-import atob from 'atob';
-import btoa from 'btoa';
+// 使用浏览器的内置 atob 和 btoa 函数
+const atob = globalThis.atob;
+const btoa = globalThis.btoa;
 
 class Base64Util {
 

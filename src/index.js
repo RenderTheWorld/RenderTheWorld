@@ -16,7 +16,7 @@ import RenderEngine from './core/renderengine.js';
 import ExtensionCore from './core/extcore.js';
 import Extension from './core/main.js';
 
-import external from './utils/external.js';
+import external from './utils/tw-external.js';
 import staticFetch from './utils/tw-static-fetch.js';
 
 if (!Scratch.extensions.unsandboxed) {
