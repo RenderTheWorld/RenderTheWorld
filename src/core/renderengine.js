@@ -38,6 +38,8 @@ class RenderEngine {
         this.scene = null;
         this.camera = null;
         this.renderer = null;
+
+        this._logDebugInfo();
     }
 
     _injectLayer() {
@@ -65,8 +67,69 @@ class RenderEngine {
         this.rendererAdapter.setDrawableVisible(this.threeDrawableId, true);
     }
 
+    _logDebugInfo() {
+        console.log(
+            `%c    RenderTheWorld%c by xiaochen004hao\n      https://github.com/RenderTheWorld/RenderTheWorld\n      Version: ${this.ext.$version}`,
+            `background-image: url("${chen_RenderTheWorld_icon}");
+             background-size: contain;
+             background-repeat: no-repeat;
+             padding: 10px;
+             color: #def;
+             font-weight: bold;
+             font-size: 25px;
+             font-family: serif;
+            `,
+            'color: #aaa;',
+        );
+        if (this.ext.$inMainWorkspace()) {
+            this.domUtils.setGlobal('RTW', {
+                THREE: THREE,
+                Extension: this.ext,
+                VM: this.ext.vm,
+                ScratchBlocks: this.ext.ScratchBlocks,
+                scratchInstance: this.ext.Scratch,
+            }, true);
+
+            console.log(
+                '%c RTW Developer %c 🔓ON ',
+                `padding: 2px 1px; border: 1.5px solid ${color_secondary}; border-right: none; border-radius: 3px 0 0 3px; color: #fff; background: linear-gradient(to right, ${color_secondary}, ${color}); font-weight: bold;`,
+                `padding: 2px 1px; border: 1.5px solid ${color_secondary}; border-left: none; border-radius: 0 3px 3px 0; color: #fff; background: ${color}; font-weight: bold;`
+            );
+            console.log(
+                "%c Internal RTW Extension: %c (RTW.Extension) \n %o",
+                `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: linear-gradient(to right, ${color_secondary}, rgba(0, 0, 0, 0))`,
+                'color: #aaa;',
+                RTW.Extension
+            );
+            console.log(
+                "%c Three JS: %c               (RTW.THREE) \n %o",
+                `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: linear-gradient(to right, ${color_secondary}, rgba(0, 0, 0, 0))`,
+                'color: #aaa;',
+                RTW.THREE
+            );
+            console.log(
+                "%c Scratch Blocks: %c         (RTW.ScratchBlocks) \n %o",
+                `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: linear-gradient(to right, ${color_secondary}, rgba(0, 0, 0, 0))`,
+                'color: #aaa;',
+                RTW.ScratchBlocks
+            );
+            console.log(
+                "%c Scratch VM: %c             (RTW.VM) \n %o",
+                `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: linear-gradient(to right, ${color_secondary}, rgba(0, 0, 0, 0))`,
+                'color: #aaa;',
+                RTW.VM
+            );
+        } else {
+            console.log(
+                '%c RTW Developer %c 🔒OFF ',
+                `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: ${color}; font-weight: bold;`,
+                `padding: 2px 1px; border-radius: 0 3px 3px 0; color: #fff; background: ${color}; font-weight: bold;`
+            );
+        }
+    }
+
     /**
-     * 初始化 Three.js 环境 - 优化版本
+     * 初始化 Three.js 环境
      */
     init() {
         if (this.renderer) return; // 防止重复初始化
