@@ -77,6 +77,7 @@ function getScratchBlocks(runtime, vm) {
 function getVM(runtime) {
     return (
         hijack(getEventListener(runtime._events["QUESTION"])).props.vm ||
+        runtime.extensionManager.vm ||
         window.Scratch.vm
     );
 }

@@ -16,14 +16,129 @@ import RenderEngine from './core/renderengine.js';
 import ExtensionCore from './core/extcore.js';
 import Extension from './core/main.js';
 
+import external from './utils/external.js';
+import staticFetch from './utils/tw-static-fetch.js';
+
+if (!Scratch.extensions.unsandboxed) {
+    throw new Error("RenderTheWorld must be run unsandboxed");
+}
+
+if (!Scratch.runtime) {
+    throw new Error("RenderTheWorld requires Scratch Runtime");
+}
+
+const vm = getVM(Scratch.runtime);
+
+if (!vm) {
+    throw new Error("RenderTheWorld requires Scratch VM");
+}
+
+const ScratchBlocks = getScratchBlocks(Scratch.runtime, vm);
+
+if (!ScratchBlocks) {
+    throw new Error("RenderTheWorld requires Scratch Blocks");
+}
+
+
+
+
+
+const scratchInstance = {
+    ArgumentType: Scratch.ArgumentType,
+    BlockType: Scratch.BlockType,
+    Cast: Scratch.Cast,
+    Color: Scratch.Color,
+    TargetType: Scratch.TargetType,
+    canDownload: async (url, name) => {
+        const parsed = parseURL(url);
+        if (!parsed) {
+            return false;
+        }
+        // Always reject protocols that would allow code execution.
+        // eslint-disable-next-line no-script-url
+        if (parsed.protocol === 'javascript:') {
+            return false;
+        }
+        return vm.securityManager.canDownload(url, name);
+    },
+    canEmbed: async url => {
+        const parsed = parseURL(url);
+        if (!parsed) {
+            return false;
+        }
+        return vm.securityManager.canEmbed(parsed.href);
+    },
+    canFetch: async url => {
+        const parsed = parseURL(url);
+        if (!parsed) {
+            return false;
+        }
+        // Always allow protocols that don't involve a remote request.
+        if (parsed.protocol === 'blob:' || parsed.protocol === 'data:') {
+            return true;
+        }
+        return vm.securityManager.canFetch(parsed.href);
+    },
+    canGeolocate: async () => vm.securityManager.canGeolocate(),
+    canNotify: async () => vm.securityManager.canNotify(),
+    canOpenWindow: async url => {
+        const parsed = parseURL(url);
+        if (!parsed) {
+            return false;
+        }
+        // Always reject protocols that would allow code execution.
+        // eslint-disable-next-line no-script-url
+        if (parsed.protocol === 'javascript:') {
+            return false;
+        }
+        return vm.securityManager.canOpenWindow(parsed.href);
+    },
+    canReadClipboard: async () => vm.securityManager.canReadClipboard(),
+    canRecordAudio: async () => vm.securityManager.canRecordAudio(),
+    canRecordVideo: async () => vm.securityManager.canRecordVideo(),
+    canRedirect: async url => {
+        const parsed = parseURL(url);
+        if (!parsed) {
+            return false;
+        }
+        // Always reject protocols that would allow code execution.
+        // eslint-disable-next-line no-script-url
+        if (parsed.protocol === 'javascript:') {
+            return false;
+        }
+        return vm.securityManager.canRedirect(parsed.href);
+    },
+    download: async (url, name) => {
+        if (!await Scratch.canDownload(url, name)) {
+            throw new Error(`Permission to download ${name} rejected.`);
+        }
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = name;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    },
+    extensions: Scratch.extensions,
+    external: external,
+    fetch: async (url, options) => {
+        const actualURL = url instanceof Request ? url.url : url;
+
+        const staticFetchResult = staticFetch(url);
+        if (staticFetchResult) {
+            return staticFetchResult;
+        }
+
+        if (!await Scratch.canFetch(actualURL)) {
+            throw new Error(`Permission to fetch ${actualURL} rejected.`);
+        }
+        return fetch(url, options);
+    },
+    
+};
 
 (function (Scratch) {
     'use strict';
-    const { logSystem } = Scratch.vm?.runtime;
-    const logError = (...args) => {
-        logSystem?.error(...args);
-        console.error(...args);
-    };
 
     const {
         ArgumentType,
@@ -37,6 +152,13 @@ import Extension from './core/main.js';
     const vm = getVM(Scratch.runtime);
     /** @type {import('scratch-blocks')} */
     const ScratchBlocks = getScratchBlocks(Scratch.runtime, vm);
+
+    const { logSystem } = vm?.runtime;
+    const logError = (...args) => {
+        logSystem?.error(...args);
+        console.error(...args);
+    };
+
     /** @type {Extension} */
     const extension = new Extension();
 

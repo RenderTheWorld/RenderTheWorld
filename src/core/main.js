@@ -41,7 +41,7 @@ class Extension {
      * @param {Scratch} Scratch 
      */
     $initExtension(_runtime, vm, ScratchBlocks, Scratch) {
-        this.runtime = _runtime ?? Scratch?.vm?.runtime;
+        this.runtime = vm?.runtime ?? _runtime ?? Scratch?.vm?.runtime;
         this.vm = vm;
         this.ScratchBlocks = ScratchBlocks;
 
