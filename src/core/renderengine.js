@@ -39,6 +39,15 @@ class RenderEngine {
         this.camera = null;
         this.renderer = null;
 
+        this.ext.runtime.on('PROJECT_RUN_START', () => {
+            this.init();
+            this.startRenderLoop();
+        });
+
+        this.ext.runtime.on('PROJECT_RUN_STOP', () => {
+            this.dispose();
+        });
+
         this._logDebugInfo();
     }
 
@@ -149,12 +158,12 @@ class RenderEngine {
 
             // 场景 - 启用视锥剔除
             this.scene = new THREE.Scene();
-            this.scene.matrixAutoUpdate = false; // 手动控制矩阵更新
+            // this.scene.matrixAutoUpdate = false; // 手动控制矩阵更新
 
             // 摄像机 - 优化参数
             this.camera = new THREE.PerspectiveCamera(75, 1287 / 724, 0.1, 1000);
             this.camera.position.z = 5;
-            this.camera.matrixAutoUpdate = false; // 手动控制矩阵更新
+            // this.camera.matrixAutoUpdate = false; // 手动控制矩阵更新
 
         } catch (error) {
             console.error('RenderTheWorld: Failed to initialize Three.js:', error);
@@ -205,6 +214,7 @@ class RenderEngine {
         if (this.renderReqId) {
             cancelAnimationFrame(this.renderReqId);
             this.renderReqId = null;
+            console.log('RenderTheWorld: Rendering stopped.');
         }
     }
 
@@ -215,6 +225,7 @@ class RenderEngine {
         if (this.isRendering) return;
         this.isRendering = true;
         this.lastFrameTime = 0;
+        console.log('RenderTheWorld: Start rendering...');
         this._loop();
     }
 

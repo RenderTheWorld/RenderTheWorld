@@ -46,6 +46,8 @@
                 return vm
             } else if (property === 'renderer') {
                 return vm.runtime.renderer
+            } else if (property === 'runtime') {
+                return vm.runtime
             } else if (property === 'gui') {
                 return {
                     getBlockly: () => Promise.resolve(Blockly ?? new Promise(() => { })),
@@ -90,7 +92,7 @@
 
         getInfo() {
             return {
-                id: '$$test|runow|test$$',
+                id: 'runowtest999999999999999999',
                 name: '测试',
                 blocks: [
                     {
