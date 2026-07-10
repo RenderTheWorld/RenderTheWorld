@@ -2,14 +2,16 @@
  * 相机分组 —— 创建、配置相机
  *
  * 包含积木：
- *   - useCamera         (COMMAND) 切换当前相机
- *   - perspectiveCamera (OUTPUT) 创建透视相机
- *   - moveCamera        (COMMAND) 移动相机
- *   - rotationCamera    (COMMAND) 旋转相机
- *   - cameraLookAt      (COMMAND) 相机看向某点
+ *   - useCamera          (COMMAND) 切换当前相机
+ *   - perspectiveCamera  (OUTPUT) 创建透视相机
+ *   - orthographicCamera (OUTPUT) 创建正交相机
+ *   - moveCamera         (COMMAND) 移动相机
+ *   - rotationCamera     (COMMAND) 旋转相机
+ *   - cameraLookAt       (COMMAND) 相机看向某点
+ *   - setCameraFov       (COMMAND) 设置透视相机视野
  *   - '---'
- *   - getCameraPos      (REPORTER, disableMonitor) 获取相机位置
- *   - getCameraRotation (REPORTER, disableMonitor) 获取相机旋转
+ *   - getCameraPos       (REPORTER, disableMonitor) 获取相机位置
+ *   - getCameraRotation  (REPORTER, disableMonitor) 获取相机旋转
  */
 
 import BlockGroup from '../BlockGroup.js'
@@ -66,6 +68,37 @@ export default class CameraGroup extends BlockGroup {
                     const cam = new THREE.PerspectiveCamera(
                         cast.toNumber(args.fov),
                         cast.toNumber(args.aspect),
+                        cast.toNumber(args.near),
+                        cast.toNumber(args.far)
+                    )
+                    return new Wrapper(
+                        new RTW_Model_Box(cam, false, false, false, undefined)
+                    )
+                }
+            },
+            {
+                opcode: 'orthographicCamera',
+                blockType: BT.OUTPUT,
+                text: t('orthographicCamera'),
+                arguments: {
+                    left: { type: AT.NUMBER, defaultValue: -10 },
+                    right: { type: AT.NUMBER, defaultValue: 10 },
+                    top: { type: AT.NUMBER, defaultValue: 10 },
+                    bottom: { type: AT.NUMBER, defaultValue: -10 },
+                    near: { type: AT.NUMBER, defaultValue: 0.1 },
+                    far: { type: AT.NUMBER, defaultValue: 1000 }
+                },
+                output: 'Reporter',
+                outputShape: 3,
+                branchCount: 0,
+                handler: args => {
+                    const cast = ext.cast
+                    const THREE = ext.renderEngine.THREE
+                    const cam = new THREE.OrthographicCamera(
+                        cast.toNumber(args.left),
+                        cast.toNumber(args.right),
+                        cast.toNumber(args.top),
+                        cast.toNumber(args.bottom),
                         cast.toNumber(args.near),
                         cast.toNumber(args.far)
                     )
@@ -138,6 +171,23 @@ export default class CameraGroup extends BlockGroup {
                     engine.setDirty3D()
                 }
             },
+            {
+                opcode: 'setCameraFov',
+                blockType: BT.COMMAND,
+                text: t('setCameraFov'),
+                arguments: {
+                    fov: { type: AT.NUMBER, defaultValue: 40 }
+                },
+                handler: args => {
+                    const engine = ext.renderEngine
+                    if (!engine.tc) return '⚠️显示器未初始化！'
+                    const cam = engine.camera
+                    if (!cam || !cam.isPerspectiveCamera) return
+                    cam.fov = ext.cast.toNumber(args.fov)
+                    cam.updateProjectionMatrix()
+                    engine.setDirty3D()
+                }
+            },
             '---',
             {
                 opcode: 'getCameraPos',
@@ -196,6 +246,15 @@ export default class CameraGroup extends BlockGroup {
                 'zh-cn':
                     '透视相机 视野 [fov] 宽高比 [aspect] 近裁面 [near] 远裁面 [far]',
                 en: 'perspective camera fov [fov] aspect [aspect] near [near] far [far]'
+            },
+            orthographicCamera: {
+                'zh-cn':
+                    '正交相机 左 [left] 右 [right] 上 [top] 下 [bottom] 近裁面 [near] 远裁面 [far]',
+                en: 'orthographic camera l [left] r [right] t [top] b [bottom] near [near] far [far]'
+            },
+            setCameraFov: {
+                'zh-cn': '设置透视相机视野 [fov]°',
+                en: 'set camera fov [fov]°'
             },
             moveCamera: {
                 'zh-cn': '移动相机到 x [x] y [y] z [z]',

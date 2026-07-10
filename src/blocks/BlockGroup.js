@@ -85,7 +85,7 @@ class BlockGroup {
         }
         blocks.forEach(b => {
             if (b === '---') {
-                this.core.registerBlock('---')
+                this.core.registerBlankLine()
             } else {
                 this.core.registerBlock(b)
             }

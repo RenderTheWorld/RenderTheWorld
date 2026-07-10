@@ -1,16 +1,19 @@
 // 基于Nights/FurryR/zxq的可扩展积木
 // xiaochen004hao对其进行了一些更改优化
+// 兼容并收 test3.js (Arkos) 的 beforeArg / specifiedArgTypes / @PRE_ARG@ / argument_reporter_string_number 等特性
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable func-names */
 /* eslint-disable max-classes-per-file */
 /**
  * Label options for different input types.
- * @type {{s: string, n: string, b: string}}
+ * @type {{s: string, n: string, b: string, argument_reporter_string_number: string}}
  */
 const INPUT_TYPES_OPTIONS_LABEL = {
     s: 'ADD_TEXT_PARAMETER',
     n: 'ADD_NUM_PARAMETER',
-    b: 'ADD_BOOL_PARAMETER'
+    b: 'ADD_BOOL_PARAMETER',
+    r: 'ADD_REGEN_PARAMETER',
+    argument_reporter_string_number: 'ADD_PARAMETER'
 }
 
 const leftArrow =
@@ -37,11 +40,17 @@ const defaultPlusSelectImage =
     'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTQiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCA1NCAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iMC41IiB5PSIwLjUiIHdpZHRoPSI1MyIgaGVpZ2h0PSIzMSIgcng9IjE1LjUiIHN0cm9rZT0iYmxhY2siIHN0cm9rZS1vcGFjaXR5PSIwLjIiLz4KPHBhdGggZD0iTTE3Ljk5OTggMTAuMTY0MVYyMS44MzA3TTEyLjE2NjUgMTUuOTk3NEgyMy44MzMyIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNjY2NjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8cGF0aCBkPSJNMzkuNzYzOCAxOC44Mzg2QzM5LjMyNTQgMTkuMjE4MiAzOC42NzQ2IDE5LjIxODIgMzguMjM2MiAxOC44Mzg2TDM1LjMwMzMgMTYuMjk4NkMzNC40ODY4IDE1LjU5MTQgMzQuOTg2OSAxNC4yNSAzNi4wNjcxIDE0LjI1TDQxLjkzMjkgMTQuMjVDNDMuMDEzMSAxNC4yNSA0My41MTMyIDE1LjU5MTQgNDIuNjk2NyAxNi4yOTg2TDM5Ljc2MzggMTguODM4NloiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo='
 
 /**
- * A record of enabled dynamic argument blocks.
+ * 共享全局状态（与 test3.js / Arkos 方案一致）
+ * 使用 window.__ArkosExtendableInfo 避免多实例时数据被覆盖
  * @type {Object}
  */
-const enabledDynamicArgBlocksInfo = {}
-const extInfo = {}
+if (!window.__ArkosExtendableInfo) {
+    window.__ArkosExtendableInfo = {
+        enabledDynamicArgBlocksInfo: {},
+        extInfo: {}
+    }
+}
+const { enabledDynamicArgBlocksInfo, extInfo } = window.__ArkosExtendableInfo
 
 let proxingBlocklyBlocks = false
 
@@ -54,6 +63,8 @@ function setLocales(ScratchBlocks) {
         ADD_TEXT_PARAMETER: 'Add Text Parameter',
         ADD_NUM_PARAMETER: 'Add Num Parameter',
         ADD_BOOL_PARAMETER: 'Add Booln Parameter',
+        ADD_REGEN_PARAMETER: 'Add Regen Parameter',
+        ADD_PARAMETER: 'Add Parameter',
         DELETE_DYNAMIC_PARAMETER: 'Delete Dynamic Parameter'
     })
 
@@ -61,6 +72,8 @@ function setLocales(ScratchBlocks) {
         ADD_TEXT_PARAMETER: '添加文本参数',
         ADD_NUM_PARAMETER: '添加数字参数',
         ADD_BOOL_PARAMETER: '添加布尔值参数',
+        ADD_REGEN_PARAMETER: '添加再生参数',
+        ADD_PARAMETER: '添加参数',
         DELETE_DYNAMIC_PARAMETER: '删除动态参数'
     })
 }
@@ -333,33 +346,34 @@ function initExpandableBlock(
     }
 
     const moveButtonToTheRightPlace = function () {
-        // this.moveInputBefore('PLUS', null);
         const showPlus = getNextParamInc.call(this) > 0 // 是否显示 +
         if (showPlus) {
-            // + 按钮不存在，创建
             this.getInput('PLUS').setVisible(true)
-            // if (!this.getInput('PLUS')) this.appendDummyInput('PLUS').appendField(new PlusButton());
             // 调整 + 按钮位置
-            const { afterArg } = this.dynamicArgInfo_
+            const { afterArg, beforeArg } = this.dynamicArgInfo_
             if (afterArg) {
                 this.moveInputBefore('PLUS', afterArg)
                 this.moveInputBefore(afterArg, 'PLUS')
+            } else if (beforeArg) {
+                this.moveInputBefore('PLUS', beforeArg)
             } else {
                 this.moveInputBefore('PLUS', null)
             }
         } else {
             // 删除 + 按钮
             this.getInput('PLUS').setVisible(false)
-            // this.removeInput('PLUS', true);
         }
-        if (this.getInput('ENDTEXT')) this.moveInputBefore('ENDTEXT', 'PLUS')
+        if (this.getInput('ENDTEXT'))
+            this.moveInputBefore('ENDTEXT', 'PLUS')
         const cnt = this.dynamicArgumentTypes_.length
         if (cnt === 0) {
             // 删除 - 按钮
             this.removeInput('MINUS')
         } else {
             if (!this.getInput('MINUS'))
-                this.appendDummyInput('MINUS').appendField(new MinusButton())
+                this.appendDummyInput('MINUS').appendField(
+                    new MinusButton()
+                )
             // 调整 - 按钮位置
             this.moveInputBefore('MINUS', 'PLUS')
         }
@@ -373,35 +387,67 @@ function initExpandableBlock(
         this.dynamicArgumentTypes_ = []
         this.dynamicArgInfo_ = dynamicArgInfo
         this.dynamicArgOptionalTypes_ = dynamicArgInfo.dynamicArgTypes
+        // 详细指定每个参数的类型（数组），与 test3.js 一致
+        this.specifiedArgTypes = dynamicArgInfo.argType
         this.plusButton_ =
             dynamicArgInfo.dynamicArgTypes.length > 1
                 ? new PlusSelectButton()
                 : new PlusButton()
         this.minusButton_ = new MinusButton()
 
-        const { afterArg, endText } = dynamicArgInfo
+        const { afterArg, endText, beforeArg, preText } = dynamicArgInfo
         if (!this.getInput) return // 避免协作报错
-        updatePreText(this, 0)
         const endTxt = getValue(endText, 0, '')
-        if (endTxt !== '')
+        const preTxt = getValue(preText, 0, '')
+        const n = this.dynamicArgumentIds_.length
+        // 与 test3.js 一致：n===0 且 beforeArg 时，preText + endText 合并显示
+        if (n === 0 && preTxt + endTxt !== '') {
+            if (beforeArg)
+                this.appendDummyInput('ENDTEXT').appendField(
+                    preTxt + endTxt,
+                    'ENDTEXT'
+                )
+            else if (endTxt !== '')
+                this.appendDummyInput('ENDTEXT').appendField(
+                    endTxt,
+                    'ENDTEXT'
+                )
+        } else if (endTxt !== '') {
             this.appendDummyInput('ENDTEXT').appendField(endTxt, 'ENDTEXT')
+        }
+        updatePreText(this, 0)
         this.appendDummyInput('PLUS').appendField(this.plusButton_)
-        // 将 + 按钮移到 afterArg 后面
-        if (afterArg) {
+        // 将 + 按钮移到 afterArg 后面或 beforeArg 前面
+        if (afterArg || beforeArg) {
             const plusInput = this.getInput('PLUS')
             const endTxtInput = this.getInput('ENDTEXT')
-            const afterArgInput = this.getInput(afterArg)
             const plusIndex = this.inputList.indexOf(plusInput)
-            const endTxtIndex = this.inputList.indexOf(endTxtInput)
-            const afterArgIndex = this.inputList.indexOf(afterArgInput)
-            if (plusIndex > -1 && afterArgIndex > -1) {
+
+            const argInput = this.getInput(afterArg ?? beforeArg)
+            let argIdx = this.inputList.indexOf(argInput)
+            if (plusIndex > -1 && argIdx > -1) {
                 // 删除 PLUS 输入
                 this.inputList.splice(plusIndex, 1)
-                // 插入 PLUS 输入到 afterArg 后面
-                this.inputList.splice(afterArgIndex + 1, 0, plusInput)
-                if (endTxtIndex > -1) {
-                    this.inputList.splice(endTxtIndex, 1)
-                    this.inputList.splice(afterArgIndex + 1, 0, endTxtInput)
+                argIdx = this.inputList.indexOf(argInput)
+                if (afterArg) {
+                    // 插入 PLUS 输入到 afterArg 后面
+                    this.inputList.splice(argIdx + 1, 0, plusInput)
+                    const endTxtIndex = this.inputList.indexOf(endTxtInput)
+                    if (endTxtIndex > -1) {
+                        this.inputList.splice(endTxtIndex, 1)
+                        argIdx = this.inputList.indexOf(argInput)
+                        this.inputList.splice(argIdx + 1, 0, endTxtInput)
+                    }
+                    updatePreText(this, 0)
+                } else if (beforeArg) {
+                    // 插入 PLUS 输入到 beforeArg 前面
+                    this.inputList.splice(argIdx, 0, plusInput)
+                    const endTxtIndex = this.inputList.indexOf(endTxtInput)
+                    if (endTxtIndex > -1) {
+                        this.inputList.splice(endTxtIndex, 1)
+                        argIdx = this.inputList.indexOf(plusInput)
+                        this.inputList.splice(argIdx, 0, endTxtInput)
+                    }
                 }
             }
         }
@@ -515,31 +561,44 @@ function initExpandableBlock(
         argumentType,
         defaultValue = ''
     ) {
-        if (argumentType === 'n' || argumentType === 's') {
-            const blockType = argumentType === 'n' ? 'math_number' : 'text'
-            ScratchBlocks.Events.disable()
-            const newBlock = this.workspace.newBlock(blockType)
-            try {
-                if (argumentType === 'n') {
-                    newBlock.setFieldValue(defaultValue, 'NUM')
-                } else {
-                    newBlock.setFieldValue(defaultValue, 'TEXT')
-                }
-                newBlock.setShadow(true)
-                if (!this.isInsertionMarker()) {
-                    newBlock.initSvg()
-                    newBlock.render(false)
-                }
-            } finally {
-                ScratchBlocks.Events.enable()
-            }
-            if (ScratchBlocks.Events.isEnabled()) {
-                ScratchBlocks.Events.fire(
-                    new ScratchBlocks.Events.BlockCreate(newBlock)
-                )
-            }
-            newBlock.outputConnection.connect(input.connection)
+        // 与 test3.js 一致：跳过布尔类型，支持自定义类型（如 argument_reporter_string_number）
+        if (argumentType === 'b') return
+        let blockType
+        switch (argumentType) {
+            case 'n':
+                blockType = 'math_number'
+                break
+            case 's':
+                blockType = 'text'
+                break
+            default:
+                blockType = argumentType
+                break
         }
+        ScratchBlocks.Events.disable()
+        const newBlock = this.workspace.newBlock(blockType)
+        try {
+            if (argumentType === 'n') {
+                newBlock.setFieldValue(defaultValue, 'NUM')
+            } else if (argumentType === 's') {
+                newBlock.setFieldValue(defaultValue, 'TEXT')
+            } else if (argumentType === 'argument_reporter_string_number') {
+                newBlock.setFieldValue(defaultValue, 'VALUE')
+            }
+            newBlock.setShadow(true)
+            if (!this.isInsertionMarker()) {
+                newBlock.initSvg()
+                newBlock.render(false)
+            }
+        } finally {
+            ScratchBlocks.Events.enable()
+        }
+        if (ScratchBlocks.Events.isEnabled()) {
+            ScratchBlocks.Events.fire(
+                new ScratchBlocks.Events.BlockCreate(newBlock)
+            )
+        }
+        newBlock.outputConnection.connect(input.connection)
     }
 
     blockDefinition.mutationToDom = function () {
@@ -582,7 +641,13 @@ function initExpandableBlock(
         const cnt = getNextParamInc.call(this)
         for (let i = 0; i < cnt; i++) {
             this.dynamicArgumentIds_.push(`DYNAMIC_ARGS${index + i + 1}`)
-            this.dynamicArgumentTypes_.push(type)
+            // 与 test3.js 一致：支持 specifiedArgTypes 按位置指定类型
+            const specifiedType = this.specifiedArgTypes?.[index + i]
+            if (specifiedType) {
+                this.dynamicArgumentTypes_.push(specifiedType)
+            } else {
+                this.dynamicArgumentTypes_.push(type)
+            }
         }
         this.updateDisplay_()
 
@@ -605,7 +670,18 @@ function initExpandableBlock(
     }
 
     /**
-     * 根据id删除动态积木（同时成组删除关联的其他参数）
+     * 根据id删除动态积木（支持成组删除）
+     *
+     * 修复中间删除 bug（前移策略）：
+     *   不直接删除中间的参数 id（会导致 DYNAMIC_ARGS 序号断开，
+     *   getDynamicArgs 无法获取后续参数），而是将后续参数的
+     *   连接内容前移覆盖被删除位置，然后删除末尾的参数 id。
+     *
+     *   示例：删除 D3（5个参数）
+     *     前：[D1, D2, D3, D4, D5]
+     *     前移：D3 内容 = D4 内容, D4 内容 = D5 内容
+     *     后：[D1, D2, D3, D4]  （D5 被删除）
+     *
      * @param {string} id 参数id
      */
     blockDefinition.removeDynamicArg = function (id) {
@@ -619,19 +695,61 @@ function initExpandableBlock(
         const name = matches[1]
         // 当前动态参数序号
         const i = Number(matches[2])
-        // 查找要移除的参数的索引数组
+        // 查找要移除的参数组
         const paramsToRemove = getParamsGroupindexes.call(this, i)
-        // 移除参数组的每个参数
-        paramsToRemove.forEach(it => {
-            const curId = `${name}${it}`
-            const idx = this.dynamicArgumentIds_.indexOf(curId)
-            this.dynamicArgumentIds_.splice(idx, 1)
-            this.dynamicArgumentTypes_.splice(idx, 1)
-            this.removeInput(curId)
-        })
+        const removeCount = paramsToRemove.length
+        const startNum = paramsToRemove[0]
 
-        // 更新显示
-        this.updateDisplay_()
+        // —— 前移策略：在 connectionMap 中将后续参数内容前移 ——
+        const wasRendered = this.rendered
+        this.rendered = false
+
+        // 1. 断开所有动态参数连接，保存到 connectionMap
+        const connectionMap = this.disconnectDynamicArgBlocks_()
+        this.removeAllDynamicArgInputs_()
+
+        // 2. 前移 connectionMap：将 startNum+removeCount 之后的连接移到 startNum
+        //    这样中间被删除的位置会被后面的内容覆盖，末尾多余的自然消失
+        for (let j = startNum; ; j++) {
+            const srcKey = `${name}${j + removeCount}`
+            const dstKey = `${name}${j}`
+            if (srcKey in connectionMap) {
+                connectionMap[dstKey] = connectionMap[srcKey]
+                if (srcKey !== dstKey) delete connectionMap[srcKey]
+            } else {
+                // 没有更多后续参数，清除被删除位置的内容
+                delete connectionMap[dstKey]
+                break
+            }
+        }
+
+        // 3. 前移 dynamicArgumentTypes_ 并删除末尾
+        const startIdx = this.dynamicArgumentIds_.indexOf(
+            `${name}${startNum}`
+        )
+        if (startIdx !== -1) {
+            const len = this.dynamicArgumentTypes_.length
+            for (let j = startIdx; j + removeCount < len; j++) {
+                this.dynamicArgumentTypes_[j] =
+                    this.dynamicArgumentTypes_[j + removeCount]
+            }
+            this.dynamicArgumentTypes_.splice(len - removeCount, removeCount)
+            // 从 dynamicArgumentIds_ 末尾删除 removeCount 个
+            this.dynamicArgumentIds_.splice(
+                this.dynamicArgumentIds_.length - removeCount,
+                removeCount
+            )
+        }
+
+        // 4. 用前移后的 connectionMap 重建输入
+        this.createAllDynamicArgInputs_(connectionMap)
+        this.deleteShadows_(connectionMap)
+
+        this.rendered = wasRendered
+        if (wasRendered && !this.isInsertionMarker()) {
+            this.initSvg()
+            this.render()
+        }
 
         const newMutationDom = this.mutationToDom()
         const newMutation =
@@ -646,28 +764,41 @@ function initExpandableBlock(
                     newMutation
                 )
             )
+            // VM 同步：清理不再存在的动态参数 inputs
+            // 注意：updateDisplay_ 中的 connect 已通过 BlockMove 事件
+            // 自动将后续参数的 block 前移到正确位置（如 D3 的 C 移到 D2）。
+            // 这里只需删除 dynamicArgumentIds_ 中不存在的残留 inputs（如 D3），
+            // 不能前移 block.inputs，否则会覆盖 connect 已设置的正确值。
             setTimeout(() => {
-                const target = runtime.getEditingTarget()
-                const block = target.blocks._blocks[this.id]
-                Object.keys(block.inputs).forEach(name => {
-                    // 对于每个被删除的动态参数
-                    if (
-                        /^DYNAMIC_ARGS\d+$/.test(name) &&
-                        !this.dynamicArgumentIds_.includes(name)
-                    ) {
-                        target.blocks.deleteBlock(block.inputs[name].shadow, {
-                            source: 'default',
-                            targetId: target.id
-                        })
-                        delete block.inputs[name]
-                        if (runtime.emitTargetBlocksChanged) {
-                            runtime.emitTargetBlocksChanged(target.id, [
-                                'deleteInput',
-                                { id: block.id, inputName: name }
-                            ])
+                try {
+                    const target = runtime.getEditingTarget()
+                    const block = target.blocks._blocks[this.id]
+                    if (!block || !block.inputs) return
+                    const validIds = new Set(this.dynamicArgumentIds_)
+                    for (const inputName of Object.keys(block.inputs)) {
+                        if (
+                            /^DYNAMIC_ARGS\d+$/.test(inputName) &&
+                            !validIds.has(inputName)
+                        ) {
+                            const inputDef = block.inputs[inputName]
+                            if (inputDef?.shadow) {
+                                target.blocks.deleteBlock(inputDef.shadow, {
+                                    source: 'default',
+                                    targetId: target.id
+                                })
+                            }
+                            delete block.inputs[inputName]
+                            if (runtime.emitTargetBlocksChanged) {
+                                runtime.emitTargetBlocksChanged(target.id, [
+                                    'deleteInput',
+                                    { id: block.id, inputName }
+                                ])
+                            }
                         }
                     }
-                })
+                } catch {
+                    /* VM 同步失败忽略 */
+                }
             }, 0)
         }
 
@@ -732,19 +863,23 @@ function initExpandableBlock(
     }
 
     function updatePreText(block, num) {
-        const { preText, afterArg } = block.dynamicArgInfo_
+        const { preText, afterArg, beforeArg } = block.dynamicArgInfo_
         if (preText) {
+            // beforeArg 模式下 preText 在 createAllDynamicArgInputs_ 中通过 joinCh 处理
+            if (beforeArg) return
             // 动态参数前的文本修改为 preText
-            // console.log(this.inputList);
             const txt = getValue(preText, num, '')
-            const input = afterArg
-                ? block.inputList.find(i => i.name === afterArg) // 改afterArg前面的文本
-                : block.inputList.findLast(
-                      it =>
-                          it.name !== 'PLUS' &&
-                          it.name !== 'MINUS' &&
-                          it.name !== 'ENDTEXT'
-                  ) // 改第一个参数前的文本
+            let input
+            if (afterArg) {
+                input = block.inputList.find(i => i.name === afterArg) // 改afterArg前面的文本
+            } else {
+                input = block.inputList.findLast(
+                    it =>
+                        it.name !== 'PLUS' &&
+                        it.name !== 'MINUS' &&
+                        it.name !== 'ENDTEXT'
+                ) // 改第一个参数前的文本
+            }
 
             // 查找afterArg对应的参数前面的文本（ScratchBlocks.FieldLabel）
             if (input)
@@ -757,16 +892,20 @@ function initExpandableBlock(
     blockDefinition.createAllDynamicArgInputs_ = function (connectionMap) {
         // Create arguments and labels as appropriate.
         const num = this.dynamicArgumentTypes_.length
-        const { endText, joinCh, afterArg } = this.dynamicArgInfo_
+        const { endText, joinCh, afterArg, beforeArg, preText } =
+            this.dynamicArgInfo_
         updatePreText(this, num)
         for (let i = 0; i < num; i++) {
             const argumentType = this.dynamicArgumentTypes_[i]
+            // 与 test3.js 一致：允许自定义类型（如 argument_reporter_string_number）
             if (
                 !(
                     argumentType === 'n' ||
                     argumentType === 'b' ||
                     argumentType === 's' ||
-                    argumentType === 'l'
+                    argumentType === 'l' ||
+                    argumentType === 'r' ||
+                    argumentType === 'argument_reporter_string_number'
                 )
             ) {
                 throw new Error(
@@ -781,46 +920,45 @@ function initExpandableBlock(
             if (joinCh && (i !== 0 || afterArg)) {
                 input.appendField(getValue(joinCh, i, ''))
             }
+            // beforeArg 模式下，第一个参数前用 preText 作为分隔符
+            if (beforeArg && i === 0) {
+                input.appendField(getValue(joinCh, i, preText))
+            }
             if (argumentType === 'b') {
                 input.setCheck('Boolean')
-            } /** else if (argumentType === 'l') {  // 测试
-        console.log("dropdown", this);
-        input.appendField(new ScratchBlocks.FieldDropdown([["a", 0], ["bbb", 1]]), id)
-        const fields = runtime
-          .getEditingTarget()
-          ?.blocks.getBlock(this.id)?.fields
-        if (fields) {
-          fields[id] = {
-            id: null,
-            name: id,
-            value: '+'
-          }
-        }
-        // this.moveInputBefore(id, 'END')
-      } */
+            }
             this.populateArgument_(argumentType, connectionMap, id, input, i)
         }
         // 动态参数后的文本
-        const txt = getValue(endText, num, '')
+        let txt = getValue(endText, num, '')
+        // beforeArg 模式下，无参数时 preText + endText 合并
+        if (beforeArg && num === 0) txt = getValue(preText, num, '') + txt
         if (txt === '') {
             this.removeInput('ENDTEXT', true) // 删除ENDTEXT输入
         } else {
-            // console.log(endTxtInput.fieldRow);
             const field = this.getField('ENDTEXT')
             if (field) field.setValue(txt)
             else this.appendDummyInput('ENDTEXT').appendField(txt, 'ENDTEXT')
         }
-        // Move the + and - buttons to the far right.
-        moveButtonToTheRightPlace.call(this)
-        // 将动态参数移到某个特定参数之后
+        // 将动态参数移到特定位置，并调整按钮位置
         if (afterArg) {
+            moveButtonToTheRightPlace.call(this)
             const cnt = this.dynamicArgumentTypes_.length
             for (let i = cnt - 1; i >= 0; i--) {
                 const id = this.dynamicArgumentIds_[i]
                 this.moveInputBefore(id, afterArg)
-
                 this.moveInputBefore(afterArg, id)
             }
+        } else if (beforeArg) {
+            // beforeArg 模式：动态参数移到 beforeArg 前面
+            const cnt = this.dynamicArgumentTypes_.length
+            for (let i = 0; i < cnt; i++) {
+                const id = this.dynamicArgumentIds_[i]
+                this.moveInputBefore(id, beforeArg)
+            }
+            moveButtonToTheRightPlace.call(this)
+        } else {
+            moveButtonToTheRightPlace.call(this)
         }
     }
 
@@ -840,15 +978,46 @@ function initExpandableBlock(
         }
 
         const getDefaultValue = (id, i) => {
-            const { defaultValues } = this.dynamicArgInfo_
+            const { defaultValues, afterArg } = this.dynamicArgInfo_
             const type = typeof defaultValues
+            // 默认值是函数，则调用函数获取默认值
             if (type === 'function') return defaultValues(i, id)
+            // 默认值是列表
             if (Array.isArray(defaultValues)) {
                 const len = defaultValues.length
-                if (i < len - 1) return defaultValues[i]
-                if (i === len - 1) return defaultValues[len - 1]
+                // 与 test3.js 一致：i <= len - 1 时直接取 defaultValues[i]
+                if (i <= len - 1) return defaultValues[i]
+                // 超出列表长度，则取最后一项+递增编号
                 return `${defaultValues[len - 1]}${i - len + 2}`
             }
+            // 使用前一个参数的值（与 test3.js 的 @PRE_ARG@ 策略一致）
+            if (defaultValues === '@PRE_ARG@') {
+                let previousArgName = null
+                let previousArgValue = ''
+
+                if (i > 0) {
+                    // DYNAMIC_ARGS 使用 1-based 命名，第 i 个参数（0-based）的前一个是 DYNAMIC_ARGS${i}
+                    previousArgName = `DYNAMIC_ARGS${i}`
+                } else if (afterArg) {
+                    // afterArg 模式下，第一个动态参数的前一个是 afterArg 静态参数
+                    previousArgName = afterArg
+                }
+                if (previousArgName) {
+                    const previousArgInput = this.getInput(previousArgName)
+                    if (previousArgInput && previousArgInput.connection) {
+                        const targetBlock =
+                            previousArgInput.connection.targetBlock()
+                        if (targetBlock && targetBlock.getFieldValue) {
+                            previousArgValue =
+                                targetBlock.getFieldValue('TEXT') ||
+                                targetBlock.getFieldValue('NUM') ||
+                                ''
+                        }
+                    }
+                }
+                return previousArgValue
+            }
+            // 默认值是数字或字符串，直接返回
             return defaultValues
         }
 
@@ -886,8 +1055,10 @@ function initExpandableBlocks(
     minusImage = leftArrow,
     rightSelectButton = defaultPlusSelectImage
 ) {
-    // 创建按钮
     const { runtime, ScratchBlocks } = extension
+    // 详情页（播放器）不需要设置可扩展积木（与 test3.js 一致）
+    if (runtime.isPlayerOnly) return
+    // 创建按钮
     const { PlusSelectButton, PlusButton, MinusButton } = createButtons(
         ScratchBlocks,
         plusImage,

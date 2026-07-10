@@ -47,6 +47,10 @@ export default class ControlsGroup extends BlockGroup {
                         ext.runtime.renderer.canvas
                     )
                     controls.isOrbitControls = true
+                    // 控制器交互时标记脏，唤醒 RAF 渲染
+                    controls.addEventListener('change', () =>
+                        engine.setDirty3D()
+                    )
                     controls.update()
                     return new Wrapper(
                         new RTW_Model_Box(

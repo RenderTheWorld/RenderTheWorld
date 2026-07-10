@@ -21,7 +21,8 @@ class FormatMessager {
      * @returns {string}
      */
     translate(key, lang = this.default_lang) {
-        return (this._format[lang] && this._format[lang][key]) || key
+        const val = this._format[lang] && this._format[lang][key]
+        return val !== undefined ? val : key
     }
 }
 

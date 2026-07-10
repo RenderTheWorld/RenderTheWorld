@@ -19,7 +19,7 @@
 import BlockGroup from './BlockGroup.js'
 
 // 各积木分组（顺序即面板显示顺序）
-import InitGroup from './groups/initGroup.js'
+import SettingsGroup from './groups/settingsGroup.js'
 import MaterialGroup from './groups/materialGroup.js'
 import ModelGroup from './groups/modelGroup.js'
 import HierarchyGroup from './groups/hierarchyGroup.js'
@@ -29,18 +29,26 @@ import LightingGroup from './groups/lightingGroup.js'
 import CameraGroup from './groups/cameraGroup.js'
 import ControlsGroup from './groups/controlsGroup.js'
 import FogGroup from './groups/fogGroup.js'
+import SkyGroup from './groups/skyGroup.js'
+import EffectsGroup from './groups/effectsGroup.js'
+import TextureGroup from './groups/textureGroup.js'
+import MathGroup from './groups/mathGroup.js'
 
 const groupClasses = [
-    InitGroup,
+    SettingsGroup,
     MaterialGroup,
     ModelGroup,
     HierarchyGroup,
     TransformGroup,
+    MathGroup,
     AnimationGroup,
     LightingGroup,
     CameraGroup,
     ControlsGroup,
-    FogGroup
+    FogGroup,
+    SkyGroup,
+    EffectsGroup,
+    TextureGroup
 ]
 
 /**
@@ -188,7 +196,7 @@ export function loadBlocks(
             blocks.forEach(b => {
                 // 分割线
                 if (b === '---') {
-                    core.registerBlock('---')
+                    core.registerBlankLine()
                     return
                 }
 

@@ -17,12 +17,15 @@ import { chen_RenderTheWorld_extensionId } from '../assets/index.js'
 import { addFileType } from '../utils/gandiAssetTools.js'
 
 /**
- * 劫持 _convertBlockForScratchBlocks，补回 OUTPUT 块的自定义形状字段
+ * 劫持 _convertBlockForScratchBlocks，适配 OUTPUT 类型块
  *
- * Blockly 默认不识别 outputShape/output/branchCount 字段，
- * 对于 OUTPUT 类型块（有 output/outputShape 属性），需要：
- *   1. 如果 scratch-vm 不认识 blockType='output'，先转为 'conditional' 获得 C 形分支
- *   2. 强制覆盖 outputShape/output/branchCount 实现输出连接
+ * Gandi/TurboWarp 的 BlockType 枚举都没有 OUTPUT 类型，需要回退为标准类型：
+ *
+ * 适配策略（兼容 Gandi 和 TurboWarp）：
+ *   - branchCount=0 的 OUTPUT 块 → 回退为 COMMAND，删除 previousStatement/nextStatement，手动覆盖 output
+ *     这样块只有 output 连接（无上下连接），呈现为方形 reporter 块
+ *   - branchCount>0 的 OUTPUT 块 → 回退为 CONDITIONAL，手动覆盖 output
+ *     CONDITIONAL 提供 C 块分支 + 方形外观，手动添加 output 实现输出连接（如 makeMaterial）
  *
  * @param {Object} runtime - Scratch runtime
  */
@@ -30,48 +33,49 @@ export function hookOutputBlocks(runtime) {
     const original = runtime._convertBlockForScratchBlocks.bind(runtime)
 
     runtime._convertBlockForScratchBlocks = function (blockInfo, categoryInfo) {
-        const isOutputBlock =
-            blockInfo.output !== undefined ||
-            blockInfo.outputShape !== undefined
-
-        let effectiveBlockInfo = blockInfo
-
-        if (isOutputBlock && blockInfo.blockType !== 'conditional') {
-            // 尝试原始调用
-            try {
-                const res = original(blockInfo, categoryInfo)
-                applyOutputFields(res, blockInfo)
-                return res
-            } catch {
-                // 原始调用失败（blockType 不被识别），用 conditional 重试
-                effectiveBlockInfo = Object.assign({}, blockInfo, {
-                    blockType: 'conditional'
-                })
-            }
+        if (blockInfo.blockType !== 'output') {
+            return original(blockInfo, categoryInfo)
         }
 
+        const branchCount = blockInfo.branchCount || 0
+        const output = blockInfo.output
+
+        if (branchCount > 0) {
+            // C 块 + 返回值（如 makeMaterial）：回退为 conditional
+            const effectiveBlockInfo = Object.assign({}, blockInfo, {
+                blockType: 'conditional',
+                branchCount: branchCount
+            })
+            delete effectiveBlockInfo.output
+            delete effectiveBlockInfo.outputShape
+            const res = original(effectiveBlockInfo, categoryInfo)
+            // conditional 不设置 output，手动覆盖以添加输出连接
+            if (output !== undefined) {
+                res.json.output = output
+            }
+            return res
+        }
+
+        // 普通返回值块：回退为 command，然后删除上下连接，只保留 output
+        const effectiveBlockInfo = Object.assign({}, blockInfo, {
+            blockType: 'command'
+        })
+        delete effectiveBlockInfo.output
+        delete effectiveBlockInfo.outputShape
+        delete effectiveBlockInfo.branchCount
         const res = original(effectiveBlockInfo, categoryInfo)
-        applyOutputFields(res, blockInfo)
+        // 删除 COMMAND 的上下连接，让块只有 output 连接（方形 reporter）
+        delete res.json.previousStatement
+        delete res.json.nextStatement
+        // 手动添加 output 实现输出连接
+        if (output !== undefined) {
+            res.json.output = output
+        }
         return res
     }
 
     return () => {
         runtime._convertBlockForScratchBlocks = original
-    }
-}
-
-/**
- * 强制覆盖 OUTPUT 块的形状字段
- */
-function applyOutputFields(res, blockInfo) {
-    if (blockInfo.outputShape !== undefined) {
-        res.json.outputShape = blockInfo.outputShape
-    }
-    if (blockInfo.output !== undefined) {
-        res.json.output = blockInfo.output
-    }
-    if (blockInfo.branchCount !== undefined) {
-        res.json.branchCount = blockInfo.branchCount
     }
 }
 

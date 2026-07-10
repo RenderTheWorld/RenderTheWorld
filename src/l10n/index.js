@@ -29,7 +29,7 @@ export default function l10nInit(core) {
         const entry = allEntries[key]
         if (!entry || typeof entry !== 'object') continue
         for (const lang of ['zh-cn', 'en']) {
-            if (entry[lang]) {
+            if (entry[lang] !== undefined) {
                 merged[lang][key] = entry[lang]
             }
         }

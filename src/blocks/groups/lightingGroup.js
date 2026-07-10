@@ -1,9 +1,11 @@
 /**
- * 光照分组 —— 点光源 / 方向光 / 环境光 / 半球光 / 阴影
+ * 光照分组 —— 点光源 / 方向光 / 聚光灯 / 面光源 / 环境光 / 半球光 / 阴影
  *
  * 包含积木：
  *   - pointLight                       (OUTPUT) 创建点光源
  *   - directionalLight                 (OUTPUT) 创建方向光
+ *   - spotLight                        (OUTPUT) 创建聚光灯
+ *   - rectAreaLight                    (OUTPUT) 创建面光源
  *   - setAmbientLightColor             (COMMAND) 设置环境光
  *   - setHemisphereLightColor          (COMMAND) 设置半球光
  *   - '---'
@@ -96,11 +98,12 @@ export default class LightingGroup extends BlockGroup {
                         cast.toNumber(args.y),
                         cast.toNumber(args.z)
                     )
-                    // 旧版 target.position 使用的是光源位置（x, y, z）而非目标位置（x2, y2, z2）
+                    // 修复：旧版误用光源位置 (x,y,z) 作为 target.position，
+                    // 导致 x2/y2/z2 参数完全无效。正确应使用目标位置 (x2,y2,z2)。
                     light.target.position.set(
-                        cast.toNumber(args.x),
-                        cast.toNumber(args.y),
-                        cast.toNumber(args.z)
+                        cast.toNumber(args.x2),
+                        cast.toNumber(args.y2),
+                        cast.toNumber(args.z2)
                     )
                     light.shadow.bias = -0.00005
                     if (cast.toString(args.YN) === 'true') {
@@ -112,6 +115,100 @@ export default class LightingGroup extends BlockGroup {
                     light.shadow.camera.bottom = -20
                     light.shadow.camera.near = 0.1
                     light.shadow.camera.far = 1000
+                    return new Wrapper(
+                        new RTW_Model_Box(light, false, false, false, undefined)
+                    )
+                }
+            },
+            {
+                opcode: 'spotLight',
+                blockType: BT.OUTPUT,
+                text: t('spotLight'),
+                arguments: {
+                    color: { type: AT.NUMBER },
+                    intensity: { type: AT.NUMBER, defaultValue: 100 },
+                    x: { type: AT.NUMBER, defaultValue: 0 },
+                    y: { type: AT.NUMBER, defaultValue: 5 },
+                    z: { type: AT.NUMBER, defaultValue: 0 },
+                    tx: { type: AT.NUMBER, defaultValue: 0 },
+                    ty: { type: AT.NUMBER, defaultValue: 0 },
+                    tz: { type: AT.NUMBER, defaultValue: 0 },
+                    angle: { type: AT.NUMBER, defaultValue: 30 },
+                    penumbra: { type: AT.NUMBER, defaultValue: 0.2 },
+                    decay: { type: AT.NUMBER, defaultValue: 2 },
+                    YN: { type: AT.STRING, menu: 'YN' }
+                },
+                output: 'Reporter',
+                outputShape: 3,
+                branchCount: 0,
+                handler: args => {
+                    const cast = ext.cast
+                    const THREE = ext.renderEngine.THREE
+                    const light = new THREE.SpotLight(
+                        cast.toNumber(args.color),
+                        cast.toNumber(args.intensity),
+                        0,
+                        THREE.MathUtils.degToRad(cast.toNumber(args.angle)),
+                        cast.toNumber(args.penumbra),
+                        cast.toNumber(args.decay)
+                    )
+                    light.position.set(
+                        cast.toNumber(args.x),
+                        cast.toNumber(args.y),
+                        cast.toNumber(args.z)
+                    )
+                    light.target.position.set(
+                        cast.toNumber(args.tx),
+                        cast.toNumber(args.ty),
+                        cast.toNumber(args.tz)
+                    )
+                    light.shadow.bias = -0.00005
+                    if (cast.toString(args.YN) === 'true') {
+                        light.castShadow = true
+                    }
+                    return new Wrapper(
+                        new RTW_Model_Box(light, false, false, false, undefined)
+                    )
+                }
+            },
+            {
+                opcode: 'rectAreaLight',
+                blockType: BT.OUTPUT,
+                text: t('rectAreaLight'),
+                arguments: {
+                    color: { type: AT.NUMBER },
+                    intensity: { type: AT.NUMBER, defaultValue: 100 },
+                    width: { type: AT.NUMBER, defaultValue: 10 },
+                    height: { type: AT.NUMBER, defaultValue: 10 },
+                    x: { type: AT.NUMBER, defaultValue: 0 },
+                    y: { type: AT.NUMBER, defaultValue: 5 },
+                    z: { type: AT.NUMBER, defaultValue: 0 },
+                    tx: { type: AT.NUMBER, defaultValue: 0 },
+                    ty: { type: AT.NUMBER, defaultValue: 0 },
+                    tz: { type: AT.NUMBER, defaultValue: 0 }
+                },
+                output: 'Reporter',
+                outputShape: 3,
+                branchCount: 0,
+                handler: args => {
+                    const cast = ext.cast
+                    const THREE = ext.renderEngine.THREE
+                    const light = new THREE.RectAreaLight(
+                        cast.toNumber(args.color),
+                        cast.toNumber(args.intensity),
+                        cast.toNumber(args.width),
+                        cast.toNumber(args.height)
+                    )
+                    light.position.set(
+                        cast.toNumber(args.x),
+                        cast.toNumber(args.y),
+                        cast.toNumber(args.z)
+                    )
+                    light.lookAt(
+                        cast.toNumber(args.tx),
+                        cast.toNumber(args.ty),
+                        cast.toNumber(args.tz)
+                    )
                     return new Wrapper(
                         new RTW_Model_Box(light, false, false, false, undefined)
                     )
@@ -254,6 +351,16 @@ export default class LightingGroup extends BlockGroup {
                 'zh-cn':
                     '方向光 颜色 [color] 光照强度 [intensity] 位置 x [x] y [y] z [z] 目标 x [x2] y [y2] z [z2] [YN] 投射阴影',
                 en: 'directional light color [color] intensity [intensity] pos x [x] y [y] z [z] target x [x2] y [y2] z [z2] [YN] shadow'
+            },
+            spotLight: {
+                'zh-cn':
+                    '聚光灯 颜色 [color] 强度 [intensity] 位置 x [x] y [y] z [z] 目标 x [tx] y [ty] z [tz] 角度 [angle]° 半影 [penumbra] 衰减 [decay] [YN] 阴影',
+                en: 'spot light color [color] intensity [intensity] pos x [x] y [y] z [z] target x [tx] y [ty] z [tz] angle [angle]° penumbra [penumbra] decay [decay] [YN] shadow'
+            },
+            rectAreaLight: {
+                'zh-cn':
+                    '面光源 颜色 [color] 强度 [intensity] 宽 [width] 高 [height] 位置 x [x] y [y] z [z] 朝向 x [tx] y [ty] z [tz]',
+                en: 'rect area light color [color] intensity [intensity] w [width] h [height] pos x [x] y [y] z [z] look x [tx] y [ty] z [tz]'
             },
             setAmbientLightColor: {
                 'zh-cn': '设置环境光颜色 [color] 光照强度 [intensity]',

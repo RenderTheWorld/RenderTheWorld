@@ -5,6 +5,7 @@
  * Modified by: Fath11 & Optimized by AI
  * Link: https://github.com/fath11
  */
+
 class Skins {
     constructor(runtime) {
         this.runtime = runtime
@@ -46,7 +47,6 @@ class Skins {
 
             dispose() {
                 if (this._texture) {
-                    // 构造函数中 this.gl = renderer._gl，直接复用
                     if (this.gl) this.gl.deleteTexture(this._texture)
                     this._texture = null
                 }
@@ -69,6 +69,11 @@ class Skins {
             /**
              * 优化后的 setContent
              * 使用 texSubImage2D 替代 texImage2D 以提升性能
+             *
+             * 关键：必须用 this.emit(Skin.Events.WasAltered) 通知所有关联的
+             * drawable 皮肤已更新。不能直接通过 _allDrawables[this.id] 查找
+             * drawable，因为 this.id 是皮肤 ID，而 _allDrawables 是按
+             * drawable ID 索引的，两者不同。
              */
             setContent(textureData) {
                 if (!this._texture || !textureData.width || !textureData.height)
@@ -107,11 +112,8 @@ class Skins {
                     )
                 }
 
-                // 通知关联的 drawable 皮肤已更新（若 drawable 尚未创建则跳过，避免崩溃）
-                const drawable = this._renderer._allDrawables[this.id]
-                if (drawable && drawable._skinWasAltered) {
-                    drawable._skinWasAltered()
-                }
+                // 通知所有关联的 drawable 皮肤已更新（与旧版一致）
+                this.emit(Skin.Events.WasAltered)
             }
         }
 

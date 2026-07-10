@@ -29,6 +29,14 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js'
+import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js'
+import { BrightnessContrastShader } from 'three/examples/jsm/shaders/BrightnessContrastShader.js'
+import { HueSaturationShader } from 'three/examples/jsm/shaders/HueSaturationShader.js'
 
 import { Skins } from '../utils/canvasSkin.js'
 import {
@@ -55,6 +63,19 @@ class RenderEngine {
         this.GLTFLoader = GLTFLoader
         this.OBJLoader = OBJLoader
         this.MTLLoader = MTLLoader
+        /** Post-processing（后处理模块） */
+        this.EffectComposer = EffectComposer
+        this.RenderPass = RenderPass
+        this.UnrealBloomPass = UnrealBloomPass
+        this.ShaderPass = ShaderPass
+        this.FXAAShader = FXAAShader
+        this.VignetteShader = VignetteShader
+        this.BrightnessContrastShader = BrightnessContrastShader
+        this.HueSaturationShader = HueSaturationShader
+        /** @type {EffectComposer|null} 后处理合成器（启用后处理时非 null） */
+        this._composer = null
+        /** @type {Object<string, any>} 各 pass 实例引用 */
+        this._passes = {}
         /** OrbitControls 类（供分组使用） */
         this.OrbitControls = OrbitControls
 
@@ -75,6 +96,15 @@ class RenderEngine {
         this._destroyed = false
         /** 3D 画面是否显示到舞台（旧版 isTcShow，默认关闭） */
         this._isTcShow = false
+
+        // ============== 渲染设置（可由设置积木动态修改） ==============
+        this._settings = {
+            antialias: true,
+            shadowMapType: THREE.PCFShadowMap,
+            shadowEnabled: true,
+            backgroundColor: null, // null = 透明背景
+            pixelRatio: 1
+        }
 
         // ============== Three.js 基础对象 ==============
         this.renderer = null
@@ -118,14 +148,23 @@ class RenderEngine {
         this._injectLayer()
         this._createSkin()
 
-        // 项目停止时轻量清理 Three.js 资源（不销毁 skin/drawable/canvas）
-        // 与旧版 _listener 中 PROJECT_STOP_ALL 逻辑一致
+        // 自动初始化 Three.js（无需 init 积木，扩展加载即就绪）
+        this._initThree()
+
+        // 生命周期：项目停止时轻量清理，项目启动时自动恢复
         const runtime = ext.runtime
         const onStopAll = () => this._stopRender()
         runtime.on('PROJECT_STOP_ALL', onStopAll)
-        this._cleanups.push(() => {
-            runtime.off('PROJECT_STOP_ALL', onStopAll)
-        })
+        this._cleanups.push(() => runtime.off('PROJECT_STOP_ALL', onStopAll))
+
+        // PROJECT_STOP_ALL 后再次运行时自动重新初始化
+        const onProjectStart = () => {
+            if (!this._initialized && !this._destroyed) {
+                this._initThree()
+            }
+        }
+        runtime.on('PROJECT_START', onProjectStart)
+        this._cleanups.push(() => runtime.off('PROJECT_START', onProjectStart))
 
         this._logDebugInfo()
     }
@@ -231,62 +270,45 @@ class RenderEngine {
     }
 
     // ============================================================
-    //  2. Three.js 初始化
+    //  2. Three.js 初始化（自动调用，无需 init 积木）
     // ============================================================
 
     /**
-     * 初始化 Three.js 渲染器、场景、相机、控制器
-     * @param {number|string} [backgroundColor] - 背景色
-     * @param {boolean} [antialias=true] - 是否启用抗锯齿（仅首次生效）
-     * @param {number|string} [shadowMapType] - 阴影类型
-     * @param {number} [sizex] - 渲染宽度
-     * @param {number} [sizey] - 渲染高度
+     * 自动初始化 Three.js 渲染器、场景、相机、控制器
+     * 所有配置从 this._settings 读取，可由设置积木动态修改
      */
-    init(backgroundColor, antialias = true, shadowMapType, sizex, sizey) {
-        if (this._destroyed) return
+    _initThree() {
+        if (this._destroyed || this._initialized) return
 
         // 开始新的会话（使旧的异步加载回调失效）
         this.sessionGuard.begin()
 
-        // 已初始化：仅更新可变参数
-        if (this._initialized) {
-            this._applyBackground(backgroundColor)
-            this._applyShadowMapType(shadowMapType)
-            if (sizex && sizey) {
-                this._applySize(sizex, sizey)
-            }
-            // 旧版 init 时重置 isTcShow = false
-            this._isTcShow = false
-            if (this.threeSkin) this.threeSkin.setContent(this.nullCanvas)
-            this.setDirty3D()
-            return
-        }
-
         try {
+            const s = this._settings
+
             // 渲染器
             this.renderer = new THREE.WebGLRenderer({
                 canvas: this.tc,
-                antialias: antialias !== false,
+                antialias: s.antialias,
                 alpha: true,
                 powerPreference: 'high-performance',
                 desynchronized: true
             })
-            this.renderer.setPixelRatio(1)
-            // 旧版 setClearColor('#000000')；新版用透明背景以支持 Scratch 舞台穿透
+            this.renderer.setPixelRatio(s.pixelRatio)
+            // 透明背景以支持 Scratch 舞台穿透
             this.renderer.setClearColor(0x000000, 0)
-            if (sizex && sizey) this._applySize(sizex, sizey)
             this.renderer.setSize(this._renderWidth, this._renderHeight, false)
-            // 旧版设 outputColorSpace = SRGBColorSpace
             this.renderer.outputColorSpace = THREE.SRGBColorSpace
-            this.renderer.shadowMap.enabled = true
-            this.renderer.shadowMap.type = THREE.PCFShadowMap
-            this._applyShadowMapType(shadowMapType)
+            this.renderer.shadowMap.enabled = s.shadowEnabled
+            this.renderer.shadowMap.type = s.shadowMapType
 
             // 场景
             this.scene = new THREE.Scene()
-            this._applyBackground(backgroundColor)
+            if (s.backgroundColor != null) {
+                this._applyBackgroundToScene(s.backgroundColor)
+            }
 
-            // 相机（旧版 fov=40，aspect=画布宽高比）
+            // 相机（fov=40，aspect=画布宽高比）
             const canvas = this.ext.runtime.renderer.canvas
             const aspect =
                 canvas.width / canvas.height ||
@@ -294,7 +316,7 @@ class RenderEngine {
                 16 / 9
             this.camera = new THREE.PerspectiveCamera(40, aspect, 0.1, 1000)
 
-            // 控制器（旧版绑定到 runtime.renderer.canvas，显式禁用所有操作）
+            // 控制器（绑定到 runtime.renderer.canvas，显式禁用所有操作）
             this.controls = new OrbitControls(this.camera, canvas)
             this.controls.enabled = false
             this.controls.enableDamping = false
@@ -303,7 +325,7 @@ class RenderEngine {
             this.controls.enableRotate = false
             this.controls.update()
 
-            // 旧版在 init 时创建环境光和半球光（黑色，占位）
+            // 环境光和半球光（黑色，占位）
             this.lights.ambient = new THREE.AmbientLight(0x000000)
             this.scene.add(this.lights.ambient)
             this.lights.hemisphere = new THREE.HemisphereLight(
@@ -314,9 +336,10 @@ class RenderEngine {
 
             this._initialized = true
 
-            // 旧版 init 时 isTcShow = false，显示空白画布
-            this._isTcShow = false
-            if (this.threeSkin) this.threeSkin.setContent(this.nullCanvas)
+            // _isTcShow 默认 false，显示空白画布
+            if (!this._isTcShow && this.threeSkin) {
+                this.threeSkin.setContent(this.nullCanvas)
+            }
 
             this._hookScratchDraw()
             this._startRafLoop()
@@ -329,49 +352,169 @@ class RenderEngine {
         }
     }
 
+    // ============================================================
+    //  2.1 渲染设置 API（供设置积木调用）
+    // ============================================================
+
     /**
-     * 应用渲染尺寸
+     * 设置背景颜色（null/空 = 透明）
+     * @param {number|string|null} color
      */
-    _applySize(sizex, sizey) {
-        this._renderWidth = sizex
-        this._renderHeight = sizey
-        if (this.renderer) this.renderer.setSize(sizex, sizey, false)
-        if (this.tc) {
-            this.tc.width = sizex
-            this.tc.height = sizey
+    setBackgroundColor(color) {
+        this._settings.backgroundColor = color
+        if (this.scene) {
+            if (color == null || color === '') {
+                this.scene.background = null
+            } else {
+                this._applyBackgroundToScene(color)
+            }
         }
+        this.setDirty3D()
     }
 
-    _applyBackground(backgroundColor) {
-        if (!this.scene || backgroundColor == null || backgroundColor === '')
-            return
+    /** 内部：将颜色值应用到 scene.background */
+    _applyBackgroundToScene(color) {
         try {
-            // 旧版用 Cast.toNumber(color) 确保数字类型
-            // THREE.Color 对字符串 '0' 会走 setStyle 找颜色名导致报错
-            // 对数字 0 则走 setHex(0) 正确得到黑色
             const cast = this.ext.cast
-            const colorVal = cast
-                ? cast.toNumber(backgroundColor)
-                : Number(backgroundColor)
+            const colorVal = cast ? cast.toNumber(color) : Number(color)
             this.scene.background = new THREE.Color(colorVal)
         } catch {
             /* 非法颜色值忽略 */
         }
     }
 
-    _applyShadowMapType(shadowMapType) {
-        if (!this.renderer || shadowMapType == null || shadowMapType === '')
-            return
-        const map = {
-            BasicShadowMap: THREE.BasicShadowMap,
-            PCFShadowMap: THREE.PCFShadowMap,
-            PCFSoftShadowMap: THREE.PCFSoftShadowMap,
-            VSMShadowMap: THREE.VSMShadowMap
+    /**
+     * 设置抗锯齿（需要重建 WebGLRenderer）
+     * @param {boolean} enabled
+     */
+    setAntialias(enabled) {
+        this._settings.antialias = !!enabled
+        if (this._initialized) this._rebuildRenderer()
+    }
+
+    /**
+     * 设置阴影类型
+     * @param {number|string} type - THREE.ShadowMap 常量或字符串名
+     */
+    setShadowMapType(type) {
+        this._settings.shadowMapType = type
+        if (this.renderer) {
+            const map = {
+                BasicShadowMap: THREE.BasicShadowMap,
+                PCFShadowMap: THREE.PCFShadowMap,
+                PCFSoftShadowMap: THREE.PCFSoftShadowMap,
+                VSMShadowMap: THREE.VSMShadowMap
+            }
+            this.renderer.shadowMap.type =
+                typeof type === 'string'
+                    ? map[type] || THREE.PCFShadowMap
+                    : type
+            // 阴影类型变更需要刷新材质
+            this.scene?.traverse(child => {
+                if (child.material) child.material.needsUpdate = true
+            })
         }
-        this.renderer.shadowMap.type =
-            typeof shadowMapType === 'string'
-                ? map[shadowMapType] || THREE.PCFShadowMap
-                : shadowMapType
+        this.setDirty3D()
+    }
+
+    /**
+     * 启用/禁用阴影
+     * @param {boolean} enabled
+     */
+    setShadowEnabled(enabled) {
+        this._settings.shadowEnabled = !!enabled
+        if (this.renderer) {
+            this.renderer.shadowMap.enabled = !!enabled
+            this.scene?.traverse(child => {
+                if (child.material) child.material.needsUpdate = true
+            })
+        }
+        this.setDirty3D()
+    }
+
+    /**
+     * 设置像素比（1 = 使用 _renderWidth 中已含的 DPR，不建议 >2）
+     * @param {number} ratio
+     */
+    setPixelRatio(ratio) {
+        this._settings.pixelRatio = ratio
+        if (this.renderer) this.renderer.setPixelRatio(ratio)
+        this.setDirty3D()
+    }
+
+    /**
+     * 重建 WebGLRenderer（用于抗锯齿等创建时参数的切换）
+     *
+     * 浏览器不允许在同一 canvas 上创建第二个 WebGL context，
+     * forceContextLoss 是异步的且不可靠。正确做法：
+     *   1. 创建新 canvas（同尺寸）替换旧 canvas
+     *   2. dispose 旧 renderer（释放旧 context 资源）
+     *   3. 在新 canvas 上创建新 WebGLRenderer
+     *   4. 更新 skin 内容指向新 canvas
+     */
+    _rebuildRenderer() {
+        if (!this._initialized || !this.renderer) return
+        const s = this._settings
+
+        // 1. 创建新 canvas
+        const oldCanvas = this.tc
+        const newCanvas = this.domUtils.createCanvas(
+            this._renderWidth,
+            this._renderHeight,
+            true
+        )
+        // 插入到旧 canvas 旁边，稍后移除旧 canvas
+        if (oldCanvas?.parentElement) {
+            oldCanvas.parentElement.insertBefore(newCanvas, oldCanvas)
+        }
+
+        // 2. dispose 旧 renderer（释放 GL 资源、着色器、几何体上传缓冲等）
+        try {
+            this.renderer.dispose()
+        } catch {
+            /* 忽略 */
+        }
+        // forceContextLoss 加速旧 context 释放（异步，不阻塞）
+        try {
+            this.renderer.forceContextLoss?.()
+        } catch {
+            /* 忽略 */
+        }
+
+        // 3. 移除旧 canvas DOM
+        if (oldCanvas?.parentElement) {
+            oldCanvas.parentElement.removeChild(oldCanvas)
+        }
+
+        // 4. 切换到新 canvas
+        this.tc = newCanvas
+
+        // 5. 在新 canvas 上创建新 WebGLRenderer
+        this.renderer = new THREE.WebGLRenderer({
+            canvas: this.tc,
+            antialias: s.antialias,
+            alpha: true,
+            powerPreference: 'high-performance',
+            desynchronized: true
+        })
+        this.renderer.setPixelRatio(s.pixelRatio)
+        this.renderer.setClearColor(0x000000, 0)
+        this.renderer.setSize(this._renderWidth, this._renderHeight, false)
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace
+        this.renderer.shadowMap.enabled = s.shadowEnabled
+        this.renderer.shadowMap.type = s.shadowMapType
+
+        // 6. 刷新所有材质（让新 context 重新编译着色器）
+        this.scene?.traverse(child => {
+            if (child.material) child.material.needsUpdate = true
+        })
+
+        // 7. 如果当前是显示状态，更新 skin 指向新 canvas
+        if (this._isTcShow && this.threeSkin) {
+            this.threeSkin.setContent(this.tc)
+        }
+
+        this.setDirty3D()
     }
 
     // ============================================================
@@ -384,17 +527,14 @@ class RenderEngine {
         this._originalDraw = scratchRenderer.draw.bind(scratchRenderer)
         this._drawHooked = true
 
+        // draw hook 只做层级同步，3D 渲染在 RAF 循环中执行
+        // （与旧版 setAnimationLoop 方式一致：在 Scratch draw 之前
+        //   完成渲染 + setContent，确保 draw 时皮肤已有最新内容）
         const self = this
         scratchRenderer.draw = function () {
             try {
                 if (!self._destroyed && self._initialized) {
                     self._syncLayerOnce()
-                    self._updateAnimations()
-                    if (self._dirty3D) {
-                        self._renderThree()
-                        self._dirty3D = false
-                        self._needsScratchRedraw = true
-                    }
                 }
             } catch (e) {
                 self.ext.logger?.warn('RTW draw hook error:', e)
@@ -444,7 +584,12 @@ class RenderEngine {
         if (!this.renderer || !this.scene || !this.camera || !this.threeSkin)
             return
         if (this._isTcShow) {
-            this.renderer.render(this.scene, this.camera)
+            // 后处理合成器优先
+            if (this._composer) {
+                this._composer.render()
+            } else {
+                this.renderer.render(this.scene, this.camera)
+            }
             this.threeSkin.setContent(this.tc)
         } else {
             this.threeSkin.setContent(this.nullCanvas)
@@ -455,32 +600,52 @@ class RenderEngine {
 
     /**
      * 推进所有动画混合器（自动计算帧间隔）
+     * @returns {boolean} 是否有注册的动画
      */
     _updateAnimations() {
         const names = Object.keys(this.animations)
-        if (names.length === 0) return
+        if (names.length === 0) return false
         const now = performance.now()
         const dt = this._lastAnimTime
             ? (now - this._lastAnimTime) / 1000
             : 0
         this._lastAnimTime = now
         this.sceneManager.updateAnimations(dt)
+        return true
     }
 
     // ============================================================
-    //  4. RAF 唤醒循环
+    //  4. RAF 渲染循环
     // ============================================================
 
+    /**
+     * RAF 循环：每帧检查脏标记，如果为脏则渲染 3D + 更新皮肤 + 请求 Scratch 重绘
+     *
+     * 优化：无动画且非脏时自动暂停 RAF，由 setDirty3D() 唤醒。
+     * 控制器交互通过 change 事件调用 setDirty3D() 触发唤醒。
+     */
     _startRafLoop() {
         const loop = () => {
-            if (this._destroyed || !this._initialized) return
-            if (!document.hidden && this._needsScratchRedraw) {
-                this.rendererAdapter.requestRedraw()
-                this._needsScratchRedraw = false
+            if (this._destroyed || !this._initialized) {
+                this._rafId = null
+                return
+            }
+            if (!document.hidden) {
+                const hasAnimations = this._updateAnimations()
+                if (this._dirty3D) {
+                    this._renderThree()
+                    this._dirty3D = false
+                    this.rendererAdapter.requestRedraw()
+                }
+                // 无动画且非脏时暂停 RAF，由 setDirty3D 唤醒
+                if (!hasAnimations && !this._dirty3D) {
+                    this._rafId = null
+                    return
+                }
             }
             this._rafId = requestAnimationFrame(loop)
         }
-        loop()
+        this._rafId = requestAnimationFrame(loop)
     }
 
     _stopRafLoop() {
@@ -554,11 +719,284 @@ class RenderEngine {
     // ============================================================
 
     /**
-     * 标记 3D 场景为脏
+     * 标记 3D 场景为脏，并确保 RAF 循环正在运行
      */
     setDirty3D() {
         this._dirty3D = true
-        this._needsScratchRedraw = true
+        // 如果 RAF 已停止（无动画且非脏时自动暂停），则重新启动
+        if (this._rafId === null && this._initialized && !this._destroyed) {
+            this._startRafLoop()
+        }
+    }
+
+    // ============================================================
+    //  后处理管理（模块化 pass 系统）
+    // ============================================================
+
+    /**
+     * 确保后处理合成器已创建（含 RenderPass 基础通道）
+     * @returns {EffectComposer|null}
+     */
+    _ensureComposer() {
+        if (!this._initialized || !this.renderer) return null
+        if (this._composer) return this._composer
+        const size = this.renderer.getDrawingBufferSize(
+            new this.THREE.Vector2()
+        )
+        this._composer = new EffectComposer(this.renderer)
+        this._composer.addPass(new RenderPass(this.scene, this.camera))
+        this._composer.setSize(size.x, size.y)
+        return this._composer
+    }
+
+    /**
+     * 重新排列 pass 顺序：Render → Bloom → 色彩 → FXAA → Vignette
+     * 确保 RenderPass 始终第一，FXAA/Vignette 始终最后
+     */
+    _reorderPasses() {
+        if (!this._composer) return
+        const composer = this._composer
+        // 保留 RenderPass，移除其他
+        const passes = composer.passes
+        const renderPass = passes[0]
+        composer.passes = [renderPass]
+        // 按固定顺序重新添加
+        const order = ['bloom', 'brightnessContrast', 'hueSaturation', 'fxaa', 'vignette']
+        for (const name of order) {
+            if (this._passes[name]) {
+                composer.passes.push(this._passes[name])
+            }
+        }
+        // 最后一个 pass renderToScreen = true
+        if (composer.passes.length > 1) {
+            for (let i = 0; i < composer.passes.length - 1; i++) {
+                composer.passes[i].renderToScreen = false
+            }
+            composer.passes[composer.passes.length - 1].renderToScreen = true
+        }
+    }
+
+    /**
+     * 启用 Bloom 辉光
+     */
+    enableBloom(strength = 0.6, radius = 0.4, threshold = 0.85) {
+        const composer = this._ensureComposer()
+        if (!composer || this._passes.bloom) return
+        const size = this.renderer.getDrawingBufferSize(
+            new this.THREE.Vector2()
+        )
+        this._passes.bloom = new UnrealBloomPass(
+            size, strength, radius, threshold
+        )
+        this._reorderPasses()
+        this.setDirty3D()
+    }
+
+    /**
+     * 禁用 Bloom
+     */
+    disableBloom() {
+        if (!this._passes.bloom) return
+        this._passes.bloom.dispose?.()
+        delete this._passes.bloom
+        this._reorderPasses()
+        this._checkComposerEmpty()
+        this.setDirty3D()
+    }
+
+    /**
+     * 启用 FXAA 抗锯齿
+     */
+    enableFXAA() {
+        const composer = this._ensureComposer()
+        if (!composer || this._passes.fxaa) return
+        const size = this.renderer.getDrawingBufferSize(
+            new this.THREE.Vector2()
+        )
+        const fxaa = new ShaderPass(FXAAShader)
+        fxaa.material.uniforms.resolution.value.set(1 / size.x, 1 / size.y)
+        this._passes.fxaa = fxaa
+        this._reorderPasses()
+        this.setDirty3D()
+    }
+
+    /**
+     * 禁用 FXAA
+     */
+    disableFXAA() {
+        if (!this._passes.fxaa) return
+        this._passes.fxaa.dispose?.()
+        delete this._passes.fxaa
+        this._reorderPasses()
+        this._checkComposerEmpty()
+        this.setDirty3D()
+    }
+
+    /**
+     * 启用 Vignette 暗角
+     */
+    enableVignette(offset = 1.0, darkness = 1.0) {
+        const composer = this._ensureComposer()
+        if (!composer || this._passes.vignette) return
+        const pass = new ShaderPass(VignetteShader)
+        pass.material.uniforms.offset.value = offset
+        pass.material.uniforms.darkness.value = darkness
+        this._passes.vignette = pass
+        this._reorderPasses()
+        this.setDirty3D()
+    }
+
+    /**
+     * 禁用 Vignette
+     */
+    disableVignette() {
+        if (!this._passes.vignette) return
+        this._passes.vignette.dispose?.()
+        delete this._passes.vignette
+        this._reorderPasses()
+        this._checkComposerEmpty()
+        this.setDirty3D()
+    }
+
+    /**
+     * 启用亮度/对比度调整
+     */
+    enableBrightnessContrast(brightness = 0, contrast = 0) {
+        const composer = this._ensureComposer()
+        if (!composer || this._passes.brightnessContrast) return
+        const pass = new ShaderPass(BrightnessContrastShader)
+        pass.material.uniforms.brightness.value = brightness
+        pass.material.uniforms.contrast.value = contrast
+        this._passes.brightnessContrast = pass
+        this._reorderPasses()
+        this.setDirty3D()
+    }
+
+    /**
+     * 禁用亮度/对比度
+     */
+    disableBrightnessContrast() {
+        if (!this._passes.brightnessContrast) return
+        this._passes.brightnessContrast.dispose?.()
+        delete this._passes.brightnessContrast
+        this._reorderPasses()
+        this._checkComposerEmpty()
+        this.setDirty3D()
+    }
+
+    /**
+     * 启用色相/饱和度调整
+     */
+    enableHueSaturation(hue = 0, saturation = 0) {
+        const composer = this._ensureComposer()
+        if (!composer || this._passes.hueSaturation) return
+        const pass = new ShaderPass(HueSaturationShader)
+        pass.material.uniforms.hue.value = hue
+        pass.material.uniforms.saturation.value = saturation
+        this._passes.hueSaturation = pass
+        this._reorderPasses()
+        this.setDirty3D()
+    }
+
+    /**
+     * 禁用色相/饱和度
+     */
+    disableHueSaturation() {
+        if (!this._passes.hueSaturation) return
+        this._passes.hueSaturation.dispose?.()
+        delete this._passes.hueSaturation
+        this._reorderPasses()
+        this._checkComposerEmpty()
+        this.setDirty3D()
+    }
+
+    /**
+     * 如果没有任何效果 pass，销毁合成器回到直接渲染
+     */
+    _checkComposerEmpty() {
+        if (this._composer && Object.keys(this._passes).length === 0) {
+            this._composer.dispose?.()
+            this._composer = null
+        }
+    }
+
+    /**
+     * 禁用所有后处理
+     */
+    disablePostProcessing() {
+        for (const name of Object.keys(this._passes)) {
+            this._passes[name]?.dispose?.()
+            delete this._passes[name]
+        }
+        if (this._composer) {
+            this._composer.dispose?.()
+            this._composer = null
+        }
+        this.setDirty3D()
+    }
+
+    /**
+     * 更新 Bloom 参数
+     */
+    setBloomParams(strength, radius, threshold) {
+        if (!this._passes.bloom) return
+        if (strength != null) this._passes.bloom.strength = strength
+        if (radius != null) this._passes.bloom.radius = radius
+        if (threshold != null) this._passes.bloom.threshold = threshold
+        this.setDirty3D()
+    }
+
+    /**
+     * 更新 Vignette 参数
+     */
+    setVignetteParams(offset, darkness) {
+        if (!this._passes.vignette) return
+        if (offset != null)
+            this._passes.vignette.material.uniforms.offset.value = offset
+        if (darkness != null)
+            this._passes.vignette.material.uniforms.darkness.value = darkness
+        this.setDirty3D()
+    }
+
+    /**
+     * 更新亮度/对比度
+     */
+    setBrightnessContrast(brightness, contrast) {
+        if (!this._passes.brightnessContrast) return
+        if (brightness != null)
+            this._passes.brightnessContrast.material.uniforms.brightness.value = brightness
+        if (contrast != null)
+            this._passes.brightnessContrast.material.uniforms.contrast.value = contrast
+        this.setDirty3D()
+    }
+
+    /**
+     * 更新色相/饱和度
+     */
+    setHueSaturation(hue, saturation) {
+        if (!this._passes.hueSaturation) return
+        if (hue != null)
+            this._passes.hueSaturation.material.uniforms.hue.value = hue
+        if (saturation != null)
+            this._passes.hueSaturation.material.uniforms.saturation.value = saturation
+        this.setDirty3D()
+    }
+
+    /**
+     * 更新色调映射
+     * @param {number} toneMapping - THREE.ToneMapping 常量
+     * @param {number} exposure
+     */
+    setToneMapping(toneMapping, exposure) {
+        if (!this.renderer) return
+        if (toneMapping != null)
+            this.renderer.toneMapping = toneMapping
+        if (exposure != null)
+            this.renderer.toneMappingExposure = exposure
+        this.scene?.traverse(child => {
+            if (child.material) child.material.needsUpdate = true
+        })
+        this.setDirty3D()
     }
 
     /**
@@ -569,7 +1007,6 @@ class RenderEngine {
         const obj = this.getModel(camera)
         if (obj && obj.isCamera) {
             this.camera = obj
-            if (this.controls) this.controls.object = obj
             this.setDirty3D()
         }
     }
@@ -627,11 +1064,11 @@ class RenderEngine {
 
     /**
      * 停止渲染（PROJECT_STOP_ALL 时调用）
-     * 与旧版 _listener 中 PROJECT_STOP_ALL 逻辑一致：
+     * 轻量清理 Three.js 资源，保留 tc canvas / skin / drawable：
      *   - 停止动画循环
-     *   - 释放 material/geometry/scene/controls
-     *   - 不销毁 tc canvas / skin / drawable（保留以便重新 init）
-     *   - 不设置 _destroyed（允许重新 init）
+     *   - 释放 material/geometry/scene/controls/renderer
+     *   - 不销毁 tc canvas / skin / drawable（保留以便 _initThree 自动恢复）
+     *   - 不设置 _destroyed（允许 PROJECT_START 时自动重新初始化）
      */
     _stopRender() {
         if (!this._initialized) return
@@ -657,6 +1094,9 @@ class RenderEngine {
         this.controls?.dispose()
         this.controls = null
 
+        // 释放后处理合成器
+        this.disablePostProcessing()
+
         // 释放场景中的 material/geometry，然后清空场景
         if (this.scene) {
             this.scene.traverse(child => {
@@ -675,11 +1115,12 @@ class RenderEngine {
         this.camera = null
 
         // 清空灯光引用（scene.clear 已移除灯光对象，这里只清引用）
-        this.lights = Object.create(null)
+        // 注意：不能重新赋值 this.lights = Object.create(null)，否则会断开
+        // 与 sceneManager.lights 的共享引用。应原地清空 key。
+        for (const k in this.lights) delete this.lights[k]
 
-        // 重置显示状态（旧版 isTcShow 在 init 时重置）
-        this._isTcShow = false
-        if (this.threeSkin) this.threeSkin.setContent(this.nullCanvas)
+        // 旧版停止时不清除皮肤内容，保留最后画面
+        // _isTcShow 在下次 init 时重置为 false
 
         // 重置状态标记（允许重新 init）
         this._initialized = false

@@ -102,21 +102,27 @@ addRTWStyle(`
             extension.logger = logger
 
             // ============== Scratch 劫持 ==============
+            // 收集清理函数，扩展卸载时统一调用
+            /** @type {(() => void)[]} */
+            this._hookCleanups = []
+
             // 1. BlockType.XML 支持
             hackFun(this.runtime, Scratch)
             // 2. 自定义监视器/返回值显示
             refactoringVisualReport(this)
             // 3. OUTPUT 块自定义形状
-            hookOutputBlocks(this.runtime)
+            this._hookCleanups.push(hookOutputBlocks(this.runtime))
             // 4. Gandi 自定义文件类型（OBJ/MTL/GLTF）注册到文件编辑器
-            setupGandiFileTypes(this)
+            this._hookCleanups.push(setupGandiFileTypes(this))
             // 5. Gandi 资源文件动态菜单
             setupGandiAssetMenus(this)
 
             // ============== 主工作区集成 ==============
             if (inMainWorkspace(this)) {
                 // 6. hat_parameter 颜色修复
-                setupHatParameterColor(this, this.ScratchBlocks)
+                this._hookCleanups.push(
+                    setupHatParameterColor(this, this.ScratchBlocks)
+                )
                 // 7. 可扩展积木
                 initExpandableBlocks(
                     this,
@@ -162,6 +168,23 @@ addRTWStyle(`
                 blocks: extension.core.blocks,
                 menus: extension.core.menus
             }
+        }
+
+        /**
+         * 扩展卸载时清理所有劫持与资源
+         */
+        dispose() {
+            // 清理 hooks 劫持
+            this._hookCleanups?.forEach(cleanup => {
+                try {
+                    cleanup()
+                } catch {
+                    /* 忽略 */
+                }
+            })
+            this._hookCleanups = []
+            // 清理渲染引擎
+            extension.renderEngine?.destroy()
         }
     }
 
