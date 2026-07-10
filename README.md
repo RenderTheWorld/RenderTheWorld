@@ -11,9 +11,9 @@
 
 </div>
 
-### [Original project](https://github.com/RenderTheWorld/RenderTheWorld/)地址：
+### [Original project](https://github.com/RenderTheWorld/RenderTheWorld/) URL:
 > https://github.com/RenderTheWorld/RenderTheWorld/
-### [PR project](https://github.com/xiaochen004hao/custom-extension/tree/main/xiaochen004hao/RenderTheWorld)地址：
+### [PR project](https://github.com/xiaochen004hao/custom-extension/tree/main/xiaochen004hao/RenderTheWorld) URL:
 > https://github.com/xiaochen004hao/custom-extension/tree/main/xiaochen004hao/RenderTheWorld
 
 <div align="center">

@@ -1,4 +1,4 @@
-; (function (window, Scratch) {
+;(function (window, Scratch) {
     function hijack(fn) {
         const _orig = Function.prototype.apply
         Function.prototype.apply = function (thisArg) {
@@ -9,7 +9,7 @@
         return result
     }
 
-    const code = "console.log(Scratch.vm)"
+    const code = 'console.log(Scratch.vm)'
 
     const runtime = Scratch.runtime
     let vm = undefined
@@ -50,7 +50,8 @@
                 return vm.runtime
             } else if (property === 'gui') {
                 return {
-                    getBlockly: () => Promise.resolve(Blockly ?? new Promise(() => { })),
+                    getBlockly: () =>
+                        Promise.resolve(Blockly ?? new Promise(() => {})),
                     getBlocklyEagerly: () => {
                         throw new Error('Not implemented')
                     }
@@ -82,13 +83,14 @@
             return v
         },
         has(target, property) {
-            if (property === 'Scratch' || property === 'ScratchBlocks') return true
+            if (property === 'Scratch' || property === 'ScratchBlocks')
+                return true
             return Reflect.has(target, property)
         }
     })
 
     class Extension {
-        constructor(runtime) { }
+        constructor(runtime) {}
 
         getInfo() {
             return {
@@ -102,16 +104,20 @@
                         arguments: {
                             code: {
                                 type: Scratch.ArgumentType.STRING,
-                                defaultValue: 'console.log("Hello, World!")',
+                                defaultValue: 'console.log("Hello, World!")'
                             }
                         }
                     }
-                ],
+                ]
             }
         }
 
         runjs({ code }) {
-            return (new Function('Scratch', 'ScratchBlocks', 'window', code))(scratchInstance, Blockly, windowProxy)
+            return new Function('Scratch', 'ScratchBlocks', 'window', code)(
+                scratchInstance,
+                Blockly,
+                windowProxy
+            )
         }
     }
     Scratch.extensions.register(new Extension(runtime))

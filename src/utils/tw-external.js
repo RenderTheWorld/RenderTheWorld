@@ -15,11 +15,11 @@ const checkURL = url => {
         !url.startsWith('data:') &&
         !url.startsWith('blob:')
     ) {
-        throw new Error(`Unsupported URL: ${url}`);
+        throw new Error(`Unsupported URL: ${url}`)
     }
-};
+}
 
-const external = {};
+const external = {}
 
 /**
  * @param {string} url
@@ -27,48 +27,48 @@ const external = {};
  * @returns {Promise<T>}
  */
 external.importModule = url => {
-    checkURL(url);
+    checkURL(url)
     // Need to specify webpackIgnore so that webpack compiles this directly to a call to import()
     // instead of trying making it try to use the webpack import system.
-    return import(/* webpackIgnore: true */ url);
-};
+    return import(/* webpackIgnore: true */ url)
+}
 
 /**
  * @param {string} url
  * @returns {Promise<Response>}
  */
 external.fetch = async url => {
-    checkURL(url);
-    const res = await fetch(url);
+    checkURL(url)
+    const res = await fetch(url)
     if (!res.ok) {
-        throw new Error(`HTTP ${res.status} fetching ${url}`);
+        throw new Error(`HTTP ${res.status} fetching ${url}`)
     }
-    return res;
-};
+    return res
+}
 
 /**
  * @param {string} url
  * @returns {Promise<string>}
  */
 external.dataURL = async url => {
-    const res = await external.fetch(url);
-    const blob = await res.blob();
+    const res = await external.fetch(url)
+    const blob = await res.blob()
     return new Promise((resolve, reject) => {
-        const fr = new FileReader();
-        fr.onload = () => resolve(fr.result);
-        fr.onerror = () => reject(fr.error);
-        fr.readAsDataURL(blob);
-    });
-};
+        const fr = new FileReader()
+        fr.onload = () => resolve(fr.result)
+        fr.onerror = () => reject(fr.error)
+        fr.readAsDataURL(blob)
+    })
+}
 
 /**
  * @param {string} url
  * @returns {Promise<Blob>}
  */
 external.blob = async url => {
-    const res = await external.fetch(url);
-    return res.blob();
-};
+    const res = await external.fetch(url)
+    return res.blob()
+}
 
 /**
  * @param {string} url
@@ -77,11 +77,11 @@ external.blob = async url => {
  * @returns {Promise<T>}
  */
 external.evalAndReturn = async (url, returnExpression) => {
-    const res = await external.fetch(url);
-    const text = await res.text();
-    const js = `${text}\nreturn ${returnExpression};`;
-    const fn = new Function(js);
-    return fn();
-};
+    const res = await external.fetch(url)
+    const text = await res.text()
+    const js = `${text}\nreturn ${returnExpression};`
+    const fn = new Function(js)
+    return fn()
+}
 
-export default external;
+export default external

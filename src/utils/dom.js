@@ -11,13 +11,13 @@ class DOMUtils {
      * @returns {HTMLCanvasElement}
      */
     createCanvas(width, height, hidden = true) {
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
         if (hidden) {
-            canvas.style.display = 'none';
+            canvas.style.display = 'none'
         }
-        return canvas;
+        return canvas
     }
 
     /**
@@ -27,7 +27,7 @@ class DOMUtils {
      */
     appendTo(element, parent) {
         if (parent) {
-            parent.appendChild(element);
+            parent.appendChild(element)
         }
     }
 
@@ -38,15 +38,15 @@ class DOMUtils {
      * @returns {HTMLStyleElement}
      */
     createAndAppendStyle(cssText, id) {
-        let styleElement = document.getElementById(id);
+        let styleElement = document.getElementById(id)
         if (!styleElement) {
-            styleElement = document.createElement('style');
-            styleElement.type = 'text/css';
-            styleElement.id = id;
-            document.head.appendChild(styleElement);
+            styleElement = document.createElement('style')
+            styleElement.type = 'text/css'
+            styleElement.id = id
+            document.head.appendChild(styleElement)
         }
-        styleElement.appendChild(document.createTextNode(cssText));
-        return styleElement;
+        styleElement.appendChild(document.createTextNode(cssText))
+        return styleElement
     }
 
     /**
@@ -55,12 +55,12 @@ class DOMUtils {
      * @param {string} filename
      */
     triggerDownload(url, filename) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
     }
 
     /**
@@ -70,9 +70,11 @@ class DOMUtils {
      * @returns {Window|null}
      */
     openWindow(url, features = '') {
-        const baseFeatures = 'noreferrer';
-        const finalFeatures = features ? `${baseFeatures},${features}` : baseFeatures;
-        return window.open(url, '_blank', finalFeatures);
+        const baseFeatures = 'noreferrer'
+        const finalFeatures = features
+            ? `${baseFeatures},${features}`
+            : baseFeatures
+        return window.open(url, '_blank', finalFeatures)
     }
 
     /**
@@ -83,7 +85,7 @@ class DOMUtils {
      */
     setGlobal(key, value, isDev = false) {
         if (isDev && typeof globalThis !== 'undefined') {
-            globalThis[key] = value;
+            globalThis[key] = value
         }
     }
 
@@ -93,8 +95,8 @@ class DOMUtils {
      * @returns {*}
      */
     getGlobal(key) {
-        return typeof globalThis !== 'undefined' ? globalThis[key] : undefined;
+        return typeof globalThis !== 'undefined' ? globalThis[key] : undefined
     }
 }
 
-export default DOMUtils;
+export default DOMUtils

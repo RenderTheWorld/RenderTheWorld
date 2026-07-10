@@ -1,6 +1,6 @@
-import { chen_RenderTheWorld_extensionId } from '../assets/index.js';
+import { chen_RenderTheWorld_extensionId } from '../assets/index.js'
 
-const PATCHES_ID = '__patches_' + chen_RenderTheWorld_extensionId;
+const PATCHES_ID = '__patches_' + chen_RenderTheWorld_extensionId
 
 /**
  * 补丁
@@ -8,23 +8,23 @@ const PATCHES_ID = '__patches_' + chen_RenderTheWorld_extensionId;
  * @param functions 包含需要修改或添加的方法的对象
  */
 const patch = (obj, functions) => {
-    if (obj[PATCHES_ID]) return;
-    obj[PATCHES_ID] = {};
+    if (obj[PATCHES_ID]) return
+    obj[PATCHES_ID] = {}
     for (const name in functions) {
-        const original = obj[name];
-        obj[PATCHES_ID][name] = obj[name];
+        const original = obj[name]
+        obj[PATCHES_ID][name] = obj[name]
         if (original) {
             obj[name] = function (...args) {
-                const callOriginal = (...args) => original.call(this, ...args);
-                return functions[name].call(this, callOriginal, ...args);
-            };
+                const callOriginal = (...args) => original.call(this, ...args)
+                return functions[name].call(this, callOriginal, ...args)
+            }
         } else {
             obj[name] = function (...args) {
-                return functions[name].call(this, () => { }, ...args);
-            };
+                return functions[name].call(this, () => {}, ...args)
+            }
         }
     }
-};
+}
 
 /**
  * By FurryR
@@ -33,14 +33,14 @@ const patch = (obj, functions) => {
  * @returns {*} The result of the function execution.
  */
 function hijack(fn) {
-    if (fn === undefined) return 0;
-    const _orig = Function.prototype.apply;
+    if (fn === undefined) return 0
+    const _orig = Function.prototype.apply
     // eslint-disable-next-line no-extend-native
-    Function.prototype.apply = (thisArg) => thisArg;
-    const result = fn();
+    Function.prototype.apply = thisArg => thisArg
+    const result = fn()
     // eslint-disable-next-line no-extend-native
-    Function.prototype.apply = _orig;
-    return result;
+    Function.prototype.apply = _orig
+    return result
 }
 
 /**
@@ -49,7 +49,7 @@ function hijack(fn) {
  * @returns {Event} The event listener.
  */
 function getEventListener(e) {
-    return e instanceof Array ? e[e.length - 1] : e;
+    return e instanceof Array ? e[e.length - 1] : e
 }
 
 /**
@@ -57,16 +57,17 @@ function getEventListener(e) {
  * @param {Runtime} runtime - The runtime object.
  * @returns {Object} The ScratchBlocks object.
  */
-function getScratchBlocks(runtime, vm) {
+function getScratchBlocks(runtime) {
     // In Gandi, ScratchBlocks can be accessed from the runtime.
     // In TW, ScratchBlocks can be directly accessed from the window.
 
     return (
-        hijack(getEventListener(runtime._events.EXTENSION_ADDED))?.ScratchBlocks ||
+        hijack(getEventListener(runtime._events.EXTENSION_ADDED))
+            ?.ScratchBlocks ||
         runtime.scratchBlocks ||
         window.Blockly?.getMainWorkspace()?.getScratchBlocks?.() ||
         window.ScratchBlocks
-    );
+    )
 }
 
 /**
@@ -76,10 +77,10 @@ function getScratchBlocks(runtime, vm) {
  */
 function getVM(runtime) {
     return (
-        hijack(getEventListener(runtime._events["QUESTION"])).props.vm ||
+        hijack(getEventListener(runtime._events['QUESTION'])).props.vm ||
         runtime.extensionManager.vm ||
         window.Scratch.vm
-    );
+    )
 }
 
-export { PATCHES_ID, patch, getScratchBlocks, getVM };
+export { PATCHES_ID, patch, getScratchBlocks, getVM }

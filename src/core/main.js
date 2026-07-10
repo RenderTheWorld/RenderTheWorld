@@ -1,60 +1,80 @@
-import * as THREE from 'three';
+/* eslint-disable no-unused-vars */
+/**
+ * Extension —— 渲染世界扩展主对象
+ *
+ * 持有运行时、虚拟机、ScratchBlocks、渲染引擎、日志等核心组件引用，
+ * 作为各积木分组访问扩展能力的统一入口。
+ */
 
-import {
-    chen_RenderTheWorld_extensionId,
-} from '../assets/index.js';
-import { Wrapper, RTW_Model_Box } from '../utils/RTWTools.js';
-import RenderEngine from './renderengine.js';
-import ExtensionCore from './extcore.js';
-import Logger from 'src/utils/logger.js';
-
-import { patch } from '../utils/injector.js';
-
+// 类型导入仅用于 JSDoc 类型注解，运行时无需导入
+// import { chen_RenderTheWorld_extensionId } from '../assets/index.js'
+// import RenderEngine from './renderengine.js'
+// import ExtensionCore from './extcore.js'
 
 class Extension {
     constructor() {
-        this.$version = "Alpha 0.0.1";
+        this.$version = 'Alpha 0.1.0'
 
         /** @type {import('scratch-vm').Runtime} */
-        this.runtime;
+        this.runtime = null
         /** @type {import('scratch-vm')} */
-        this.vm;
+        this.vm = null
         /** @type {import('scratch-blocks')} */
-        this.ScratchBlocks;
+        this.ScratchBlocks = null
 
         /** @type {Scratch} */
-        this.Scratch;
+        this.Scratch = null
 
         /** @type {ExtensionCore} */
-        this.core;
+        this.core = null
         /** @type {RenderEngine} */
-        this.renderEngine;
+        this.renderEngine = null
 
-        /** @type {THREE} */
-        this.threejs;
+        /** @type {import('../utils/logger.js').default} */
+        this.logger = null
 
-        /** @type {Logger} */
-        this.logger;
+        /** @type {Object} Cast 工具（数值/字符串/布尔转换） */
+        this.cast = null
+
+        /** API 文档地址 */
+        this.docsURI =
+            'https://learn.ccw.site/article/0d8196d6-fccf-4d92-91b8-ee918a733237'
     }
 
     /**
-     * init extension
-     * @param {import('scratch-vm').Runtime} _runtime 
-     * @param {import('scratch-vm')} vm 
-     * @param {import('scratch-blocks')} ScratchBlocks 
-     * @param {Scratch} Scratch 
+     * 初始化扩展
+     * @param {Object} Scratch - Scratch 全局对象（含 vm/runtime/ScratchBlocks 等）
      */
     $initExtension(Scratch) {
-        this.runtime = Scratch.runtime;
-        this.vm = Scratch.vm;
-        this.ScratchBlocks = Scratch.ScratchBlocks;
-
-        this.Scratch = Scratch;
+        this.runtime = Scratch.runtime
+        this.vm = Scratch.vm
+        this.ScratchBlocks = Scratch.ScratchBlocks
+        this.Scratch = Scratch
+        // Cast 工具：用于积木参数类型转换
+        this.cast = Scratch.Cast || {
+            toNumber: v => Number(v) || 0,
+            toString: v => String(v),
+            toBoolean: v => Boolean(v) || v === 'true'
+        }
     }
 
+    /**
+     * 是否在主工作区（用于开启开发者调试全局变量）
+     */
     $inMainWorkspace() {
-        return !!this.ScratchBlocks?.getMainWorkspace();
-    };
+        return !!this.ScratchBlocks?.getMainWorkspace?.()
+    }
+
+    /**
+     * 打开 API 文档
+     */
+    openDocs() {
+        const a = document.createElement('a')
+        a.href = this.docsURI
+        a.rel = 'noopener noreferrer'
+        a.target = '_blank'
+        a.click()
+    }
 }
 
-export default Extension;
+export default Extension
