@@ -15,26 +15,39 @@ export default function l10nInit(core) {
     // 扩展自身的元信息翻译
     const metaL10n = {
         name: { 'zh-cn': '渲染世界', en: 'Render The World' },
-        descp: { 'zh-cn': '积木渲染世界', en: 'Render the world using blocks' }
+        descp: { 'zh-cn': '积木渲染世界', en: 'Render the world using blocks' },
+        apidocs: { 'zh-cn': '📖API文档', en: '📖API Docs' }
     }
 
     // 从各积木分组收集翻译
     const blocksL10n = collectL10n()
 
     // 合并并转换为 FormatMessager 期望的格式：{ 'zh-cn': { key: value }, en: { key: value } }
-    const merged = { 'zh-cn': {}, en: {} }
+    const l10n = { 'zh-cn': {}, en: {} }
     const allEntries = { ...metaL10n, ...blocksL10n }
 
-    for (const key in allEntries) {
-        const entry = allEntries[key]
-        if (!entry || typeof entry !== 'object') continue
-        for (const lang of ['zh-cn', 'en']) {
-            if (entry[lang] !== undefined) {
-                merged[lang][key] = entry[lang]
+    /**
+     * 递归构建 l10n 对象，将嵌套结构转换为扁平化的点号路径
+     * @param {Object} obj - 当前遍历的对象
+     * @param {string} currentPath - 当前累积的路径
+     */
+    const buildL10n = (obj, currentPath) => {
+        for (const key in obj) {
+            const value = obj[key]
+
+            if (key === 'zh-cn' || key === 'en') {
+                if (!l10n[key]) l10n[key] = {}
+                l10n[key][currentPath] = value
+            } else if (typeof value === 'object' && value !== null) {
+                const newPath = currentPath ? `${currentPath}.${key}` : key
+                buildL10n(value, newPath)
             }
         }
     }
 
-    core.loadformat(merged)
+    buildL10n(allEntries, '')
+
+    // console.log(blocksL10n, l10n)
+    core.loadformat(l10n)
     return core
 }

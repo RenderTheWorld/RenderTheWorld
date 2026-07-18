@@ -1,10 +1,10 @@
 /**
  * 层级分组 —— 子物体管理与场景获取
  *
- * 无独立标签（以 '---' 分割线开始），位于模型分组之后。
+ * 无独立标签（以 '---' 分割线开始），位于对象分组之后。
  *
  * 包含积木：
- *   - getChildrenNumInObject       (REPORTER, disableMonitor) 子物体数量
+ *   - getChildrenNumInObject       (REPORTER, disableMonitor) 对象数量
  *   - getChildrenInObject          (OUTPUT, dynamicArgsInfo) 按序号获取子物体
  *   - getChildrenInObjectByName    (OUTPUT) 按名称获取子物体
  *   - addChildren                  (COMMAND) 添加子物体
@@ -19,7 +19,7 @@ import { getDynamicArgs } from '../../utils/extendableBlock.js'
 export default class HierarchyGroup extends BlockGroup {
     constructor(ctx) {
         super(ctx)
-        // 无标签分组
+        // 无标签分组，groupId 自动推断为 Hierarchy
     }
 
     build() {
@@ -31,6 +31,7 @@ export default class HierarchyGroup extends BlockGroup {
         return [
             '---',
             {
+                // 子物体数量
                 opcode: 'getChildrenNumInObject',
                 blockType: BT.REPORTER,
                 text: t('getChildrenNumInObject'),
@@ -179,28 +180,31 @@ export default class HierarchyGroup extends BlockGroup {
     l10n() {
         return {
             getChildrenNumInObject: {
-                'zh-cn': '获取物体: [name] 中的子物体数量',
-                en: 'children count of [name]'
+                'zh-cn': '对象 [name] 的直接子物体数量',
+                en: 'direct children count of object [name]'
             },
             getChildrenInObject: {
-                'zh-cn': '获取物体: [name] 中的第 [num] 个子物体',
-                en: 'child [num] of [name]'
+                'zh-cn': '对象 [name] 的第 [num] 个直接子物体',
+                en: 'object [name]\'s direct child [num]'
             },
-            'getChildrenInObject.joinCh': { 'zh-cn': ' 的', en: ' of ' },
-            'getChildrenInObject.preText': { 'zh-cn': '子物体', en: 'child' },
+            'getChildrenInObject.joinCh': {
+                'zh-cn': ' 个直接子物体的第 ',
+                en: '\'s direct child'
+            },
+            'getChildrenInObject.preText': { 'zh-cn': '的第', en: '\'s direct child' },
             getChildrenInObjectByName: {
-                'zh-cn': '获取物体: [name] 中第一个名为 [name2] 的子物体',
-                en: 'child named [name2] in [name]'
+                'zh-cn': '对象 [name] 中第一个名为 [name2] 的子物体',
+                en: 'the first child named [name2] in object [name]'
             },
             addChildren: {
-                'zh-cn': '给物体: [name] 添加子物体: [name2]',
-                en: 'add [name2] as child of [name]'
+                'zh-cn': '为对象 [name] 添加子物体 [name2]',
+                en: 'add [name2] to object [name]'
             },
             removeChildren: {
-                'zh-cn': '给物体: [name] 删除子物体: [name2]',
-                en: 'remove [name2] from [name]'
+                'zh-cn': '删除对象 [name] 的子物体 [name2]',
+                en: 'remove [name2] from object [name]'
             },
-            getScene: { 'zh-cn': '获取场景', en: 'get scene' }
+            getScene: { 'zh-cn': '场景', en: 'scene' }
         }
     }
 }

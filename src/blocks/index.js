@@ -40,15 +40,16 @@ const groupClasses = [
     ModelGroup,
     HierarchyGroup,
     TransformGroup,
-    MathGroup,
     AnimationGroup,
     LightingGroup,
     CameraGroup,
     ControlsGroup,
-    FogGroup,
-    SkyGroup,
-    EffectsGroup,
-    TextureGroup
+    FogGroup
+    // AI编写，还有问题，稍后修改
+    // MathGroup
+    // SkyGroup
+    // EffectsGroup,
+    // TextureGroup
 ]
 
 /**
@@ -61,7 +62,7 @@ const groupClasses = [
  * （Gandi 环境的 scratch-vm 能识别这些值），如果没有则使用回退值。
  *
  * @param {Object} [originalBlockType] - 来自 Scratch.BlockType 的原始枚举
- * @returns {Object}
+ * @returns {import('./BlockGroup.js').BlockType}
  */
 function normalizeBlockType(originalBlockType) {
     const orig = originalBlockType || {}
@@ -85,7 +86,7 @@ function normalizeBlockType(originalBlockType) {
 
 /**
  * 规范化 ArgumentType —— 强制使用小写标准字符串值（与 BlockType 同理）。
- * @returns {Object}
+ * @returns {import('./BlockGroup.js').ArgumentType}
  */
 function normalizeArgumentType() {
     return {
@@ -102,55 +103,9 @@ function normalizeArgumentType() {
 }
 
 /**
- * 从 BlockDef 提取传递给 scratch-vm 的标准属性
- * @param {BlockDef} b - 积木定义
- * @param {Object} renderTheWorldInstance - 扩展实例（挂载 handler/onClick）
- * @param {Object} BT - 规范化的 BlockType
- * @returns {Object} scratch-vm 格式的积木定义
- */
-function buildScratchBlockDef(b) {
-    const blockDef = {
-        opcode: b.opcode,
-        blockType: b.blockType,
-        text: b.text,
-        arguments: b.arguments || {}
-    }
-
-    // 可选标准属性
-    if (b.hideFromPalette !== undefined)
-        blockDef.hideFromPalette = b.hideFromPalette
-    if (b.disableInternalArgument !== undefined)
-        blockDef.disableInternalArgument = b.disableInternalArgument
-    if (b.disableMonitor !== undefined)
-        blockDef.disableMonitor = b.disableMonitor
-    if (b.isTerminal !== undefined) blockDef.isTerminal = b.isTerminal
-    if (b.tooltip !== undefined) blockDef.tooltip = b.tooltip
-
-    // OUTPUT 块自定义形状属性（需劫持 _convertBlockForScratchBlocks）
-    if (b.output !== undefined) blockDef.output = b.output
-    if (b.outputShape !== undefined) blockDef.outputShape = b.outputShape
-    if (b.branchCount !== undefined) blockDef.branchCount = b.branchCount
-
-    // EVENT 块属性
-    if (b.isEdgeActivated !== undefined)
-        blockDef.isEdgeActivated = b.isEdgeActivated
-    if (b.shouldRestartExistingThreads !== undefined)
-        blockDef.shouldRestartExistingThreads = b.shouldRestartExistingThreads
-
-    // XML 块
-    if (b.xml !== undefined) blockDef.xml = b.xml
-
-    // 可扩展积木配置（由 initExpandableBlocks 处理）
-    if (b.dynamicArgsInfo !== undefined)
-        blockDef.dynamicArgsInfo = b.dynamicArgsInfo
-
-    return blockDef
-}
-
-/**
  * 加载所有积木到 core
- * @param {Object} ext - Extension 主对象
- * @param {Object} renderTheWorldInstance - RenderTheWorld 实例（用于挂载 opcode 方法）
+ * @param {import('../core/main.js').default} ext - Extension 主对象
+ * @param {{[key: string]: any}} renderTheWorldInstance - RenderTheWorld 实例（用于挂载 opcode 方法）
  * @param {ExtensionCore} core - 扩展核心
  * @param {Object} BlockType - BlockType 枚举（原始）
  * @param {Object} ArgumentType - ArgumentType 枚举（原始）
@@ -183,63 +138,10 @@ export function loadBlocks(
         }
     })
 
-    // 2. 注册积木
+    // 2. 注册积木（由 BlockGroup 统一处理 LABEL、handler 挂载、BUTTON 等细节）
     instances.forEach(g => {
         try {
-            const blocks = g.build()
-            if (g.label) {
-                core.registerBlock({
-                    blockType: BT.LABEL,
-                    text: g.label
-                })
-            }
-            blocks.forEach(b => {
-                // 分割线
-                if (b === '---') {
-                    core.registerBlankLine()
-                    return
-                }
-
-                // LABEL 块（无 opcode）
-                if (b.blockType === BT.LABEL) {
-                    core.registerBlock({ blockType: BT.LABEL, text: b.text })
-                    return
-                }
-
-                // BUTTON 块（无 handler，有 onClick）
-                if (b.blockType === BT.BUTTON) {
-                    const blockDef = {
-                        opcode: b.opcode,
-                        blockType: BT.BUTTON,
-                        text: b.text
-                    }
-                    if (typeof b.onClick === 'function') {
-                        renderTheWorldInstance[b.opcode] = b.onClick
-                        blockDef.onClick = b.opcode
-                    } else if (typeof b.onClick === 'string') {
-                        blockDef.onClick = b.onClick
-                    }
-                    core.registerBlock(blockDef)
-                    return
-                }
-
-                // XML 块（面板预定义块，无 handler）
-                if (b.blockType === BT.XML) {
-                    core.registerBlock(buildScratchBlockDef(b))
-                    return
-                }
-
-                // 有 handler 的块（COMMAND/REPORTER/BOOLEAN/HAT/OUTPUT/EVENT）
-                if (b.handler) {
-                    renderTheWorldInstance[b.opcode] = b.handler
-                    core.registerBlock(buildScratchBlockDef(b))
-                } else if (b.opcode) {
-                    // 有 opcode 但无 handler（纯定义）
-                    core.registerBlock(buildScratchBlockDef(b))
-                } else {
-                    core.registerBlock(b)
-                }
-            })
+            g.register(renderTheWorldInstance)
         } catch (e) {
             ext.logger?.warn(`注册积木分组失败 (${g.constructor.name}):`, e)
         }

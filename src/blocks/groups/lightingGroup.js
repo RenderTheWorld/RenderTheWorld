@@ -344,41 +344,41 @@ export default class LightingGroup extends BlockGroup {
             'group.light': { 'zh-cn': '🕯️光照', en: '🕯️Lights' },
             pointLight: {
                 'zh-cn':
-                    '点光源 颜色 [color] 光照强度 [intensity] 位置 x [x] y [y] z [z] 衰减量 [decay] [YN] 投射阴影',
-                en: 'point light color [color] intensity [intensity] pos x [x] y [y] z [z] decay [decay] [YN] shadow'
+                    '<点光源>  颜色 [color] 光照强度 [intensity] 位置 x [x] y [y] z [z] 衰减量 [decay] [YN] 投射阴影',
+                en: '<point light> color [color] intensity [intensity] pos x [x] y [y] z [z] decay [decay] [YN] shadow'
             },
             directionalLight: {
                 'zh-cn':
-                    '方向光 颜色 [color] 光照强度 [intensity] 位置 x [x] y [y] z [z] 目标 x [x2] y [y2] z [z2] [YN] 投射阴影',
-                en: 'directional light color [color] intensity [intensity] pos x [x] y [y] z [z] target x [x2] y [y2] z [z2] [YN] shadow'
+                    '<平行光> 颜色 [color] 光照强度 [intensity] 位置 x [x] y [y] z [z] 目标 x [x2] y [y2] z [z2] [YN] 投射阴影',
+                en: '<directional light> color [color] intensity [intensity] pos x [x] y [y] z [z] target x [x2] y [y2] z [z2] [YN] shadow'
             },
             spotLight: {
                 'zh-cn':
-                    '聚光灯 颜色 [color] 强度 [intensity] 位置 x [x] y [y] z [z] 目标 x [tx] y [ty] z [tz] 角度 [angle]° 半影 [penumbra] 衰减 [decay] [YN] 阴影',
-                en: 'spot light color [color] intensity [intensity] pos x [x] y [y] z [z] target x [tx] y [ty] z [tz] angle [angle]° penumbra [penumbra] decay [decay] [YN] shadow'
+                    '<聚光灯> 颜色 [color] 强度 [intensity] 位置 x [x] y [y] z [z] 目标 x [tx] y [ty] z [tz] 角度 [angle]° 半影 [penumbra] 衰减 [decay] [YN] 阴影',
+                en: '<spot light> color [color] intensity [intensity] pos x [x] y [y] z [z] target x [tx] y [ty] z [tz] angle [angle]° penumbra [penumbra] decay [decay] [YN] shadow'
             },
             rectAreaLight: {
                 'zh-cn':
-                    '面光源 颜色 [color] 强度 [intensity] 宽 [width] 高 [height] 位置 x [x] y [y] z [z] 朝向 x [tx] y [ty] z [tz]',
-                en: 'rect area light color [color] intensity [intensity] w [width] h [height] pos x [x] y [y] z [z] look x [tx] y [ty] z [tz]'
+                    '<矩形面光源> 颜色 [color] 强度 [intensity] 宽 [width] 高 [height] 位置 x [x] y [y] z [z] 朝向 x [tx] y [ty] z [tz]',
+                en: '<rect area light> color [color] intensity [intensity] w [width] h [height] pos x [x] y [y] z [z] look x [tx] y [ty] z [tz]'
             },
             setAmbientLightColor: {
-                'zh-cn': '设置环境光颜色 [color] 光照强度 [intensity]',
-                en: 'ambient light color [color] intensity [intensity]'
+                'zh-cn': '将环境光的颜色设为 [color] 光照强度设为 [intensity]',
+                en: 'set ambient light color to [color] intensity to [intensity]'
             },
             setHemisphereLightColor: {
                 'zh-cn':
-                    '设置半球光天空颜色 [skyColor] 地面颜色 [groundColor] 光照强度 [intensity]',
-                en: 'hemisphere light sky [skyColor] ground [groundColor] intensity [intensity]'
+                    '将半球光天空颜色设为 [skyColor] 地面颜色设为 [groundColor] 光照强度设为 [intensity]',
+                en: 'set hemisphere light sky to [skyColor] ground to [groundColor] intensity to [intensity]'
             },
             setDirectionalLightShadowCamera: {
                 'zh-cn':
-                    '设置 [name] 阴影相机 近 [near] 远 [far] 左 [left] 右 [right] 上 [top] 下 [bottom]',
-                en: 'set [name] shadow cam near [near] far [far] l [left] r [right] t [top] b [bottom]'
+                    '将平行光 [name] 的阴影相机设为近 [near] 远 [far] 左 [left] 右 [right] 上 [top] 下 [bottom]',
+                en: 'set directional light [name] shadow cam to near [near] far [far] l [left] r [right] t [top] b [bottom]'
             },
             setLightMapSize: {
-                'zh-cn': '设置 [name] 阴影贴图尺寸 宽 [xsize] 高 [ysize]',
-                en: 'set [name] shadow map size w [xsize] h [ysize]'
+                'zh-cn': '将灯光 [name] 的阴影贴图尺寸宽设为 [xsize] 高设为 [ysize]',
+                en: 'set light [name] shadow map size to w [xsize] h to [ysize]'
             }
         }
     }

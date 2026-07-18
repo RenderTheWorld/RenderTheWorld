@@ -31,6 +31,7 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js'
@@ -47,7 +48,7 @@ import {
 } from '../assets/index.js'
 import RendererAdapter from '../adapters/rendererAdapter.js'
 import DOMUtils from '../utils/dom.js'
-import { RTW_Model_Box, Wrapper } from '../utils/RTWTools.js'
+import { RTW_Model_Box, Wrapper, setTHREE } from '../utils/RTWTools.js'
 import SceneManager from './SceneManager.js'
 import SessionGuard from './SessionGuard.js'
 
@@ -59,6 +60,7 @@ class RenderEngine {
         this.ext = ext
         /** @type {import('three')} */
         this.THREE = THREE
+        setTHREE(THREE)
         /** Loaders（供分组使用，避免分组静态 import three） */
         this.GLTFLoader = GLTFLoader
         this.OBJLoader = OBJLoader
@@ -68,13 +70,16 @@ class RenderEngine {
         this.RenderPass = RenderPass
         this.UnrealBloomPass = UnrealBloomPass
         this.ShaderPass = ShaderPass
+        this.OutputPass = OutputPass
         this.FXAAShader = FXAAShader
         this.VignetteShader = VignetteShader
         this.BrightnessContrastShader = BrightnessContrastShader
         this.HueSaturationShader = HueSaturationShader
         /** @type {EffectComposer|null} 后处理合成器（启用后处理时非 null） */
         this._composer = null
-        /** @type {Object<string, any>} 各 pass 实例引用 */
+        /** @type {OutputPass|null} 输出通道（sRGB 转换 + 色调映射，始终为 composer 最后一个 pass） */
+        this._outputPass = null
+        /** @type {Object<string, any>} 各用户 pass 实例引用 */
         this._passes = {}
         /** OrbitControls 类（供分组使用） */
         this.OrbitControls = OrbitControls
@@ -110,7 +115,7 @@ class RenderEngine {
         this.renderer = null
         this.scene = null
         this.camera = null
-        this.controls = null
+        // this.controls = null
 
         // ============== 缓冲与尺寸 ==============
         this.tc = null
@@ -317,13 +322,13 @@ class RenderEngine {
             this.camera = new THREE.PerspectiveCamera(40, aspect, 0.1, 1000)
 
             // 控制器（绑定到 runtime.renderer.canvas，显式禁用所有操作）
-            this.controls = new OrbitControls(this.camera, canvas)
-            this.controls.enabled = false
-            this.controls.enableDamping = false
-            this.controls.enablePan = false
-            this.controls.enableZoom = false
-            this.controls.enableRotate = false
-            this.controls.update()
+            // this.controls = new OrbitControls(this.camera, canvas)
+            // this.controls.enabled = false
+            // this.controls.enableDamping = false
+            // this.controls.enablePan = false
+            // this.controls.enableZoom = false
+            // this.controls.enableRotate = false
+            // this.controls.update()
 
             // 环境光和半球光（黑色，占位）
             this.lights.ambient = new THREE.AmbientLight(0x000000)
@@ -509,12 +514,93 @@ class RenderEngine {
             if (child.material) child.material.needsUpdate = true
         })
 
-        // 7. 如果当前是显示状态，更新 skin 指向新 canvas
+        // 7. 销毁旧后处理合成器（引用了旧 renderer，必须重建）
+        //    保存 pass 参数以便重建后恢复
+        const savedParams = this._savePassParams()
+        this.disablePostProcessing()
+
+        // 8. 如果当前是显示状态，更新 skin 指向新 canvas
         if (this._isTcShow && this.threeSkin) {
             this.threeSkin.setContent(this.tc)
         }
 
+        // 9. 恢复后处理 pass
+        this._restorePassParams(savedParams)
+
         this.setDirty3D()
+    }
+
+    /**
+     * 保存当前所有 pass 的参数（用于 _rebuildRenderer 后恢复）
+     * @returns {Object} 参数快照
+     */
+    _savePassParams() {
+        const params = {}
+        if (this._passes.bloom) {
+            params.bloom = {
+                strength: this._passes.bloom.strength,
+                radius: this._passes.bloom.radius,
+                threshold: this._passes.bloom.threshold
+            }
+        }
+        if (this._passes.fxaa) params.fxaa = true
+        if (this._passes.vignette) {
+            params.vignette = {
+                offset: this._passes.vignette.material.uniforms.offset.value,
+                darkness: this._passes.vignette.material.uniforms.darkness.value
+            }
+        }
+        if (this._passes.brightnessContrast) {
+            params.brightnessContrast = {
+                brightness:
+                    this._passes.brightnessContrast.material.uniforms.brightness
+                        .value,
+                contrast:
+                    this._passes.brightnessContrast.material.uniforms.contrast
+                        .value
+            }
+        }
+        if (this._passes.hueSaturation) {
+            params.hueSaturation = {
+                hue: this._passes.hueSaturation.material.uniforms.hue.value,
+                saturation:
+                    this._passes.hueSaturation.material.uniforms.saturation.value
+            }
+        }
+        return params
+    }
+
+    /**
+     * 从参数快照恢复后处理 pass
+     * @param {Object} params - _savePassParams 的返回值
+     */
+    _restorePassParams(params) {
+        if (params.bloom) {
+            this.enableBloom(
+                params.bloom.strength,
+                params.bloom.radius,
+                params.bloom.threshold
+            )
+        }
+        if (params.fxaa) this.enableFXAA()
+        if (params.vignette) {
+            this.enableVignette(
+                params.vignette.offset,
+                params.vignette.darkness
+            )
+        }
+        if (params.brightnessContrast) {
+            this.enableBrightnessContrast(
+                params.brightnessContrast.brightness,
+                params.brightnessContrast.contrast
+            )
+        }
+        if (params.hueSaturation) {
+            this.enableHueSaturation(
+                params.hueSaturation.hue,
+                params.hueSaturation.saturation
+            )
+        }
     }
 
     // ============================================================
@@ -595,7 +681,7 @@ class RenderEngine {
             this.threeSkin.setContent(this.nullCanvas)
         }
         // 控制器更新（旧版 render 中始终调用 controls.update()）
-        this.controls?.update()
+        // this.controls?.update()
     }
 
     /**
@@ -675,6 +761,15 @@ class RenderEngine {
         this._resizeObserver.observe(parent)
     }
 
+    /**
+     * 处理尺寸变化
+     *
+     * 参考：https://threejs.org/manual/#zh/responsive
+     * - renderer.setSize 已内部设置 canvas.width/height，无需手动重复设置
+     * - 相机 aspect 仅在尺寸真正变化时更新
+     * - EffectComposer 也需要同步缩放其内部渲染目标
+     * - FXAA 的 resolution uniform 需手动更新（ShaderPass.setSize 不处理 uniform）
+     */
     _handleResize() {
         const scratchCanvas = this.ext.runtime.renderer.canvas
         const cWidth = scratchCanvas.clientWidth || 480
@@ -703,12 +798,19 @@ class RenderEngine {
             this.camera.aspect = cWidth / cHeight
             this.camera.updateProjectionMatrix()
         }
+        // renderer.setSize(w, h, false) 已内部设置 canvas.width/height
+        // 参考：https://threejs.org/manual/#zh/responsive
         if (this.renderer) this.renderer.setSize(targetW, targetH, false)
-        if (this.tc) {
-            this.tc.width = targetW
-            this.tc.height = targetH
+        // 同步缩放后处理合成器的渲染目标
+        if (this._composer) this._composer.setSize(targetW, targetH)
+        // FXAA 的 resolution uniform 需手动更新
+        if (this._passes.fxaa) {
+            this._passes.fxaa.material.uniforms.resolution.value.set(
+                1 / targetW,
+                1 / targetH
+            )
         }
-        this.controls?.handleResize?.()
+        // this.controls?.handleResize?.()
 
         this._currentResolution = targetW / this._stageWidth
         this.setDirty3D()
@@ -734,7 +836,12 @@ class RenderEngine {
     // ============================================================
 
     /**
-     * 确保后处理合成器已创建（含 RenderPass 基础通道）
+     * 确保后处理合成器已创建（含 RenderPass + OutputPass）
+     *
+     * OutputPass 始终为最后一个 pass，负责 sRGB 色彩空间转换与色调映射。
+     * 参考：https://threejs.org/manual/#zh/color-management
+     * 参考：https://threejs.org/manual/#zh/how-to-use-post-processing
+     *
      * @returns {EffectComposer|null}
      */
     _ensureComposer() {
@@ -745,13 +852,17 @@ class RenderEngine {
         )
         this._composer = new EffectComposer(this.renderer)
         this._composer.addPass(new RenderPass(this.scene, this.camera))
+        this._outputPass = new OutputPass()
+        this._composer.addPass(this._outputPass)
         this._composer.setSize(size.x, size.y)
         return this._composer
     }
 
     /**
-     * 重新排列 pass 顺序：Render → Bloom → 色彩 → FXAA → Vignette
-     * 确保 RenderPass 始终第一，FXAA/Vignette 始终最后
+     * 重新排列 pass 顺序：Render → Bloom → 色彩 → FXAA → Vignette → Output
+     *
+     * RenderPass 始终第一，OutputPass 始终最后（负责 sRGB 转换 + 色调映射）。
+     * 参考：https://threejs.org/manual/#zh/how-to-use-post-processing
      */
     _reorderPasses() {
         if (!this._composer) return
@@ -760,18 +871,22 @@ class RenderEngine {
         const passes = composer.passes
         const renderPass = passes[0]
         composer.passes = [renderPass]
-        // 按固定顺序重新添加
+        // 按固定顺序重新添加用户 pass
         const order = ['bloom', 'brightnessContrast', 'hueSaturation', 'fxaa', 'vignette']
         for (const name of order) {
             if (this._passes[name]) {
                 composer.passes.push(this._passes[name])
             }
         }
-        // 最后一个 pass renderToScreen = true
-        if (composer.passes.length > 1) {
-            for (let i = 0; i < composer.passes.length - 1; i++) {
-                composer.passes[i].renderToScreen = false
-            }
+        // OutputPass 始终最后
+        if (this._outputPass) {
+            composer.passes.push(this._outputPass)
+        }
+        // 只有最后一个 pass renderToScreen = true
+        for (let i = 0; i < composer.passes.length - 1; i++) {
+            composer.passes[i].renderToScreen = false
+        }
+        if (composer.passes.length > 0) {
             composer.passes[composer.passes.length - 1].renderToScreen = true
         }
     }
@@ -911,12 +1026,14 @@ class RenderEngine {
     }
 
     /**
-     * 如果没有任何效果 pass，销毁合成器回到直接渲染
+     * 如果没有任何用户效果 pass，销毁合成器回到直接渲染
+     * （OutputPass 不算用户 pass；无效果时 renderer.render() 自身已做 sRGB 转换）
      */
     _checkComposerEmpty() {
         if (this._composer && Object.keys(this._passes).length === 0) {
             this._composer.dispose?.()
             this._composer = null
+            this._outputPass = null
         }
     }
 
@@ -932,6 +1049,7 @@ class RenderEngine {
             this._composer.dispose?.()
             this._composer = null
         }
+        this._outputPass = null
         this.setDirty3D()
     }
 
@@ -1091,17 +1209,29 @@ class RenderEngine {
         this.sceneManager.clear()
 
         // 释放控制器
-        this.controls?.dispose()
-        this.controls = null
+        // this.controls?.dispose()
+        // this.controls = null
 
         // 释放后处理合成器
         this.disablePostProcessing()
 
-        // 释放场景中的 material/geometry，然后清空场景
+        // 释放场景中的 material/geometry/texture，然后清空场景
+        // 参考：https://threejs.org/manual/#zh/how-to-dispose-of-objects
         if (this.scene) {
             this.scene.traverse(child => {
-                if (child.material) child.material.dispose()
                 if (child.geometry) child.geometry.dispose()
+                if (child.material) {
+                    const mats = Array.isArray(child.material)
+                        ? child.material
+                        : [child.material]
+                    mats.forEach(m => {
+                        // 释放材质引用的所有纹理（map/normalMap/roughnessMap 等）
+                        for (const k in m) {
+                            if (m[k] && m[k].isTexture) m[k].dispose()
+                        }
+                        m.dispose()
+                    })
+                }
             })
             this.scene.clear()
             this.scene = null
@@ -1182,6 +1312,26 @@ class RenderEngine {
     //  8. 调试信息
     // ============================================================
 
+    /**
+     * 打印渲染器内存信息（用于检测内存泄漏）
+     * 参考：https://threejs.org/manual/#zh/how-to-dispose-of-objects
+     */
+    logMemoryInfo() {
+        if (!this.renderer) {
+            console.log('RTW: renderer 未初始化')
+            return
+        }
+        const info = this.renderer.info
+        console.log(
+            '%c RTW Memory Info %c geometries: %d, textures: %d, programs: %d',
+            `padding: 2px 1px; border-radius: 3px 0 0 3px; color: #fff; background: ${color}; font-weight: bold;`,
+            'color: #aaa;',
+            info.memory.geometries,
+            info.memory.textures,
+            info.programs?.length || 0
+        )
+    }
+
     _logDebugInfo() {
         console.log(
             `%c    RenderTheWorld%c by xiaochen004hao\n      https://github.com/RenderTheWorld/RenderTheWorld\n      Version: ${this.ext.$version}`,
@@ -1204,7 +1354,8 @@ class RenderEngine {
                     Extension: this.ext,
                     VM: this.ext.vm,
                     ScratchBlocks: this.ext.ScratchBlocks,
-                    scratchInstance: this.ext.Scratch
+                    scratchInstance: this.ext.Scratch,
+                    logMemoryInfo: () => this.logMemoryInfo()
                 },
                 true
             )

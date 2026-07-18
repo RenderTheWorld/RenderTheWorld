@@ -1,10 +1,13 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable func-names */
 /* eslint-disable max-classes-per-file */
-import { patch } from './injector.js'
 
-// three 通过 renderengine.js 动态加载后挂到 window.THREE
-const getTHREE = () => window.THREE
+// getTHREE 用于获取 THREE 库
+let getTHREE = () => null;
+// setTHREE 用于在 renderengine.js 中设置 THREE
+const setTHREE = (three) => {
+    getTHREE = () => three
+}
 
 function addRTWStyle(newStyle) {
     let _RTWStyle = !window.RTWStyle
@@ -36,8 +39,9 @@ addRTWStyle(`
 }
 .RTW-visualReport-property {
     display: flex;
+    align-items: center;
 }
-.RTW-visualReport-property》label {
+.RTW-visualReport-property>label {
     min-width: 50px;
 }
 .RTW-visualReport-head>*, .RTW-visualReport-property>*, .RTW-visualReport-childrenViewButton>span {
@@ -61,9 +65,30 @@ addRTWStyle(`
     text-align: left;
     width: 100%;
 }
-
 .RTW-visualReport-childrenViewButton {
     display: flex;
+}
+.RTW-visualReport-colorSwatch {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(255,255,255,0.3);
+    margin-right: 6px;
+    vertical-align: middle;
+}
+.RTW-visualReport-section {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    width: 100%;
+}
+.RTW-visualReport-sectionTitle {
+    color: #888;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
 }
 .blocklyDropDownContent:has(.RTW-visualReport-body) {
     max-width: 100%;
@@ -128,6 +153,34 @@ class _RTWVisualReport {
         _color.style.opacity = opacity
         return _color
     }
+    /** 颜色色块 + hex 文本 */
+    ColorSwatch(hex) {
+        const wrapper = document.createElement('span')
+        wrapper.style.display = 'inline-flex'
+        wrapper.style.alignItems = 'center'
+        const swatch = document.createElement('span')
+        swatch.classList.add('RTW-visualReport-colorSwatch')
+        swatch.style.background = `#${hex}`
+        wrapper.appendChild(swatch)
+        const text = document.createElement('span')
+        text.textContent = `#${hex}`
+        wrapper.appendChild(text)
+        return wrapper
+    }
+    /** 分节标题 */
+    Section(title) {
+        const section = document.createElement('div')
+        section.classList.add('RTW-visualReport-section')
+        const sectionTitle = document.createElement('div')
+        sectionTitle.classList.add('RTW-visualReport-sectionTitle')
+        sectionTitle.textContent = title
+        section.appendChild(sectionTitle)
+        return section
+    }
+    /** 格式化向量为字符串 */
+    Vec3(v, digits = 2) {
+        return `${v.x.toFixed(digits)}, ${v.y.toFixed(digits)}, ${v.z.toFixed(digits)}`
+    }
     childrenView(models) {
         const _childrenView = document.createElement('div')
         _childrenView.classList.add('RTW-visualReport-childrenView')
@@ -179,19 +232,46 @@ class RTW_Model_Box {
     }
 
     toString() {
+        const m = this.model
+        const THREE = getTHREE()
         let text = ''
         if (this.isobj) {
-            text = `objfile: "${this.model.objfile}" mtlfile: "${this.model.mtlfile}`
+            text = `OBJ: "${m.objfile}"`
         } else if (this.isgltf) {
-            text = `gltffile: "${this.model.gltffile}"`
+            text = `GLTF: "${m.gltffile}"`
+            if (m.animations?.length) text += ` (${m.animations.length} 动画)`
         } else if (this.ismaterial) {
-            text = `material: "${this.model['type'] ?? String(this.model)}"`
+            text = `材质: ${m['type'] ?? 'Unknown'}`
+            if (m.color) text += ` #${m.color.getHexString()}`
+        } else if (m && m.isOrbitControls) {
+            text = '轨道控制器'
+        } else if (THREE && m?.isLight) {
+            text = `光源: ${m.type}`
+        } else if (THREE && m?.isCamera) {
+            text = `相机: ${m.type}`
+        } else if (THREE && m?.isTexture) {
+            text = `纹理: ${m.image?.width ?? '?'}x${m.image?.height ?? '?'}`
+        } else if (THREE && m instanceof THREE.Quaternion) {
+            text = `四元数 (${m.x.toFixed(2)}, ${m.y.toFixed(2)}, ${m.z.toFixed(2)}, ${m.w.toFixed(2)})`
+        } else if (THREE && m instanceof THREE.Euler) {
+            const deg = THREE.MathUtils.radToDeg
+            text = `欧拉角 (${deg(m.x).toFixed(1)}°, ${deg(m.y).toFixed(1)}°, ${deg(m.z).toFixed(1)}°)`
+        } else if (THREE && m instanceof THREE.Vector3) {
+            text = `向量 (${m.x.toFixed(2)}, ${m.y.toFixed(2)}, ${m.z.toFixed(2)})`
+        } else if (THREE && m instanceof THREE.Vector2) {
+            text = `向量 (${m.x.toFixed(2)}, ${m.y.toFixed(2)})`
+        } else if (THREE && m instanceof THREE.Color) {
+            text = `颜色 #${m.getHexString()}`
+        } else if (THREE && m instanceof THREE.Matrix4) {
+            text = '4x4 矩阵'
+        } else if (THREE && m instanceof THREE.Matrix3) {
+            text = '3x3 矩阵'
+        } else if (THREE && m?.isObject3D) {
+            text = `${m.type}`
+            if (m.name) text += ` "${m.name}"`
+            if (m.children?.length > 0) text += ` [${m.children.length} 子]`
         } else {
-            text = `${this.model['type'] ?? String(this.model)}`
-        }
-        const THREE = getTHREE()
-        if (THREE && this.model instanceof THREE.Group) {
-            text += ` ${JSON.stringify(this.model.children.map(x => x.type))}`
+            text = `${m?.['type'] ?? String(m)}`
         }
         return text
     }
@@ -199,125 +279,373 @@ class RTW_Model_Box {
     getHTML(isInMonitor = false) {
         const m = this.model
         const THREE = getTHREE()
+        const R = RTWVisualReport
         const parts = []
 
+        // ============== 文件类（OBJ/GLTF） ==============
         if (this.isobj) {
             parts.push(
-                RTWVisualReport.Property('OBJ文件:', m.objfile),
-                RTWVisualReport.Property('MTL文件:', m.mtlfile)
+                R.Property('OBJ文件:', m.objfile),
+                R.Property('MTL文件:', m.mtlfile)
             )
         } else if (this.isgltf) {
-            parts.push(RTWVisualReport.Property('GLTF文件:', m.gltffile))
+            parts.push(R.Property('GLTF文件:', m.gltffile))
+            if (m.animations?.length) {
+                parts.push(R.Property('动画数:', String(m.animations.length)))
+            }
         } else if (this.ismaterial) {
+            // ============== 材质 ==============
+            parts.push(R.Property('类型:', m['type'] ?? ''))
+            if (m.color) {
+                parts.push(R.Property('颜色:', R.ColorSwatch(m.color.getHexString())))
+            }
             parts.push(
-                RTWVisualReport.Property('类型:', m['type'] ?? ''),
-                RTWVisualReport.Property('透明:', String(m.transparent ?? false)),
-                RTWVisualReport.Property('可见:', String(m.visible ?? true))
+                R.Property('透明:', String(m.transparent ?? false)),
+                R.Property('不透明度:', (m.opacity ?? 1).toFixed(2)),
+                R.Property('可见:', String(m.visible ?? true)),
+                R.Property('单面:', String(m.side === 0)) // 0=FrontSide
             )
-            if (m.color) parts.push(RTWVisualReport.Property('颜色:', `#${m.color.getHexString()}`))
-            if (m.map) parts.push(RTWVisualReport.Property('贴图:', '已设置'))
+            // PBR 材质属性
+            if (m.metalness !== undefined) {
+                parts.push(R.Property('金属度:', m.metalness.toFixed(2)))
+            }
+            if (m.roughness !== undefined) {
+                parts.push(R.Property('粗糙度:', m.roughness.toFixed(2)))
+            }
+            if (m.emissive) {
+                parts.push(R.Property('发光色:', R.ColorSwatch(m.emissive.getHexString())))
+                if (m.emissiveIntensity !== undefined && m.emissiveIntensity !== 1) {
+                    parts.push(R.Property('发光强度:', m.emissiveIntensity.toFixed(2)))
+                }
+            }
+            // 贴图通道列表
+            const texChannels = []
+            for (const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'aoMap', 'displacementMap', 'alphaMap']) {
+                if (m[k]) texChannels.push(k)
+            }
+            if (texChannels.length > 0) {
+                parts.push(R.Property('贴图通道:', texChannels.join(', ')))
+            }
+            if (m.fog !== undefined) {
+                parts.push(R.Property('受雾影响:', String(m.fog)))
+            }
         } else if (m && m.isOrbitControls) {
+            // ============== OrbitControls ==============
             parts.push(
-                RTWVisualReport.Property('轨道控制器:', ''),
-                RTWVisualReport.Property('启用:', String(m.enabled))
+                R.Property('类型:', '轨道控制器'),
+                R.Property('启用:', String(m.enabled)),
+                R.Property('阻尼:', String(m.enableDamping)),
+                R.Property('平移:', String(m.enablePan)),
+                R.Property('缩放:', String(m.enableZoom)),
+                R.Property('旋转:', String(m.enableRotate))
             )
+            if (m.target) {
+                parts.push(R.Property('目标:', R.Vec3(m.target)))
+            }
+            if (m.minDistance !== -Infinity && m.minDistance !== 0) {
+                parts.push(R.Property('最小距离:', m.minDistance.toFixed(2)))
+            }
+            if (m.maxDistance !== Infinity) {
+                parts.push(R.Property('最大距离:', m.maxDistance.toFixed(2)))
+            }
         } else if (THREE && m?.isLight) {
+            // ============== 光源 ==============
+            parts.push(R.Property('类型:', m.type))
+            if (m.color) {
+                parts.push(R.Property('颜色:', R.ColorSwatch(m.color.getHexString())))
+            }
             parts.push(
-                RTWVisualReport.Property('光源类型:', m.type),
-                RTWVisualReport.Property('颜色:', `#${m.color.getHexString()}`),
-                RTWVisualReport.Property('强度:', String(m.intensity)),
-                RTWVisualReport.Property('投射阴影:', String(m.castShadow ?? false))
+                R.Property('强度:', m.intensity.toFixed(2)),
+                R.Property('投射阴影:', String(m.castShadow ?? false))
             )
-            if (m.position)
+            if (m.position) {
+                parts.push(R.Property('位置:', R.Vec3(m.position)))
+            }
+            // SpotLight 特有
+            if (m.isSpotLight) {
+                const deg = THREE.MathUtils.radToDeg
                 parts.push(
-                    RTWVisualReport.Property(
-                        '位置:',
-                        `${m.position.x.toFixed(2)}, ${m.position.y.toFixed(2)}, ${m.position.z.toFixed(2)}`
-                    )
+                    R.Property('角度:', `${deg(m.angle).toFixed(1)}°`),
+                    R.Property('半影:', m.penumbra.toFixed(2)),
+                    R.Property('衰减:', m.decay.toFixed(2))
                 )
+                if (m.target) {
+                    parts.push(R.Property('目标:', R.Vec3(m.target.position)))
+                }
+            }
+            // RectAreaLight 特有
+            if (m.isRectAreaLight) {
+                parts.push(
+                    R.Property('宽度:', m.width.toFixed(2)),
+                    R.Property('高度:', m.height.toFixed(2))
+                )
+            }
+            // HemisphereLight 特有
+            if (m.isHemisphereLight) {
+                if (m.color) {
+                    parts.push(R.Property('天空色:', R.ColorSwatch(m.color.getHexString())))
+                }
+                if (m.groundColor) {
+                    parts.push(R.Property('地面色:', R.ColorSwatch(m.groundColor.getHexString())))
+                }
+            }
+            // DirectionalLight target
+            if (m.isDirectionalLight && m.target) {
+                parts.push(R.Property('目标:', R.Vec3(m.target.position)))
+            }
         } else if (THREE && m?.isCamera) {
+            // ============== 相机 ==============
             parts.push(
-                RTWVisualReport.Property('相机类型:', m.type),
-                RTWVisualReport.Property(
-                    '位置:',
-                    `${m.position.x.toFixed(2)}, ${m.position.y.toFixed(2)}, ${m.position.z.toFixed(2)}`
-                )
+                R.Property('类型:', m.type),
+                R.Property('位置:', R.Vec3(m.position))
             )
+            if (m.rotation) {
+                const deg = THREE.MathUtils.radToDeg
+                parts.push(R.Property(
+                    '旋转:',
+                    `${deg(m.rotation.x).toFixed(1)}°, ${deg(m.rotation.y).toFixed(1)}°, ${deg(m.rotation.z).toFixed(1)}°`
+                ))
+            }
             if (m.isPerspectiveCamera) {
                 parts.push(
-                    RTWVisualReport.Property('视野:', `${m.fov.toFixed(1)}°`),
-                    RTWVisualReport.Property('近裁面:', String(m.near)),
-                    RTWVisualReport.Property('远裁面:', String(m.far))
+                    R.Property('视野:', `${m.fov.toFixed(1)}°`),
+                    R.Property('近裁面:', String(m.near)),
+                    R.Property('远裁面:', String(m.far))
                 )
             } else if (m.isOrthographicCamera) {
                 parts.push(
-                    RTWVisualReport.Property('左:', String(m.left)),
-                    RTWVisualReport.Property('右:', String(m.right)),
-                    RTWVisualReport.Property('上:', String(m.top)),
-                    RTWVisualReport.Property('下:', String(m.bottom))
+                    R.Property('左:', String(m.left)),
+                    R.Property('右:', String(m.right)),
+                    R.Property('上:', String(m.top)),
+                    R.Property('下:', String(m.bottom)),
+                    R.Property('缩放:', m.zoom.toFixed(2))
                 )
             }
         } else if (THREE && m?.isTexture) {
+            // ============== 纹理 ==============
             parts.push(
-                RTWVisualReport.Property('纹理:', m.type),
-                RTWVisualReport.Property('宽:', String(m.image?.width ?? '?')),
-                RTWVisualReport.Property('高:', String(m.image?.height ?? '?')),
-                RTWVisualReport.Property(
+                R.Property('类型:', m.type ?? 'Texture'),
+                R.Property('宽:', String(m.image?.width ?? '?')),
+                R.Property('高:', String(m.image?.height ?? '?')),
+                R.Property(
                     '重复:',
                     `${m.repeat.x.toFixed(2)}, ${m.repeat.y.toFixed(2)}`
                 ),
-                RTWVisualReport.Property(
+                R.Property(
                     '偏移:',
                     `${m.offset.x.toFixed(2)}, ${m.offset.y.toFixed(2)}`
-                )
+                ),
+                R.Property('旋转:', `${THREE.MathUtils.radToDeg(m.rotation).toFixed(1)}°`)
             )
-        } else if (THREE && m instanceof THREE.Quaternion) {
+            if (m.colorSpace !== undefined) {
+                const csName = m.colorSpace === THREE.SRGBColorSpace ? 'sRGB'
+                    : m.colorSpace === THREE.LinearSRGBColorSpace ? 'Linear-sRGB'
+                    : m.colorSpace === THREE.NoColorSpace ? 'None' : String(m.colorSpace)
+                parts.push(R.Property('色彩空间:', csName))
+            }
+            const wrapMap = { 1000: 'ClampEdge', 1001: 'Repeat', 1002: 'MirroredRepeat' }
             parts.push(
-                RTWVisualReport.Property('四元数:', ''),
-                RTWVisualReport.Property('x:', m.x.toFixed(4)),
-                RTWVisualReport.Property('y:', m.y.toFixed(4)),
-                RTWVisualReport.Property('z:', m.z.toFixed(4)),
-                RTWVisualReport.Property('w:', m.w.toFixed(4))
+                R.Property('横向包裹:', wrapMap[m.wrapS] ?? String(m.wrapS)),
+                R.Property('纵向包裹:', wrapMap[m.wrapT] ?? String(m.wrapT)),
+                R.Property('最小过滤:', String(m.minFilter)),
+                R.Property('放大过滤:', String(m.magFilter))
+            )
+            if (m.mapping !== undefined) {
+                parts.push(R.Property('映射:', String(m.mapping)))
+            }
+        } else if (THREE && m instanceof THREE.Quaternion) {
+            // ============== 四元数 ==============
+            parts.push(
+                R.Property('x:', m.x.toFixed(4)),
+                R.Property('y:', m.y.toFixed(4)),
+                R.Property('z:', m.z.toFixed(4)),
+                R.Property('w:', m.w.toFixed(4)),
+                R.Property('模长:', Math.sqrt(m.x*m.x + m.y*m.y + m.z*m.z + m.w*m.w).toFixed(4))
+            )
+            // 显示对应欧拉角（方便开发者理解）
+            const euler = new THREE.Euler().setFromQuaternion(m)
+            const deg = THREE.MathUtils.radToDeg
+            parts.push(R.Section('对应欧拉角'))
+            parts.push(
+                R.Property('x:', `${deg(euler.x).toFixed(2)}°`),
+                R.Property('y:', `${deg(euler.y).toFixed(2)}°`),
+                R.Property('z:', `${deg(euler.z).toFixed(2)}°`),
+                R.Property('顺序:', euler.order)
             )
         } else if (THREE && m instanceof THREE.Euler) {
+            // ============== 欧拉角 ==============
             const deg = THREE.MathUtils.radToDeg
             parts.push(
-                RTWVisualReport.Property('欧拉角:', ''),
-                RTWVisualReport.Property('x:', `${deg(m.x).toFixed(2)}°`),
-                RTWVisualReport.Property('y:', `${deg(m.y).toFixed(2)}°`),
-                RTWVisualReport.Property('z:', `${deg(m.z).toFixed(2)}°`),
-                RTWVisualReport.Property('顺序:', m.order)
+                R.Property('x:', `${deg(m.x).toFixed(2)}°`),
+                R.Property('y:', `${deg(m.y).toFixed(2)}°`),
+                R.Property('z:', `${deg(m.z).toFixed(2)}°`),
+                R.Property('顺序:', m.order)
+            )
+            // 显示对应四元数
+            const quat = new THREE.Quaternion().setFromEuler(m)
+            parts.push(R.Section('对应四元数'))
+            parts.push(
+                R.Property('x:', quat.x.toFixed(4)),
+                R.Property('y:', quat.y.toFixed(4)),
+                R.Property('z:', quat.z.toFixed(4)),
+                R.Property('w:', quat.w.toFixed(4))
             )
         } else if (THREE && m instanceof THREE.Vector3) {
+            // ============== 向量 ==============
             parts.push(
-                RTWVisualReport.Property('向量:', ''),
-                RTWVisualReport.Property('x:', m.x.toFixed(4)),
-                RTWVisualReport.Property('y:', m.y.toFixed(4)),
-                RTWVisualReport.Property('z:', m.z.toFixed(4)),
-                RTWVisualReport.Property('长度:', m.length().toFixed(4))
+                R.Property('x:', m.x.toFixed(4)),
+                R.Property('y:', m.y.toFixed(4)),
+                R.Property('z:', m.z.toFixed(4)),
+                R.Property('长度:', m.length().toFixed(4))
             )
-        } else {
+            if (m.length() > 0) {
+                const n = m.clone().normalize()
+                parts.push(R.Section('归一化'))
+                parts.push(R.Property('x:', n.x.toFixed(4)))
+                parts.push(R.Property('y:', n.y.toFixed(4)))
+                parts.push(R.Property('z:', n.z.toFixed(4)))
+            }
+        } else if (THREE && m instanceof THREE.Vector2) {
             parts.push(
-                RTWVisualReport.Property('对象详情', ''),
-                RTWVisualReport.Property('类型:', m?.['type'] ?? String(m)),
-                RTWVisualReport.Property(
-                    '位置:',
-                    m?.position
-                        ? `${m.position.x.toFixed(2)}, ${m.position.y.toFixed(2)}, ${m.position.z.toFixed(2)}`
-                        : 'N/A'
-                )
+                R.Property('x:', m.x.toFixed(4)),
+                R.Property('y:', m.y.toFixed(4)),
+                R.Property('长度:', m.length().toFixed(4))
             )
-            if (m?.children?.length > 0) {
+        } else if (THREE && m instanceof THREE.Color) {
+            parts.push(
+                R.Property('十六进制:', R.ColorSwatch(m.getHexString())),
+                R.Property('r:', m.r.toFixed(4)),
+                R.Property('g:', m.g.toFixed(4)),
+                R.Property('b:', m.b.toFixed(4))
+            )
+            const hsl = { h: 0, s: 0, l: 0 }
+            m.getHSL(hsl)
+            parts.push(R.Section('HSL'))
+            parts.push(
+                R.Property('色相:', `${(hsl.h * 360).toFixed(1)}°`),
+                R.Property('饱和度:', `${(hsl.s * 100).toFixed(1)}%`),
+                R.Property('亮度:', `${(hsl.l * 100).toFixed(1)}%`)
+            )
+        } else if (THREE && m instanceof THREE.Matrix4) {
+            // ============== 4x4 矩阵 ==============
+            const e = m.elements
+            const fmt = v => v.toFixed(3).padStart(8, ' ')
+            parts.push(R.Property('矩阵:', ''))
+            for (let r = 0; r < 4; r++) {
+                parts.push(R.Property(
+                    '',
+                    `${fmt(e[r*4])} ${fmt(e[r*4+1])} ${fmt(e[r*4+2])} ${fmt(e[r*4+3])}`
+                ))
+            }
+            // 分解为TRS
+            const pos = new THREE.Vector3()
+            const quat = new THREE.Quaternion()
+            const scale = new THREE.Vector3()
+            m.decompose(pos, quat, scale)
+            parts.push(R.Section('分解 TRS'))
+            parts.push(
+                R.Property('平移:', R.Vec3(pos)),
+                R.Property('旋转:', `${quat.x.toFixed(3)}, ${quat.y.toFixed(3)}, ${quat.z.toFixed(3)}, ${quat.w.toFixed(3)}`),
+                R.Property('缩放:', R.Vec3(scale))
+            )
+        } else if (THREE && m instanceof THREE.Matrix3) {
+            const e = m.elements
+            const fmt = v => v.toFixed(3).padStart(8, ' ')
+            parts.push(R.Property('3x3矩阵:', ''))
+            for (let r = 0; r < 3; r++) {
+                parts.push(R.Property(
+                    '',
+                    `${fmt(e[r*3])} ${fmt(e[r*3+1])} ${fmt(e[r*3+2])}`
+                ))
+            }
+        } else if (THREE && m?.isObject3D) {
+            // ============== Object3D（最常用） ==============
+            parts.push(
+                R.Property('类型:', m.type),
+                R.Property('名称:', m.name || '(未命名)'),
+                R.Property('可见:', String(m.visible)),
+                R.Property('位置:', R.Vec3(m.position))
+            )
+            if (m.rotation) {
+                const deg = THREE.MathUtils.radToDeg
+                parts.push(R.Property(
+                    '旋转:',
+                    `${deg(m.rotation.x).toFixed(1)}°, ${deg(m.rotation.y).toFixed(1)}°, ${deg(m.rotation.z).toFixed(1)}°`
+                ))
+            }
+            if (m.scale) {
+                parts.push(R.Property(
+                    '缩放:',
+                    `${m.scale.x.toFixed(2)}, ${m.scale.y.toFixed(2)}, ${m.scale.z.toFixed(2)}`
+                ))
+            }
+            if (m.castShadow || m.receiveShadow) {
                 parts.push(
-                    RTWVisualReport.Property(
-                        '子物体:',
-                        RTWVisualReport.childrenView(m.children)
-                    )
+                    R.Property('投射阴影:', String(m.castShadow)),
+                    R.Property('接收阴影:', String(m.receiveShadow))
                 )
             }
+            if (m.userData && Object.keys(m.userData).length > 0) {
+                parts.push(R.Property('自定义数据:', JSON.stringify(m.userData)))
+            }
+            // 几何体信息
+            if (m.geometry) {
+                const g = m.geometry
+                parts.push(R.Section('几何体'))
+                parts.push(
+                    R.Property('类型:', g.type || 'BufferGeometry'),
+                    R.Property('顶点数:', String(g.attributes?.position?.count ?? '?'))
+                )
+                if (g.index) {
+                    parts.push(R.Property('索引数:', String(g.index.count)))
+                }
+                if (g.attributes?.normal) {
+                    parts.push(R.Property('法线:', '有'))
+                }
+                if (g.attributes?.uv) {
+                    parts.push(R.Property('UV:', '有'))
+                }
+                if (g.boundingBox) {
+                    const s = new THREE.Vector3()
+                    g.boundingBox.getSize(s)
+                    parts.push(R.Property('尺寸:', R.Vec3(s)))
+                }
+            }
+            // 材质信息
+            if (m.material) {
+                const mats = Array.isArray(m.material) ? m.material : [m.material]
+                parts.push(R.Section('材质'))
+                parts.push(R.Property('数量:', String(mats.length)))
+                mats.forEach((mat, i) => {
+                    const label = mats.length > 1 ? `[${i}] ` : ''
+                    parts.push(R.Property(
+                        `${label}类型:`,
+                        mat.type || 'Material'
+                    ))
+                    if (mat.color) {
+                        parts.push(R.Property(`${label}颜色:`, R.ColorSwatch(mat.color.getHexString())))
+                    }
+                })
+            }
+            // 子物体
+            if (m.children?.length > 0) {
+                parts.push(R.Section(`子物体 (${m.children.length})`))
+                parts.push(R.Property('子物体:', R.childrenView(m.children)))
+            }
+        } else {
+            // ============== 兜底 ==============
+            parts.push(
+                R.Property('类型:', m?.['type'] ?? String(m))
+            )
+            if (m?.position) {
+                parts.push(R.Property('位置:', R.Vec3(m.position)))
+            }
+            if (m?.children?.length > 0) {
+                parts.push(R.Property('子物体:', R.childrenView(m.children)))
+            }
         }
-        return RTWVisualReport.Body(
-            RTWVisualReport.Title(this.toString()),
+        return R.Body(
+            R.Title(this.toString()),
             parts,
             isInMonitor
         )
@@ -377,6 +705,6 @@ export {
     addRTWStyle,
     RTW_Model_Box,
     Wrapper,
-    patch,
-    RTWVisualReport as RTWDialog
+    RTWVisualReport as RTWDialog,
+    setTHREE
 }

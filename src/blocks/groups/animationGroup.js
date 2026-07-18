@@ -149,22 +149,22 @@ export default class AnimationGroup extends BlockGroup {
 
     l10n() {
         return {
-            'group.animation': { 'zh-cn': '动画', en: 'Animation' },
+            'group.animation': { 'zh-cn': '💫动画', en: '💫Animation' },
             playAnimation: {
-                'zh-cn': '启动模型: [name] 的动画 [animationName]',
-                en: 'play animation [animationName] of [name]'
+                'zh-cn': '启动对象 [name] 的动画 [animationName]',
+                en: 'play animation [animationName] of object [name]'
             },
             stopAnimation: {
-                'zh-cn': '结束模型: [name] 的动画 [animationName]',
-                en: 'stop animation [animationName] of [name]'
+                'zh-cn': '结束对象 [name] 的动画 [animationName]',
+                en: 'stop animation [animationName] of object [name]'
             },
             updateAnimation: {
-                'zh-cn': '推进模型: [name] 的动画 [time] 秒 并更新',
-                en: 'advance [name] animation by [time] s'
+                'zh-cn': '推进对象 [name] 的动画 [time] 秒 并更新',
+                en: 'advance object [name] animation by [time] s'
             },
             getAnimation: {
-                'zh-cn': '获取模型: [name] 的所有动画',
-                en: 'animations of [name]'
+                'zh-cn': '获取对象 [name] 的所有动画',
+                en: 'animations of object [name]'
             }
         }
     }

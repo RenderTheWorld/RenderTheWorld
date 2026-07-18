@@ -20,9 +20,10 @@ import { RTW_Model_Box, Wrapper } from '../../utils/RTWTools.js'
 import { getDynamicArgs } from '../../utils/extendableBlock.js'
 
 export default class ModelGroup extends BlockGroup {
+    static groupId = 'Objects'
     constructor(ctx) {
         super(ctx)
-        this.label = this.translate('group.model')
+        this.label = this.translate('group.objects')
     }
 
     build() {
@@ -41,7 +42,7 @@ export default class ModelGroup extends BlockGroup {
                 arguments: {
                     name: {
                         type: AT.CCW_HAT_PARAMETER,
-                        defaultValue: 'name'
+                        defaultValue: 'name',
                     }
                 }
             },
@@ -60,7 +61,7 @@ export default class ModelGroup extends BlockGroup {
                 blockType: BT.COMMAND,
                 text: t('destroyObject'),
                 arguments: {
-                    name: { type: AT.STRING, defaultValue: 'name1' }
+                    name: { type: AT.STRING, defaultValue: 'name' }
                 },
                 dynamicArgsInfo: {
                     defaultValues: i => `name${i + 2}`,
@@ -388,6 +389,7 @@ export default class ModelGroup extends BlockGroup {
             // 仅在会话仍有效时添加到场景
             if (engine.isSessionValid(sessionToken) && engine.scene) {
                 engine.scene.add(engine.objects[name])
+                engine.objects[name].name = name
             }
             engine.triggerObjectLoaded(name)
             engine.setDirty3D()
@@ -420,6 +422,7 @@ export default class ModelGroup extends BlockGroup {
                 if (!engine.isSessionValid(sessionToken)) return
                 engine.objects[name] = root
                 if (engine.scene) engine.scene.add(root)
+                root.name = name
                 engine.triggerObjectLoaded(name)
                 engine.setDirty3D()
             })
@@ -446,6 +449,7 @@ export default class ModelGroup extends BlockGroup {
             }
             engine.objects[name] = root
             if (engine.scene) engine.scene.add(root)
+            root.name = name
             engine.triggerObjectLoaded(name)
             engine.setDirty3D()
         })
@@ -453,22 +457,22 @@ export default class ModelGroup extends BlockGroup {
 
     l10n() {
         return {
-            'group.model': { 'zh-cn': '模型', en: 'Model' },
+            'group.objects': { 'zh-cn': '🧸物体', en: '🧸Objects' },
             objectLoadingCompleted: {
-                'zh-cn': '当 [name] 对象加载完成时',
-                en: 'when [name] object loaded'
+                'zh-cn': '当名为 [name] 的对象导入或重置完成时',
+                en: 'when object named [name] imported or reset'
             },
             importModel: {
-                'zh-cn': '导入或重置: 名称 [name] 对象 [model]',
-                en: 'reset or make: name [name] object [model]'
+                'zh-cn': '导入或重置名为 [name] 的对象 [model]',
+                en: 'import or reset object named [name] [model]'
             },
             destroyObject: {
-                'zh-cn': '销毁: [name]',
-                en: 'destroy object: [name]'
+                'zh-cn': '销毁对象 [name]',
+                en: 'destroy object [name]'
             },
             getObjectByName: {
-                'zh-cn': '名称为 [name] 的物体',
-                en: 'Get an object named [name]'
+                'zh-cn': '名为 [name] 的对象',
+                en: 'object named [name]'
             },
             cubeModel: {
                 'zh-cn': '<长方体> 长 [a] 宽 [b] 高 [h] 材质 [material]',
@@ -494,10 +498,10 @@ export default class ModelGroup extends BlockGroup {
             groupModel: { 'zh-cn': '<组> ', en: '<group> ' },
             shadowSettings: {
                 'zh-cn':
-                    '设置 [name] 的阴影设置: [YN] 投射阴影 [YN2] 被投射阴影',
-                en: 'set [name] shadow settings: [YN] cast shadows [YN2] shadow cast'
+                    '让对象 [name] [YN] 产生阴影, [YN2] 接收阴影',
+                en: 'let object [name] cast shadows [YN] receive shadows [YN2]'
             },
-            fileListEmpty: { 'zh-cn': '没有文件', en: 'file list is empty' }
+            fileListEmpty: { 'zh-cn': '没有文件', en: 'no file' },
         }
     }
 }

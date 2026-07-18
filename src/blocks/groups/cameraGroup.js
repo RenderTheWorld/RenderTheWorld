@@ -244,28 +244,28 @@ export default class CameraGroup extends BlockGroup {
             },
             perspectiveCamera: {
                 'zh-cn':
-                    '透视相机 视野 [fov] 宽高比 [aspect] 近裁面 [near] 远裁面 [far]',
-                en: 'perspective camera fov [fov] aspect [aspect] near [near] far [far]'
+                    '<透视相机> 视野 [fov] 宽高比 [aspect] 近裁面 [near] 远裁面 [far]',
+                en: '<perspective camera> fov [fov] aspect [aspect] near [near] far [far]'
             },
             orthographicCamera: {
                 'zh-cn':
-                    '正交相机 左 [left] 右 [right] 上 [top] 下 [bottom] 近裁面 [near] 远裁面 [far]',
-                en: 'orthographic camera l [left] r [right] t [top] b [bottom] near [near] far [far]'
+                    '<正交相机> 左 [left] 右 [right] 上 [top] 下 [bottom] 近裁面 [near] 远裁面 [far]',
+                en: '<orthographic camera> l [left] r [right] t [top] b [bottom] near [near] far [far]'
             },
             setCameraFov: {
-                'zh-cn': '设置透视相机视野 [fov]°',
-                en: 'set camera fov [fov]°'
+                'zh-cn': '将透视相机视野设为 [fov]°',
+                en: 'set camera fov to [fov]°'
             },
             moveCamera: {
-                'zh-cn': '移动相机到 x [x] y [y] z [z]',
+                'zh-cn': '让相机移到 x [x] y [y] z [z]',
                 en: 'move camera to x [x] y [y] z [z]'
             },
             rotationCamera: {
-                'zh-cn': '旋转相机 x [x] y [y] z [z]',
-                en: 'rotate camera x [x] y [y] z [z]'
+                'zh-cn': '让相机转到 x [x] y [y] z [z]',
+                en: 'rotate camera to x [x] y [y] z [z]'
             },
             cameraLookAt: {
-                'zh-cn': '相机看向 x [x] y [y] z [z]',
+                'zh-cn': '让相机看向 x [x] y [y] z [z]',
                 en: 'camera look at x [x] y [y] z [z]'
             },
             getCameraPos: {

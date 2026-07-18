@@ -23,6 +23,49 @@
  */
 
 /**
+ * @typedef {Object} BlockType
+ * @property {string} COMMAND
+ * @property {string} REPORTER
+ * @property {string} BOOLEAN
+ * @property {string} HAT
+ * @property {string} BUTTON
+ * @property {string} LABEL
+ * @property {string} [CONDITIONAL]
+ * @property {string} [LOOP]
+ * @property {string} [EVENT]
+ * @property {string} [OUTPUT]
+ * @property {string} [XML]
+ */
+
+/**
+ * @typedef {Object} ArgumentType
+ * @property {string} ANGLE
+ * @property {string} COLOR
+ * @property {string} NUMBER
+ * @property {string} STRING
+ * @property {string} BOOLEAN
+ * @property {string} [MATRIX]
+ * @property {string} [NOTE]
+ * @property {string} [IMAGE]
+ * @property {string} [CCW_HAT_PARAMETER]
+ */
+
+/**
+ * @typedef {Object} BlockArgument
+ * @property {string|null} [type]
+ * @property {any} [defaultValue]
+ * @property {string} [menu]
+ */
+
+/**
+ * @typedef {Object} DynamicArgsInfo
+ * @property {(index: number) => string} defaultValues
+ * @property {string} afterArg
+ * @property {string} joinCh
+ * @property {string[]} dynamicArgTypes
+ */
+
+/**
  * @typedef {Object} BlockDef
  * @property {string} [opcode] - 积木唯一标识（LABEL/BUTTON/XML 可省略）
  * @property {string} blockType - BlockType 枚举值
@@ -32,32 +75,69 @@
  * @property {boolean} [disableInternalArgument] - 是否禁用内部参数
  * @property {boolean} [disableMonitor] - 是否禁用监视器
  * @property {boolean} [isTerminal] - 是否为终端块
- * @property {Function} [handler] - 积木执行函数 (args, util) => any
- * @property {Function} [onClick] - 按钮积木的点击回调
- * @property {Record<string, {type: string, defaultValue?: any, menu?: string}>} [arguments] - 参数定义
- * @property {Object} [dynamicArgsInfo] - 可扩展积木配置
+ * @property {(args: {[key: string]: any}, util?: any) => any} [handler] - 积木执行函数
+ * @property {((args?: {[key: string]: any}) => any) | string} [onClick] - 按钮积木的点击回调
+ * @property {string} [func] - BUTTON 块绑定的实例方法名
+ * @property {{[key: string]: BlockArgument | undefined}} [arguments] - 参数定义
+ * @property {DynamicArgsInfo} [dynamicArgsInfo] - 可扩展积木配置
  * @property {string} [output] - OUTPUT 块的输出类型
  * @property {number} [outputShape] - OUTPUT 块的形状（3=圆形）
  * @property {number} [branchCount] - OUTPUT 块的分支数
  * @property {string} [xml] - XML 块的 XML 字符串
  * @property {boolean} [isEdgeActivated] - EVENT 块是否边沿触发
  * @property {boolean} [shouldRestartExistingThreads] - EVENT 块是否重启现有线程
+ * @property {string} [groupId] - 子 LABEL 块的分组 ID
+ * @property {string} [filter] - 类型过滤
+ */
+
+/**
+ * @typedef {Object} ExtLike
+ * @property {import('scratch-vm').Runtime} runtime
+ * @property {import('scratch-vm')} vm
+ * @property {{toNumber: (v: any) => number, toString: (v: any) => string, toBoolean: (v: any) => boolean}} cast
+ * @property {any} renderEngine
+ * @property {{[key: string]: any}} [threadInfo]
+ * @property {import('../core/extcore.js').default} [core]
+ * @property {{warn: (...args: any[]) => void}} [logger]
+ * @property {any} [patcher]
+ * @property {any} [ScratchBlocks]
  */
 
 class BlockGroup {
     /**
+     * 子类可覆盖的分组 ID
+     * @type {string | undefined}
+     */
+    static groupId
+
+    /**
+     * 从类名自动推断的分组 ID（ getter，子类无需覆盖）
+     * @returns {string}
+     */
+    static get inferredGroupId() {
+        const name = this.name
+        if (!name || typeof name !== 'string') return ''
+        return name.replace(/Group$/, '')
+    }
+
+    /**
      * @param {Object} ctx - 分组上下文
-     * @param {import('../core/main.js').default} ctx.ext - Extension 主对象
-     * @param {Object} ctx.BlockType - BlockType 枚举
+     * @param {ExtLike} ctx.ext - Extension 主对象
+     * @param {BlockType} ctx.BlockType - BlockType 枚举
      * @param {(key: string) => string} ctx.translate - 翻译函数（已绑定语言）
      * @param {import('../core/extcore.js').default} ctx.core - ExtensionCore
-     * @param {Object} ctx.ArgumentType - ArgumentType 枚举
+     * @param {ArgumentType} ctx.ArgumentType - ArgumentType 枚举
      */
     constructor(ctx) {
+        /** @type {ExtLike} */
         this.ext = ctx.ext
+        /** @type {import('../core/extcore.js').default} */
         this.core = ctx.core
+        /** @type {BlockType} */
         this.BlockType = ctx.BlockType
+        /** @type {ArgumentType} */
         this.ArgumentType = ctx.ArgumentType || {}
+        /** @type {(key: string) => string} */
         this.translate = ctx.translate
         /** @type {string} 分组标签文本（用于 LABEL 块） */
         this.label = ''
@@ -73,22 +153,118 @@ class BlockGroup {
     }
 
     /**
-     * 注册该分组的所有积木到 core（包含分组标签 LABEL）
+     * 分组 ID，用于嵌套分类。
+     * 优先使用子类显式声明的 static groupId，否则从类名去掉 Group 后缀自动推断。
+     * @returns {string}
      */
-    register() {
+    get groupId() {
+        const ctor = /** @type {typeof BlockGroup} */ (this.constructor)
+        return ctor.groupId || ctor.inferredGroupId || ''
+    }
+
+    /**
+     * 将 BlockDef 转换为 scratch-vm 需要的标准格式
+     * @param {BlockDef} b
+     * @returns {Object}
+     */
+    _buildScratchBlockDef(b) {
+        /** @type {BlockDef & {[key: string]: any}} */
+        const blockDef = {
+            opcode: b.opcode,
+            blockType: b.blockType,
+            text: b.text,
+            arguments: b.arguments || {}
+        }
+
+        // 可选标准属性
+        if (b.hideFromPalette !== undefined)
+            blockDef.hideFromPalette = b.hideFromPalette
+        if (b.disableInternalArgument !== undefined)
+            blockDef.disableInternalArgument = b.disableInternalArgument
+        if (b.disableMonitor !== undefined)
+            blockDef.disableMonitor = b.disableMonitor
+        if (b.isTerminal !== undefined) blockDef.isTerminal = b.isTerminal
+        if (b.tooltip !== undefined) blockDef.tooltip = b.tooltip
+
+        // OUTPUT 块自定义形状属性
+        if (b.output !== undefined) blockDef.output = b.output
+        if (b.outputShape !== undefined) blockDef.outputShape = b.outputShape
+        if (b.branchCount !== undefined) blockDef.branchCount = b.branchCount
+
+        // EVENT 块属性
+        if (b.isEdgeActivated !== undefined)
+            blockDef.isEdgeActivated = b.isEdgeActivated
+        if (b.shouldRestartExistingThreads !== undefined)
+            blockDef.shouldRestartExistingThreads = b.shouldRestartExistingThreads
+
+        // XML 块
+        if (b.xml !== undefined) blockDef.xml = b.xml
+
+        // 可扩展积木配置
+        if (b.dynamicArgsInfo !== undefined)
+            blockDef.dynamicArgsInfo = b.dynamicArgsInfo
+
+        return blockDef
+    }
+
+    /**
+     * 注册该分组的所有积木到 core（包含分组标签 LABEL）。
+     * 由 blocks/index.js 统一调用。
+     * @param {{[key: string]: any}} [instance] - RenderTheWorld 实例，用于挂载 handler/onClick
+     */
+    register(instance) {
         const blocks = this.build()
         if (this.label) {
             this.core.registerBlock({
                 blockType: this.BlockType.LABEL,
-                text: this.label
+                text: this.label,
+                groupId: this.groupId
             })
         }
         blocks.forEach(b => {
             if (b === '---') {
                 this.core.registerBlankLine()
-            } else {
-                this.core.registerBlock(b)
+                return
             }
+
+            // 此时 b 一定是 BlockDef
+            if (typeof b !== 'object' || b === null) return
+
+            // 子 LABEL 块（理论上 build() 中不常用，保留兼容）
+            if (b.blockType === this.BlockType.LABEL) {
+                this.core.registerBlock({
+                    blockType: this.BlockType.LABEL,
+                    text: b.text,
+                    groupId: b.groupId || this.groupId
+                })
+                return
+            }
+
+            // BUTTON 块
+            if (b.blockType === this.BlockType.BUTTON) {
+                /** @type {BlockDef & {[key: string]: any}} */
+                const blockDef = {
+                    blockType: this.BlockType.BUTTON,
+                    text: b.text
+                }
+                if (typeof b.onClick === 'function' && instance) {
+                    instance[b.opcode] = b.onClick
+                    blockDef.func = b.opcode
+                } else if (typeof b.onClick === 'string') {
+                    blockDef.func = b.onClick
+                } else if (b.func) {
+                    blockDef.func = b.func
+                }
+                this.core.registerBlock(blockDef)
+                return
+            }
+
+            // 挂载 handler 到实例
+            if (b.handler && instance) {
+                instance[b.opcode] = b.handler
+            }
+
+            this.core.registerBlock(this._buildScratchBlockDef(b))
         })
     }
 

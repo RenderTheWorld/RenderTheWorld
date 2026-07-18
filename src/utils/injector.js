@@ -1,31 +1,3 @@
-import { chen_RenderTheWorld_extensionId } from '../assets/index.js'
-
-const PATCHES_ID = '__patches_' + chen_RenderTheWorld_extensionId
-
-/**
- * 补丁
- * @param obj 补丁对象
- * @param functions 包含需要修改或添加的方法的对象
- */
-const patch = (obj, functions) => {
-    if (obj[PATCHES_ID]) return
-    obj[PATCHES_ID] = {}
-    for (const name in functions) {
-        const original = obj[name]
-        obj[PATCHES_ID][name] = obj[name]
-        if (original) {
-            obj[name] = function (...args) {
-                const callOriginal = (...args) => original.call(this, ...args)
-                return functions[name].call(this, callOriginal, ...args)
-            }
-        } else {
-            obj[name] = function (...args) {
-                return functions[name].call(this, () => {}, ...args)
-            }
-        }
-    }
-}
-
 /**
  * By FurryR
  * Hijacks the Function.prototype.apply method.
@@ -83,4 +55,4 @@ function getVM(runtime) {
     )
 }
 
-export { PATCHES_ID, patch, getScratchBlocks, getVM }
+export { getScratchBlocks, getVM }

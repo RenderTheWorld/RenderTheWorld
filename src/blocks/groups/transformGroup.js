@@ -184,30 +184,30 @@ export default class TransformGroup extends BlockGroup {
 
     l10n() {
         return {
-            'group.transform': { 'zh-cn': '动作', en: 'Move' },
+            'group.transform': { 'zh-cn': '🏃动作', en: '🏃Move' },
             rotationObject: {
-                'zh-cn': '将: [name] 旋转: x [x] y [y] z [z]',
-                en: 'rotate [name] by x [x] y [y] z [z]'
+                'zh-cn': '让对象 [name] 旋转 x [x] y [y] z [z]',
+                en: 'rotate object [name] by x [x] y [y] z [z]'
             },
             moveObject: {
-                'zh-cn': '将: [name] 移动到: x [x] y [y] z [z]',
-                en: 'move [name] to x [x] y [y] z [z]'
+                'zh-cn': '让对象 [name] 移到 x [x] y [y] z [z]',
+                en: 'move object [name] to x [x] y [y] z [z]'
             },
             scaleObject: {
-                'zh-cn': '将: [name] 缩放: x [x] y [y] z [z]',
-                en: 'scale [name] by x [x] y [y] z [z]'
+                'zh-cn': '让对象 [name] 缩放 x [x] y [y] z [z]',
+                en: 'scale object [name] by x [x] y [y] z [z]'
             },
             getObjectPos: {
-                'zh-cn': '获取物体: [name] 的 [xyz] 坐标',
-                en: 'get [name] [xyz] position'
+                'zh-cn': '对象 [name] 的 [xyz] 坐标',
+                en: 'get object [name] [xyz] position'
             },
             getObjectRotation: {
-                'zh-cn': '获取物体: [name] [xyz] 的旋转角度',
-                en: 'get [name] [xyz] rotation'
+                'zh-cn': '对象 [name] 的 [xyz] 旋转角度',
+                en: 'get object [name] [xyz] rotation'
             },
             getObjectScale: {
-                'zh-cn': '获取物体: [name] [xyz] 的缩放',
-                en: 'get [name] [xyz] scale'
+                'zh-cn': '对象 [name] 的 [xyz] 缩放',
+                en: 'get object [name] [xyz] scale'
             },
             'xyz.x': { 'zh-cn': 'x轴', en: 'x axis' },
             'xyz.y': { 'zh-cn': 'y轴', en: 'y axis' },

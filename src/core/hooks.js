@@ -27,56 +27,25 @@ import { addFileType } from '../utils/gandiAssetTools.js'
  *   - branchCount>0 的 OUTPUT 块 → 回退为 CONDITIONAL，手动覆盖 output
  *     CONDITIONAL 提供 C 块分支 + 方形外观，手动添加 output 实现输出连接（如 makeMaterial）
  *
- * @param {Object} runtime - Scratch runtime
+ * @param {Extension} ext - 扩展核心组件
  */
-export function hookOutputBlocks(runtime) {
-    const original = runtime._convertBlockForScratchBlocks.bind(runtime)
-
-    runtime._convertBlockForScratchBlocks = function (blockInfo, categoryInfo) {
-        if (blockInfo.blockType !== 'output') {
-            return original(blockInfo, categoryInfo)
-        }
-
-        const branchCount = blockInfo.branchCount || 0
-        const output = blockInfo.output
-
-        if (branchCount > 0) {
-            // C 块 + 返回值（如 makeMaterial）：回退为 conditional
-            const effectiveBlockInfo = Object.assign({}, blockInfo, {
-                blockType: 'conditional',
-                branchCount: branchCount
-            })
-            delete effectiveBlockInfo.output
-            delete effectiveBlockInfo.outputShape
-            const res = original(effectiveBlockInfo, categoryInfo)
-            // conditional 不设置 output，手动覆盖以添加输出连接
-            if (output !== undefined) {
-                res.json.output = output
+export function hookOutputBlocks(ext) {
+    // 重新实现“output”和“outputShape”块参数
+    ext.patcher.patch(ext.runtime, '_convertBlockForScratchBlocks', {
+        after: function (res, blockInfo, categoryInfo) {
+            if (blockInfo.outputShape) {
+                if (!res.json.outputShape)
+                    res.json.outputShape = blockInfo.outputShape
             }
+            if (blockInfo.output) {
+                if (!res.json.output) res.json.output = blockInfo.output
+            }
+            if (!res.json.branchCount)
+                res.json.branchCount = blockInfo.branchCount
+
             return res
         }
-
-        // 普通返回值块：回退为 command，然后删除上下连接，只保留 output
-        const effectiveBlockInfo = Object.assign({}, blockInfo, {
-            blockType: 'command'
-        })
-        delete effectiveBlockInfo.output
-        delete effectiveBlockInfo.outputShape
-        delete effectiveBlockInfo.branchCount
-        const res = original(effectiveBlockInfo, categoryInfo)
-        // 删除 COMMAND 的上下连接，让块只有 output 连接（方形 reporter）
-        delete res.json.previousStatement
-        delete res.json.nextStatement
-        // 手动添加 output 实现输出连接
-        if (output !== undefined) {
-            res.json.output = output
-        }
-        return res
-    }
-
-    return () => {
-        runtime._convertBlockForScratchBlocks = original
-    }
+    })
 }
 
 /**
@@ -94,8 +63,7 @@ export function setupHatParameterColor(extension, ScratchBlocks) {
     extension.objectLoadingCompletedUpdate = () => {
         const ws = ScratchBlocks.getMainWorkspace()
         if (!ws) return
-
-        ws.getAllBlocks()
+        ;[...ws.getAllBlocks(), ...ws.getFlyout().getWorkspace().getAllBlocks()]
             .filter(block => block.type === 'ccw_hat_parameter')
             .forEach(hatParameter => {
                 const textEls =
@@ -138,14 +106,26 @@ export function setupHatParameterColor(extension, ScratchBlocks) {
     }
 
     const runtime = extension.runtime
-    runtime.on('PROJECT_LOADED', extension.objectLoadingCompletedUpdate)
-    runtime.on('BLOCK_DRAG_UPDATE', extension.objectLoadingCompletedUpdate)
-    runtime.on('BLOCKSINFO_UPDATE', extension.objectLoadingCompletedUpdate)
+    const vm = extension.vm
+    runtime.on(
+        'TOOLBOX_EXTENSIONS_NEED_UPDATE',
+        extension.objectLoadingCompletedUpdate
+    )
+    runtime.on('TARGET_BLOCKS_CHANGED', extension.objectLoadingCompletedUpdate)
+
+    setTimeout(() => {
+        extension.objectLoadingCompletedUpdate()
+    }, 1000)
 
     return () => {
-        runtime.off('PROJECT_LOADED', extension.objectLoadingCompletedUpdate)
-        runtime.off('BLOCK_DRAG_UPDATE', extension.objectLoadingCompletedUpdate)
-        runtime.off('BLOCKSINFO_UPDATE', extension.objectLoadingCompletedUpdate)
+        runtime.off(
+            'TOOLBOX_EXTENSIONS_NEED_UPDATE',
+            extension.objectLoadingCompletedUpdate
+        )
+        runtime.off(
+            'TARGET_BLOCKS_CHANGED',
+            extension.objectLoadingCompletedUpdate
+        )
     }
 }
 
@@ -253,4 +233,187 @@ export function setupGandiAssetMenus(extension) {
     extension.__gandiAssetsObjFileList = () => getFileList(['obj', 'json'])
     extension.__gandiAssetsMtlFileList = () => getFileList(['mtl', 'json'])
     extension.__gandiAssetsGltfFileList = () => getFileList(['gltf', 'json'])
+}
+
+/**
+ * 为 ScratchBlocks 启用文本下拉菜单功能 (Text Dropdowns)
+ *
+ * 允许下拉菜单支持直接输入文本。
+ * 通过劫持 VM 的积木构建逻辑和 Blockly 的原型链，将 acceptText: true 的菜单
+ * 转换为兼具文本输入框和下拉菜单特性的 field_textdropdown。
+ *
+ * @param {Object} ext - RenderTheWorld 实例
+ * @param {Object} ScratchBlocks - Blockly/ScratchBlocks 全局对象
+ * @returns {() => void} 清理函数
+ */
+export function setupTextDropDowns(ext) {
+    const runtime = ext.runtime
+    const ScratchBlocks = ext.ScratchBlocks
+    if (!runtime || !ScratchBlocks) return
+
+    // 内部用到的 XML 转义工具
+    const xmlEscape = unsafe => {
+        if (typeof unsafe !== 'string') return unsafe
+        return unsafe.replace(/[<>&'"]/g, c => {
+            switch (c) {
+                case '<':
+                    return '&lt;'
+                case '>':
+                    return '&gt;'
+                case '&':
+                    return '&amp;'
+                case "'":
+                    return '&apos;'
+                case '"':
+                    return '&quot;'
+                default:
+                    return c
+            }
+        })
+    }
+
+    // 1. Patch VM 端的菜单构建
+    ext.patcher.patch(runtime, '_buildMenuForScratchBlocks', {
+        after: function (res, menuName, menuInfo) {
+            if (menuInfo.acceptText) {
+                // 修改积木颜色为白色，使其看起来像文本输入框
+                res.json.colour = '#FFFFFF'
+                res.json.colourSecondary = '#FFFFFF'
+                res.json.colourTertiary = '#FFFFFF'
+                // 将原本的下拉菜单类型替换为自定义的 field_textdropdown
+                res.json.args0[0].type = 'field_textdropdown'
+                res.json.args0[0].check = 'number'
+            }
+        }
+    })
+
+    // 2. Patch VM 端的 XML 占位符转换
+    ext.patcher.patch(runtime, '_convertPlaceholders', {
+        before: function (context, match, placeholder) {
+            const argInfo = context.blockInfo.arguments[placeholder] || {}
+            const menuInfo = context.categoryInfo.menuInfo[argInfo.menu]
+
+            if (!argInfo.menu || !menuInfo.acceptText) {
+                return undefined // 退出不处理
+            }
+
+            const argJSON = { type: '', name: placeholder }
+            const defaultValue =
+                typeof argInfo.defaultValue === 'undefined'
+                    ? ''
+                    : String(argInfo.defaultValue)
+
+            let valueName, shadowType, fieldName
+
+            if (menuInfo.acceptReporters) {
+                argJSON.type = 'input_value'
+                valueName = placeholder
+                shadowType = this._makeExtensionMenuId(
+                    argInfo.menu,
+                    context.categoryInfo.id
+                )
+                fieldName = argInfo.menu
+            } else {
+                argJSON.type = 'field_textdropdown'
+                argJSON.options = this._convertMenuItems(menuInfo.items)
+                valueName = null
+                shadowType = null
+                fieldName = placeholder
+            }
+
+            if (valueName) {
+                context.inputList.push(
+                    `<value name="${xmlEscape(placeholder)}">`
+                )
+            }
+            if (shadowType) {
+                context.inputList.push(
+                    `<shadow type="${xmlEscape(shadowType)}">`
+                )
+            }
+            if (defaultValue !== null && fieldName) {
+                context.inputList.push(
+                    `<field name="${xmlEscape(fieldName)}">${xmlEscape(defaultValue)}</field>`
+                )
+            }
+            if (shadowType) context.inputList.push('</shadow>')
+            if (valueName) context.inputList.push('</value>')
+
+            const argsName = 'args' + context.outLineNum
+            const blockArgs = (context.blockJSON[argsName] =
+                context.blockJSON[argsName] || [])
+            if (argJSON) blockArgs.push(argJSON)
+
+            const argNum = blockArgs.length
+            context.argsMap[placeholder] = argNum
+            return '%' + argNum
+        }
+    })
+
+    // 3. Patch ScratchBlocks (Blockly) 端的外观与交互
+    ext.patcher.patch(ScratchBlocks.FieldTextDropdown.prototype, 'init', {
+        after: function () {
+            if (!this.sourceBlock_.isShadow()) {
+                // 使用浅色 arrow
+                this.arrow_.setAttributeNS(
+                    'http://www.w3.org/1999/xlink',
+                    'xlink:href',
+                    `${ScratchBlocks.mainWorkspace.options.pathToMedia}dropdown-arrow.svg`
+                )
+            }
+        }
+    })
+
+    // 绑定基础样式常量
+    ScratchBlocks.FieldTextDropdown.CHECKMARK_OVERHANG =
+        ScratchBlocks.FieldDropdown.CHECKMARK_OVERHANG
+    ScratchBlocks.FieldTextDropdown.prototype.CURSOR =
+        ScratchBlocks.FieldTextInput.prototype.CURSOR
+
+    // 劫持 setText，使手动输入文本时同步下拉菜单的 value_ 值
+    ext.patcher.patch(ScratchBlocks.FieldTextInput.prototype, 'setText', {
+        before: function (newValue) {
+            const extInfo = runtime._blockInfo?.find(
+                b => b.id === chen_RenderTheWorld_extensionId
+            )
+            const blockInfo = extInfo?.blocks?.find(
+                b =>
+                    `${chen_RenderTheWorld_extensionId}_${b.info.opcode}` ===
+                    this.sourceBlock_?.parentBlock_?.type
+            )
+            if (
+                Object.prototype.hasOwnProperty.call(this, 'value_') &&
+                typeof newValue === 'string'
+            ) {
+                const argIndex =
+                    this.sourceBlock_?.parentBlock_?.childBlocks_?.indexOf(
+                        this.sourceBlock_
+                    ) + 2
+                const argName = blockInfo?.json?.args0?.[argIndex]?.name
+                const argType = blockInfo?.info?.arguments?.[argName]?.type
+                if (argType === 'number' && isNaN(Number(newValue))) {
+                    return ext.patcher.constructor.UNDEFINED
+                }
+                this.setValue(newValue)
+            }
+        }
+    })
+
+    // 继承原生 Dropdown 的行为方法
+    ScratchBlocks.FieldTextDropdown.prototype.selectedItem =
+        ScratchBlocks.FieldDropdown.prototype.selectedItem
+    ScratchBlocks.FieldTextDropdown.prototype.value_ =
+        ScratchBlocks.FieldDropdown.prototype.value_
+    ScratchBlocks.FieldTextDropdown.prototype.onItemSelected =
+        ScratchBlocks.FieldDropdown.prototype.onItemSelected
+    ScratchBlocks.FieldTextDropdown.prototype.getOptions =
+        ScratchBlocks.FieldDropdown.prototype.getOptions
+    ScratchBlocks.FieldTextDropdown.prototype.getValue =
+        ScratchBlocks.FieldDropdown.prototype.getValue
+    ScratchBlocks.FieldTextDropdown.prototype.setValue =
+        ScratchBlocks.FieldDropdown.prototype.setValue
+    ScratchBlocks.FieldTextDropdown.prototype.isEqual =
+        ScratchBlocks.FieldDropdown.prototype.isEqual
+    ScratchBlocks.FieldTextDropdown.prototype.isOptionListDynamic =
+        ScratchBlocks.FieldDropdown.prototype.isOptionListDynamic
 }

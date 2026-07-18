@@ -45,12 +45,14 @@ import {
     inMainWorkspace
 } from './utils/scratchTools.js'
 import { initExpandableBlocks } from './utils/extendableBlock.js'
+import { setupNestedCategory } from './utils/nestedCategory.js'
 import { addRTWStyle } from './utils/RTWTools.js'
 import {
     hookOutputBlocks,
     setupHatParameterColor,
     setupGandiAssetMenus,
-    setupGandiFileTypes
+    setupGandiFileTypes,
+    setupTextDropDowns
 } from './core/hooks.js'
 
 // 可扩展积木按钮样式
@@ -62,7 +64,6 @@ addRTWStyle(`
         filter: brightness(150%);
     }
 `)
-
 ;(function (Scratch) {
     'use strict'
 
@@ -107,28 +108,42 @@ addRTWStyle(`
             this._hookCleanups = []
 
             // 1. BlockType.XML 支持
-            hackFun(this.runtime, Scratch)
+            hackFun(extension, BlockType)
             // 2. 自定义监视器/返回值显示
-            refactoringVisualReport(this)
+            refactoringVisualReport(extension)
             // 3. OUTPUT 块自定义形状
-            this._hookCleanups.push(hookOutputBlocks(this.runtime))
-            // 4. Gandi 自定义文件类型（OBJ/MTL/GLTF）注册到文件编辑器
+            hookOutputBlocks(extension)
+            // 4. 自定义文本下拉菜单
+            setupTextDropDowns(extension)
+            // 5. Gandi 自定义文件类型（OBJ/MTL/GLTF）注册到文件编辑器
             this._hookCleanups.push(setupGandiFileTypes(this))
-            // 5. Gandi 资源文件动态菜单
+            // 6. Gandi 资源文件动态菜单
             setupGandiAssetMenus(this)
 
             // ============== 主工作区集成 ==============
             if (inMainWorkspace(this)) {
-                // 6. hat_parameter 颜色修复
+                // 7. hat_parameter 颜色修复
                 this._hookCleanups.push(
                     setupHatParameterColor(this, this.ScratchBlocks)
                 )
-                // 7. 可扩展积木
+                // 8. 可扩展积木
                 initExpandableBlocks(
                     this,
                     rightButton,
                     leftButton,
                     rightSelectButton
+                )
+                // 9. 嵌套分类（工具栏父分类 + 子分类折叠）
+                this._hookCleanups.push(
+                    setupNestedCategory({
+                        vm: extension.vm,
+                        patcher: extension.patcher,
+                        extId: chen_RenderTheWorld_extensionId,
+                        extName: this.$formatMessage('name'),
+                        menuIconURI: chen_RenderTheWorld_icon,
+                        color1: color,
+                        color2: color_secondary
+                    })
                 )
             }
         }
@@ -156,6 +171,22 @@ addRTWStyle(`
 
         getInfo() {
             this.$loadBlocks()
+            // apidocs 按钮放在 blocks 最前面（在所有分组 LABEL 之上）
+            this.apidocs = () => {
+                window.open(
+                    extension.apiDocsURI,
+                    '_blank',
+                    'noopener,noreferrer'
+                )
+            }
+            const blocks = [
+                {
+                    blockType: 'button',
+                    text: this.$formatMessage('apidocs'),
+                    func: 'apidocs'
+                },
+                ...extension.core.blocks
+            ]
             return {
                 id: chen_RenderTheWorld_extensionId,
                 docsURI: extension.docsURI,
@@ -165,7 +196,7 @@ addRTWStyle(`
                 color1: color,
                 color2: color_secondary,
                 color3: color_tertiary,
-                blocks: extension.core.blocks,
+                blocks,
                 menus: extension.core.menus
             }
         }
@@ -174,6 +205,7 @@ addRTWStyle(`
          * 扩展卸载时清理所有劫持与资源
          */
         dispose() {
+            extension.patcher.unpatchAll()
             // 清理 hooks 劫持
             this._hookCleanups?.forEach(cleanup => {
                 try {

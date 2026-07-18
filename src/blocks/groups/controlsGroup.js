@@ -82,12 +82,12 @@ export default class ControlsGroup extends BlockGroup {
                 text: t('setControlState'),
                 arguments: {
                     name: { type: AT.STRING, defaultValue: 'name' },
-                    YN: { type: AT.STRING, menu: 'YN' }
+                    enabled: { type: AT.STRING, menu: 'enableDisableMenu' }
                 },
                 handler: args => {
                     const model = ext.renderEngine.getModel(args.name)
                     if (!model || !model.update) return '⚠️设置的控制器有误！'
-                    model.enabled = ext.cast.toString(args.YN) === 'true'
+                    model.enabled = ext.cast.toString(args.enabled) === 'enable'
                     model.update()
                 }
             },
@@ -129,12 +129,13 @@ export default class ControlsGroup extends BlockGroup {
                 text: t('setControlDamping'),
                 arguments: {
                     name: { type: AT.STRING, defaultValue: 'name' },
-                    YN2: { type: AT.STRING, menu: 'YN2' }
+                    enabled: { type: AT.STRING, menu: 'enableDisableMenu' }
                 },
                 handler: args => {
                     const model = ext.renderEngine.getModel(args.name)
                     if (!model || !model.update) return '⚠️设置的控制器有误！'
-                    model.enableDamping = ext.cast.toString(args.YN2) === 'yes'
+                    model.enableDamping =
+                        ext.cast.toString(args.enabled) === 'enable'
                 }
             },
             {
@@ -182,20 +183,20 @@ export default class ControlsGroup extends BlockGroup {
     }
 
     registerMenus() {
-        this.core.registerMenu('YN2', {
-            acceptReporters: false,
-            items: [
-                { text: this.translate('YN2.yes'), value: 'yes' },
-                { text: this.translate('YN2.no'), value: 'no' }
-            ]
-        })
+        // this.core.registerMenu('YN2', {
+        //     acceptReporters: false,
+        //     items: [
+        //         { text: this.translate('YN2.yes'), value: 'yes' },
+        //         { text: this.translate('YN2.no'), value: 'no' }
+        //     ]
+        // })
     }
 
     l10n() {
         return {
-            'group.control': { 'zh-cn': '🎚️控制模块', en: '🎚️Controller' },
+            'group.control': { 'zh-cn': '🎚️控制器', en: '🎚️Controller' },
             createOrbitControls: {
-                'zh-cn': '创建轨道控制器 绑定 [name]',
+                'zh-cn': '<轨道控制器> 绑定 [name]',
                 en: 'create orbit controls bind [name]'
             },
             updateControls: {
@@ -203,31 +204,29 @@ export default class ControlsGroup extends BlockGroup {
                 en: 'update controls [name]'
             },
             setControlState: {
-                'zh-cn': '控制器 [name] [YN] 启用',
-                en: 'controls [name] [YN] enabled'
+                'zh-cn': '[enabled] 控制器 [name]',
+                en: '[enabled] controls [name]'
             },
             mouseCanControl: {
-                'zh-cn': '控制器 [name] 已启用?',
-                en: 'controls [name] enabled?'
+                'zh-cn': '控制器 [name] 已启用',
+                en: 'controls [name] enabled'
             },
             mouseControl: {
                 'zh-cn': '控制器 [name] [yn1] 平移 [yn2] 缩放 [yn3] 旋转',
                 en: 'controls [name] [yn1] pan [yn2] zoom [yn3] rotate'
             },
             setControlDamping: {
-                'zh-cn': '控制器 [name] [YN2] 启用阻尼',
-                en: 'controls [name] [YN2] damping'
+                'zh-cn': '控制器 [name] [enabled] 阻尼',
+                en: 'controls [name] [enabled] damping'
             },
             setControlDampingNum: {
-                'zh-cn': '控制器 [name] 阻尼系数 [num]',
-                en: 'controls [name] damping factor [num]'
+                'zh-cn': '将控制器 [name] 的阻尼系数设为 [num]',
+                en: 'set damping factor of controls [name] to [num]'
             },
             setOrbitControlsTarget: {
-                'zh-cn': '控制器 [name] 目标 x [x] y [y] z [z]',
-                en: 'controls [name] target x [x] y [y] z [z]'
-            },
-            'YN2.yes': { 'zh-cn': '有', en: 'yes' },
-            'YN2.no': { 'zh-cn': '没有', en: 'no' }
+                'zh-cn': '将轨道控制器 [name] 目标设为 x [x] y [y] z [z]',
+                en: 'set orbit controls target of [name] to x [x] y [y] z [z]'
+            }
         }
     }
 }

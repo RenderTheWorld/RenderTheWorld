@@ -21,10 +21,11 @@ import { RTW_Model_Box, Wrapper } from '../../utils/RTWTools.js'
 import { chen_RenderTheWorld_extensionId } from '../../assets/index.js'
 
 export default class MaterialGroup extends BlockGroup {
+    static groupId = 'Materials'
     constructor(ctx) {
         super(ctx)
-        // 旧版 "材质" LABEL 在 InitGroup 末尾已输出，这里不再重复
-        this.label = null
+        // 旧版 "材质" LABEL 在 InitGroup 末尾已输出，这里不再重复输出
+        this.label = this.translate('group.material')
         // 材质属性栈：{ [topBlock+targetId]: [{ color, fog }] }
         // 注意：collectL10n() 时 ext 为 null，需做安全检查
         if (this.ext && !this.ext.threadInfo) this.ext.threadInfo = {}
@@ -315,22 +316,22 @@ export default class MaterialGroup extends BlockGroup {
             'group.material': { 'zh-cn': '🎨材质', en: '🎨Material' },
             makeMaterial: { 'zh-cn': '创建材质', en: 'make material' },
             setMaterialColor: {
-                'zh-cn': '设置当前材质颜色 [color]',
-                en: 'set material color [color]'
+                'zh-cn': '将当前材质颜色设为 [color]',
+                en: 'set material color to [color]'
             },
             setMaterialFog: {
-                'zh-cn': '设置当前材质 [YN] 受雾效果影响',
-                en: 'set material [YN] affected by fog'
+                'zh-cn': '让当前材质 [YN] 受雾效果影响',
+                en: 'material [YN] be affected by fog'
             },
             returnm: {
-                'zh-cn': '材质创建完成 [material]',
-                en: 'material done [material]'
+                'zh-cn': '以 [material] 类型完成创建',
+                en: 'create material type [material]'
             },
-            'YN.true': { 'zh-cn': '是', en: 'yes' },
-            'YN.false': { 'zh-cn': '否', en: 'no' },
+            'YN.true': { 'zh-cn': '能', en: 'can' },
+            'YN.false': { 'zh-cn': '不能', en: "can't" },
             'material.Basic': { 'zh-cn': '基础', en: 'Basic' },
-            'material.Lambert': { 'zh-cn': 'Lambert', en: 'Lambert' },
-            'material.Phong': { 'zh-cn': 'Phong', en: 'Phong' }
+            'material.Lambert': { 'zh-cn': '拉伯特', en: 'Lambert' },
+            'material.Phong': { 'zh-cn': '冯氏', en: 'Phong' }
         }
     }
 }

@@ -7,7 +7,7 @@
  */
 
 // 类型导入仅用于 JSDoc 类型注解，运行时无需导入
-// import { chen_RenderTheWorld_extensionId } from '../assets/index.js'
+import { chen_RenderTheWorld_extensionId } from '../assets/index.js'
 // import RenderEngine from './renderengine.js'
 // import ExtensionCore from './extcore.js'
 
@@ -36,9 +36,13 @@ class Extension {
         /** @type {Object} Cast 工具（数值/字符串/布尔转换） */
         this.cast = null
 
-        /** API 文档地址 */
+        /** 使用教程地址（docsURI，显示在扩展库的"文档"按钮） */
         this.docsURI =
             'https://learn.ccw.site/article/0d8196d6-fccf-4d92-91b8-ee918a733237'
+
+        /** API 文档地址（所有积木 API 接口讲解，作为扩展面板首个按钮显示） */
+        this.apiDocsURI =
+            'https://learn.ccw.site/article/aa0cf6d0-6758-447a-96f5-8e5dfdbe14d6'
     }
 
     /**
@@ -50,6 +54,10 @@ class Extension {
         this.vm = Scratch.vm
         this.ScratchBlocks = Scratch.ScratchBlocks
         this.Scratch = Scratch
+        // patchOwner: false 确保补丁只打在 runtime 实例上，不影响其他扩展/运行时
+        this.patcher = new Scratch.Patcher(chen_RenderTheWorld_extensionId, {
+            patchOwner: false
+        })
         // Cast 工具：用于积木参数类型转换
         this.cast = Scratch.Cast || {
             toNumber: v => Number(v) || 0,

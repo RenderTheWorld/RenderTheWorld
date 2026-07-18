@@ -1,6 +1,7 @@
 import external from './tw-external.js'
 import staticFetch from './tw-static-fetch.js'
 import Color from './gandi-color.js'
+import Patcher from './arkos_patcher.js'
 import { getVM, getScratchBlocks } from './injector.js'
 
 function parseURL(url) {
@@ -49,7 +50,8 @@ export function createScratchInstance(Scratch) {
         runtime: vm.runtime,
         translate: Scratch.translate,
         vm: vm,
-        ScratchBlocks: ScratchBlocks
+        ScratchBlocks: ScratchBlocks,
+        Patcher: Scratch.Patcher || Patcher,
     }
 }
 

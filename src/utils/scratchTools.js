@@ -10,7 +10,7 @@
  *   - inMainWorkspace: 判断是否在主工作区
  */
 
-import { RTW_Model_Box, Wrapper, patch } from './RTWTools.js'
+import { RTW_Model_Box, Wrapper } from './RTWTools.js'
 import { chen_RenderTheWorld_extensionId } from '../assets/index.js'
 
 /**
@@ -68,22 +68,22 @@ function getVM(runtime) {
  * By Nights: 支持 BlockType.XML
  * 注册 XML 块类型，用于在面板中显示预定义的 XML 块
  */
-const hackFun = (runtime, Scratch) => {
-    if (!runtime || hackFun.hacked) return
+const hackFun = (ext, BlockType) => {
+    if (!ext.runtime || hackFun.hacked) return
     hackFun.hacked = true
 
-    if (!Scratch.BlockType.XML) {
-        Scratch.BlockType.XML = 'XML'
-        const origFun = runtime._convertForScratchBlocks
-        runtime._convertForScratchBlocks = function (blockInfo, categoryInfo) {
-            if (blockInfo.blockType === Scratch.BlockType.XML) {
-                return {
-                    info: blockInfo,
-                    xml: blockInfo.xml
+    if (!BlockType.XML) {
+        BlockType.XML = 'XML'
+        ext.patcher.patch(ext.runtime, '_convertForScratchBlocks', {
+            before: function (blockInfo, categoryInfo) {
+                if (blockInfo.blockType === BlockType.XML) {
+                    return {
+                        info: blockInfo,
+                        xml: blockInfo.xml
+                    }
                 }
             }
-            return origFun.call(this, blockInfo, categoryInfo)
-        }
+        })
     }
 }
 
@@ -116,8 +116,8 @@ function show(ScratchBlocks, id, value, textAlign) {
 
 const refactoringVisualReport = ext => {
     // 劫持 visualReport：makeMaterial 内联块不显示返回值
-    patch(ext.runtime.constructor.prototype, {
-        visualReport: (original, blockId, value) => {
+    ext.patcher.patch(ext.runtime.constructor.prototype, 'visualReport', {
+        wrapper: function (original, blockId, value) {
             if (ext.vm.editingTarget) {
                 const block = ext.vm.editingTarget.blocks.getBlock(blockId)
                 if (
@@ -128,7 +128,7 @@ const refactoringVisualReport = ext => {
                 )
                     return
             }
-            original(blockId, value)
+            original.call(this, blockId, value)
         }
     })
 

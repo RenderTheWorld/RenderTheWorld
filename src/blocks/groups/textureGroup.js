@@ -18,6 +18,7 @@ import { RTW_Model_Box, Wrapper } from '../../utils/RTWTools.js'
 const MAP_TYPES = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'aoMap', 'bumpMap', 'alphaMap']
 
 export default class TextureGroup extends BlockGroup {
+    static groupId = 'Textures'
     constructor(ctx) {
         super(ctx)
         this.label = this.translate('group.texture')
