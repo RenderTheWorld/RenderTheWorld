@@ -46,7 +46,7 @@ function getEventListener(e) {
  */
 function getScratchBlocks(runtime) {
     return (
-        hijack(getEventListener(runtime._events.EXTENSION_ADDED))
+        hijack(/** @type {any} */ (getEventListener(runtime._events.EXTENSION_ADDED)))
             ?.ScratchBlocks ||
         runtime.scratchBlocks ||
         window.Blockly?.getMainWorkspace?.()?.getScratchBlocks?.() ||
@@ -59,7 +59,7 @@ function getScratchBlocks(runtime) {
  */
 function getVM(runtime) {
     return (
-        hijack(getEventListener(runtime._events['QUESTION']))?.props?.vm ||
+        hijack(/** @type {any} */ (getEventListener(runtime._events['QUESTION'])))?.props?.vm ||
         window.Scratch?.vm
     )
 }
@@ -69,8 +69,8 @@ function getVM(runtime) {
  * 注册 XML 块类型，用于在面板中显示预定义的 XML 块
  */
 const hackFun = (ext, BlockType) => {
-    if (!ext.runtime || hackFun.hacked) return
-    hackFun.hacked = true
+    if (!ext.runtime || /** @type {any} */ (hackFun).hacked) return
+    /** @type {any} */ (hackFun).hacked = true
 
     if (!BlockType.XML) {
         BlockType.XML = 'XML'

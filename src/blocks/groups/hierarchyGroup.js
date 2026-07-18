@@ -17,11 +17,17 @@ import { RTW_Model_Box, Wrapper } from '../../utils/RTWTools.js'
 import { getDynamicArgs } from '../../utils/extendableBlock.js'
 
 export default class HierarchyGroup extends BlockGroup {
+    /**
+     * @param {import('../BlockGroup.js').BlockGroupContext} ctx
+     */
     constructor(ctx) {
         super(ctx)
         // 无标签分组，groupId 自动推断为 Hierarchy
     }
 
+    /**
+     * @returns {(import('../BlockGroup.js').BlockDef | string)[]}
+     */
     build() {
         const BT = this.BlockType
         const AT = this.ArgumentType

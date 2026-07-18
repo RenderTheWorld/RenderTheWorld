@@ -30,11 +30,11 @@
  * @property {string} HAT
  * @property {string} BUTTON
  * @property {string} LABEL
- * @property {string} [CONDITIONAL]
- * @property {string} [LOOP]
- * @property {string} [EVENT]
- * @property {string} [OUTPUT]
- * @property {string} [XML]
+ * @property {string} CONDITIONAL
+ * @property {string} LOOP
+ * @property {string} EVENT
+ * @property {string} OUTPUT
+ * @property {string} XML
  */
 
 /**
@@ -59,10 +59,27 @@
 
 /**
  * @typedef {Object} DynamicArgsInfo
- * @property {(index: number) => string} defaultValues
- * @property {string} afterArg
+ * @property {any} defaultValues
+ * @property {string} [afterArg]
  * @property {string} joinCh
  * @property {string[]} dynamicArgTypes
+ * @property {any} [preText]
+ * @property {any} [endText]
+ */
+
+/**
+ * @typedef {Object} MutatorArgDef
+ * @property {string} name - 参数输入名（传给 handler 的 args 键）
+ * @property {'n'|'s'|'b'} type - 参数类型：n=数字 s=字符串 b=布尔
+ * @property {any} [default] - 默认值
+ * @property {string} [label] - 输入前显示的标签
+ */
+
+/**
+ * @typedef {Object} MutatorInfo
+ * @property {string} fieldName - 驱动变形的下拉字段名
+ * @property {string} defaultValue - 默认选项值
+ * @property {Object<string, MutatorArgDef[]>} argMap - 各选项对应的参数列表
  */
 
 /**
@@ -80,6 +97,7 @@
  * @property {string} [func] - BUTTON 块绑定的实例方法名
  * @property {{[key: string]: BlockArgument | undefined}} [arguments] - 参数定义
  * @property {DynamicArgsInfo} [dynamicArgsInfo] - 可扩展积木配置
+ * @property {MutatorInfo} [mutatorInfo] - 下拉驱动动态参数配置
  * @property {string} [output] - OUTPUT 块的输出类型
  * @property {number} [outputShape] - OUTPUT 块的形状（3=圆形）
  * @property {number} [branchCount] - OUTPUT 块的分支数
@@ -101,6 +119,15 @@
  * @property {{warn: (...args: any[]) => void}} [logger]
  * @property {any} [patcher]
  * @property {any} [ScratchBlocks]
+ */
+
+/**
+ * @typedef {Object} BlockGroupContext
+ * @property {ExtLike} ext
+ * @property {import('../core/extcore.js').default} core
+ * @property {BlockType} BlockType
+ * @property {ArgumentType} ArgumentType
+ * @property {(key: string) => string} translate
  */
 
 class BlockGroup {
@@ -136,7 +163,7 @@ class BlockGroup {
         /** @type {BlockType} */
         this.BlockType = ctx.BlockType
         /** @type {ArgumentType} */
-        this.ArgumentType = ctx.ArgumentType || {}
+        this.ArgumentType = ctx.ArgumentType || /** @type {ArgumentType} */ ({})
         /** @type {(key: string) => string} */
         this.translate = ctx.translate
         /** @type {string} 分组标签文本（用于 LABEL 块） */
@@ -204,6 +231,9 @@ class BlockGroup {
         if (b.dynamicArgsInfo !== undefined)
             blockDef.dynamicArgsInfo = b.dynamicArgsInfo
 
+        // 下拉驱动动态参数配置
+        if (b.mutatorInfo !== undefined) blockDef.mutatorInfo = b.mutatorInfo
+
         return blockDef
     }
 
@@ -248,7 +278,7 @@ class BlockGroup {
                     text: b.text
                 }
                 if (typeof b.onClick === 'function' && instance) {
-                    instance[b.opcode] = b.onClick
+                    instance[b.opcode || ''] = b.onClick
                     blockDef.func = b.opcode
                 } else if (typeof b.onClick === 'string') {
                     blockDef.func = b.onClick
@@ -261,7 +291,7 @@ class BlockGroup {
 
             // 挂载 handler 到实例
             if (b.handler && instance) {
-                instance[b.opcode] = b.handler
+                instance[b.opcode || ''] = b.handler
             }
 
             this.core.registerBlock(this._buildScratchBlockDef(b))

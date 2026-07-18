@@ -14,14 +14,20 @@
  */
 
 import BlockGroup from '../BlockGroup.js'
-import { RTW_Model_Box, Wrapper } from '../../utils/RTWTools.js'
+import { RTW_Model_Box, Wrapper, ColorTools } from '../../utils/RTWTools.js'
 
 export default class LightingGroup extends BlockGroup {
+    /**
+     * @param {import('../BlockGroup.js').BlockGroupContext} ctx
+     */
     constructor(ctx) {
         super(ctx)
         this.label = this.translate('group.light')
     }
 
+    /**
+     * @returns {(import('../BlockGroup.js').BlockDef | string)[]}
+     */
     build() {
         const BT = this.BlockType
         const AT = this.ArgumentType
@@ -49,7 +55,7 @@ export default class LightingGroup extends BlockGroup {
                     const cast = ext.cast
                     const THREE = ext.renderEngine.THREE
                     const light = new THREE.PointLight(
-                        cast.toNumber(args.color),
+                        ColorTools.parse(args.color, THREE, cast),
                         cast.toNumber(args.intensity),
                         0,
                         cast.toNumber(args.decay)
@@ -90,7 +96,7 @@ export default class LightingGroup extends BlockGroup {
                     const cast = ext.cast
                     const THREE = ext.renderEngine.THREE
                     const light = new THREE.DirectionalLight(
-                        cast.toNumber(args.color),
+                        ColorTools.parse(args.color, THREE, cast),
                         cast.toNumber(args.intensity)
                     )
                     light.position.set(
@@ -145,7 +151,7 @@ export default class LightingGroup extends BlockGroup {
                     const cast = ext.cast
                     const THREE = ext.renderEngine.THREE
                     const light = new THREE.SpotLight(
-                        cast.toNumber(args.color),
+                        ColorTools.parse(args.color, THREE, cast),
                         cast.toNumber(args.intensity),
                         0,
                         THREE.MathUtils.degToRad(cast.toNumber(args.angle)),
@@ -194,7 +200,7 @@ export default class LightingGroup extends BlockGroup {
                     const cast = ext.cast
                     const THREE = ext.renderEngine.THREE
                     const light = new THREE.RectAreaLight(
-                        cast.toNumber(args.color),
+                        ColorTools.parse(args.color, THREE, cast),
                         cast.toNumber(args.intensity),
                         cast.toNumber(args.width),
                         cast.toNumber(args.height)
@@ -232,7 +238,7 @@ export default class LightingGroup extends BlockGroup {
                         engine.scene.add(engine.lights.ambient)
                     }
                     engine.lights.ambient.color = new THREE.Color(
-                        cast.toNumber(args.color)
+                        ColorTools.parse(args.color, THREE, cast)
                     )
                     engine.lights.ambient.intensity = cast.toNumber(
                         args.intensity
@@ -262,10 +268,10 @@ export default class LightingGroup extends BlockGroup {
                         engine.scene.add(engine.lights.hemisphere)
                     }
                     engine.lights.hemisphere.color = new THREE.Color(
-                        cast.toNumber(args.skyColor)
+                        ColorTools.parse(args.skyColor, THREE, cast)
                     )
                     engine.lights.hemisphere.groundColor = new THREE.Color(
-                        cast.toNumber(args.groundColor)
+                        ColorTools.parse(args.groundColor, THREE, cast)
                     )
                     engine.lights.hemisphere.intensity = cast.toNumber(
                         args.intensity

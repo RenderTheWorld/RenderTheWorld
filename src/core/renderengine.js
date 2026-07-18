@@ -1,4 +1,5 @@
 /* eslint-disable no-underscore-dangle */
+// @ts-nocheck
 /* eslint-disable func-names */
 /**
  * RenderEngine —— 渲染世界扩展的核心渲染引擎

@@ -60,7 +60,7 @@ class RendererAdapter {
     /**
      * 注册皮肤
      * @param {number} skinId
-     * @param {Object} skin - 皮肤对象
+     * @param {any} skin - 皮肤对象
      */
     registerSkin(skinId, skin) {
         this.renderer._allSkins[skinId] = skin

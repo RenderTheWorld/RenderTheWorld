@@ -47,7 +47,7 @@ class Color {
         const r = (decimal >> 16) & 0xff
         const g = (decimal >> 8) & 0xff
         const b = decimal & 0xff
-        return { r: r, g: g, b: b, a: a > 0 ? a : 255 }
+        return /** @type {RGBObject} */ ({ r: r, g: g, b: b, a: a > 0 ? a : 255 })
     }
 
     /**

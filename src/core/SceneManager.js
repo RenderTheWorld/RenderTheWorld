@@ -12,6 +12,7 @@
  *   SceneManager 专注场景图与资源生命周期。
  */
 
+// @ts-nocheck
 import { RTW_Model_Box, Wrapper } from '../utils/RTWTools.js'
 
 class SceneManager {

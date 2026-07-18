@@ -1,4 +1,8 @@
 /**
+ * @typedef {import('scratch-vm').Runtime} Runtime
+ */
+
+/**
  * By FurryR
  * Hijacks the Function.prototype.apply method.
  * @param {Function} fn - The function to execute while the apply method is hijacked.
@@ -34,7 +38,7 @@ function getScratchBlocks(runtime) {
     // In TW, ScratchBlocks can be directly accessed from the window.
 
     return (
-        hijack(getEventListener(runtime._events.EXTENSION_ADDED))
+        hijack(/** @type {any} */ (getEventListener(runtime._events.EXTENSION_ADDED)))
             ?.ScratchBlocks ||
         runtime.scratchBlocks ||
         window.Blockly?.getMainWorkspace()?.getScratchBlocks?.() ||
@@ -49,7 +53,7 @@ function getScratchBlocks(runtime) {
  */
 function getVM(runtime) {
     return (
-        hijack(getEventListener(runtime._events['QUESTION'])).props.vm ||
+        hijack(/** @type {any} */ (getEventListener(runtime._events['QUESTION']))).props.vm ||
         runtime.extensionManager.vm ||
         window.Scratch.vm
     )

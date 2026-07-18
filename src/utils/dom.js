@@ -38,7 +38,7 @@ class DOMUtils {
      * @returns {HTMLStyleElement}
      */
     createAndAppendStyle(cssText, id) {
-        let styleElement = document.getElementById(id)
+        let styleElement = /** @type {HTMLStyleElement | null} */ (document.getElementById(id))
         if (!styleElement) {
             styleElement = document.createElement('style')
             styleElement.type = 'text/css'

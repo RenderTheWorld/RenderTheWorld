@@ -21,11 +21,17 @@ import { getDynamicArgs } from '../../utils/extendableBlock.js'
 
 export default class ModelGroup extends BlockGroup {
     static groupId = 'Objects'
+    /**
+     * @param {import('../BlockGroup.js').BlockGroupContext} ctx
+     */
     constructor(ctx) {
         super(ctx)
         this.label = this.translate('group.objects')
     }
 
+    /**
+     * @returns {(import('../BlockGroup.js').BlockDef | string)[]}
+     */
     build() {
         const BT = this.BlockType
         const AT = this.ArgumentType
@@ -54,7 +60,10 @@ export default class ModelGroup extends BlockGroup {
                     name: { type: AT.STRING, defaultValue: 'name' },
                     model: { type: null, defaultValue: '' }
                 },
-                handler: args => this._importModel(args)
+                handler: args =>
+                    this._importModel(
+                        /** @type {{name: any, model: any}} */ (args)
+                    )
             },
             {
                 opcode: 'destroyObject',
@@ -126,7 +135,12 @@ export default class ModelGroup extends BlockGroup {
                 output: 'Reporter',
                 outputShape: 3,
                 branchCount: 0,
-                handler: args => this._cubeModel(args)
+                handler: args =>
+                    this._cubeModel(
+                        /** @type {{a: any, b: any, h: any, material: any}} */ (
+                            args
+                        )
+                    )
             },
             {
                 opcode: 'sphereModel',
@@ -141,7 +155,12 @@ export default class ModelGroup extends BlockGroup {
                 output: 'Reporter',
                 outputShape: 3,
                 branchCount: 0,
-                handler: args => this._sphereModel(args)
+                handler: args =>
+                    this._sphereModel(
+                        /** @type {{radius: any, w: any, h: any, material: any}} */ (
+                            args
+                        )
+                    )
             },
             {
                 opcode: 'planeModel',
@@ -155,7 +174,10 @@ export default class ModelGroup extends BlockGroup {
                 output: 'Reporter',
                 outputShape: 3,
                 branchCount: 0,
-                handler: args => this._planeModel(args)
+                handler: args =>
+                    this._planeModel(
+                        /** @type {{a: any, b: any, material: any}} */ (args)
+                    )
             },
             {
                 opcode: 'objModel',

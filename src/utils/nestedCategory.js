@@ -151,7 +151,7 @@ export function setupNestedCategory({
 
         // 子分类菜单项高度调整
         if (childItemSelectors) {
-            styleText += `${childItemSelectors} { padding: 6px 0px !important; }\n`
+            styleText += `${childItemSelectors} { padding: 8px 0px !important; }\n`
         }
 
         // 父分类菜单图标：若有 menuIconURI，用图标替换彩色圆点
@@ -170,7 +170,7 @@ export function setupNestedCategory({
 
         styleText += `
     body[${EXPANDED_ATTR}="true"] .scratchCategoryMenuItem.scratchCategoryId-${extId} {
-      padding: 12px 0px 6px 0px !important;
+      padding: 12px 0px 8px 0px !important;
     }
     body[${EXPANDED_ATTR}="true"] .scratchCategoryMenuItem.scratchCategoryId-${extId}::after {
       top: calc(50% - 12px) !important; bottom: 0 !important;
@@ -256,9 +256,9 @@ export function setupNestedCategory({
     }
 
     /**
-     * 处理子分类点击：找到最近子分类并闪烁其积木
+     * 处理子分类双击：找到最近子分类并闪烁其积木
      */
-    function handleChildCategoryClick(e) {
+    function handleChildCategoryDblClick(e) {
         const childEl = e.target.closest('[class*="scratchCategoryId-"]')
         if (!childEl) return
 
@@ -329,6 +329,15 @@ export function setupNestedCategory({
     }
 
     const onDblClick = e => {
+        // 先判断是否是本扩展的子分类，优先处理闪烁
+        const childEl = e.target.closest(`[class*="scratchCategoryId-${extId}_"]`)
+        if (childEl) {
+            handleChildCategoryDblClick(e)
+            e.stopPropagation()
+            return
+        }
+
+        // 再判断是否是本扩展的父分类，切换折叠状态
         const parentEl = e.target.closest(`.scratchCategoryId-${extId}`)
         if (parentEl) {
             isExpanded = !isExpanded
@@ -341,7 +350,6 @@ export function setupNestedCategory({
 
     document.addEventListener('mousedown', onMouseDown, true)
     document.addEventListener('dblclick', onDblClick, true)
-    document.addEventListener('click', handleChildCategoryClick, true)
 
     // ============== 返回清理函数 ==============
     return function cleanupNestedCategory() {
@@ -350,6 +358,5 @@ export function setupNestedCategory({
         if (oldStyle) oldStyle.remove()
         document.removeEventListener('mousedown', onMouseDown, true)
         document.removeEventListener('dblclick', onDblClick, true)
-        document.removeEventListener('click', handleChildCategoryClick, true)
     }
 }

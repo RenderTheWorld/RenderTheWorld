@@ -16,3 +16,18 @@ interface TranslateFn {
 declare namespace Scratch {
   const translate: TranslateFn
 }
+
+
+interface Window {
+  RTWStyle?: HTMLStyleElement | null
+  Blockly?: any
+  /**
+   * Turbowarp IIFE extension registration list.
+   * Used to expose extension info for packaging tools.
+   */
+  IIFEExtensionInfoList?: any[]
+  /**
+   * Global RenderTheWorld namespace for compatibility hooks.
+   */
+  RTW?: any
+}

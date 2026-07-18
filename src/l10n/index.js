@@ -3,6 +3,10 @@
 import { collectL10n } from '../blocks/index.js'
 
 /**
+ * @typedef {import('../core/extcore.js').default} ExtensionCore
+ */
+
+/**
  * l10n 初始化
  *
  * 自动从各积木分组（BlockGroup.l10n()）收集翻译数据，
@@ -47,7 +51,6 @@ export default function l10nInit(core) {
 
     buildL10n(allEntries, '')
 
-    // console.log(blocksL10n, l10n)
     core.loadformat(l10n)
     return core
 }

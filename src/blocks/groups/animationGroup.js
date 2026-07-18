@@ -15,11 +15,17 @@ import BlockGroup from '../BlockGroup.js'
 import { getDynamicArgs } from '../../utils/extendableBlock.js'
 
 export default class AnimationGroup extends BlockGroup {
+    /**
+     * @param {import('../BlockGroup.js').BlockGroupContext} ctx
+     */
     constructor(ctx) {
         super(ctx)
         this.label = this.translate('group.animation')
     }
 
+    /**
+     * @returns {(import('../BlockGroup.js').BlockDef | string)[]}
+     */
     build() {
         const BT = this.BlockType
         const AT = this.ArgumentType

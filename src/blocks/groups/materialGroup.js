@@ -17,11 +17,14 @@
  */
 
 import BlockGroup from '../BlockGroup.js'
-import { RTW_Model_Box, Wrapper } from '../../utils/RTWTools.js'
+import { RTW_Model_Box, Wrapper, ColorTools } from '../../utils/RTWTools.js'
 import { chen_RenderTheWorld_extensionId } from '../../assets/index.js'
 
 export default class MaterialGroup extends BlockGroup {
     static groupId = 'Materials'
+    /**
+     * @param {import('../BlockGroup.js').BlockGroupContext} ctx
+     */
     constructor(ctx) {
         super(ctx)
         // 旧版 "材质" LABEL 在 InitGroup 末尾已输出，这里不再重复输出
@@ -31,6 +34,9 @@ export default class MaterialGroup extends BlockGroup {
         if (this.ext && !this.ext.threadInfo) this.ext.threadInfo = {}
     }
 
+    /**
+     * @returns {(import('../BlockGroup.js').BlockDef | string)[]}
+     */
     build() {
         const BT = this.BlockType
         const AT = this.ArgumentType
@@ -42,7 +48,7 @@ export default class MaterialGroup extends BlockGroup {
                 blockType: BT.OUTPUT,
                 text: t('makeMaterial'),
                 arguments: {},
-                output: 'Boolean',
+                output: 'Reporter', // 'Boolean', // Boolean可放在六边形槽里
                 outputShape: 3,
                 branchCount: 1,
                 hideFromPalette: true,
@@ -120,11 +126,18 @@ export default class MaterialGroup extends BlockGroup {
 
     // ============== 内联返回机制实现 ==============
 
+    /**
+     * @param {any} util
+     */
     _key(util) {
         const thread = util.thread
         return thread.topBlock.concat(thread.target.id)
     }
 
+    /**
+     * @param {{[key: string]: any}} args
+     * @param {any} util
+     */
     _makeMaterial(args, util) {
         const ext = this.ext
         const thread = util.thread
@@ -133,7 +146,7 @@ export default class MaterialGroup extends BlockGroup {
         if (typeof util.stackFrame._inlineLastReturn !== 'undefined') {
             // 阶段3：返回最终值
             util.stackFrame._inlineLastReturn = undefined
-            ext.threadInfo[key].pop()
+            ;(((ext.threadInfo || {})[key] || /** @type {any[]} */ ([])).pop())
             return util.stackFrame._inlineReturn
         } else if (typeof util.stackFrame._inlineReturn !== 'undefined') {
             // 阶段2：已有返回值，重新压栈以避免跳过外块
@@ -141,7 +154,7 @@ export default class MaterialGroup extends BlockGroup {
             util.thread.popStack()
             util.stackFrame._inlineLastReturn = true
             util.stackFrame._inlineReturn = returnValue
-            ext.threadInfo[key].pop()
+            ;(((ext.threadInfo || {})[key] || /** @type {any[]} */ ([])).pop())
             return returnValue
         } else {
             // 阶段1：运行子栈
@@ -150,10 +163,10 @@ export default class MaterialGroup extends BlockGroup {
                 return ''
             }
 
-            if (ext.threadInfo[key] && ext.threadInfo[key].length > 0) {
-                ext.threadInfo[key].push({ color: 0, fog: true })
+            if ((ext.threadInfo || {})[key] && (ext.threadInfo || {})[key].length > 0) {
+                (ext.threadInfo || {})[key].push({ color: 0, fog: true })
             } else {
-                ext.threadInfo[key] = [{ color: 0, fog: true }]
+                (ext.threadInfo || {})[key] = [{ color: 0, fog: true }]
             }
 
             const stackFrame = thread.peekStackFrame()
@@ -202,6 +215,12 @@ export default class MaterialGroup extends BlockGroup {
         }
     }
 
+    /**
+     * @param {any} blockId
+     * @param {any} thread
+     * @param {any} branchNum
+     * @param {any} isLoop
+     */
     _stepToBranchWithBlockId(blockId, thread, branchNum, isLoop) {
         if (!branchNum) branchNum = 1
         const branchId = thread.target.blocks.getBranch(blockId, branchNum)
@@ -213,32 +232,39 @@ export default class MaterialGroup extends BlockGroup {
         }
     }
 
+    /**
+     * @param {any} args
+     * @param {any} util
+     */
     _setMaterialColor({ color }, util) {
         const ext = this.ext
         const key = this._key(util)
         try {
-            const stack = ext.threadInfo[key]
+            const stack = (ext.threadInfo || {})[key]
             if (!stack || stack[stack.length - 1] === undefined)
                 return '⚠️请在"创建材质"积木中使用！'
             const cast = ext.cast
-            const c = cast ? cast.toString(color) : String(color)
-            // 保持与旧版一致：NaN 判断（NaN != NaN）
-            // 数字则存为 Number，否则存为 String
-            if (Number(c) == Number(c)) {
-                stack[stack.length - 1].color = Number(c)
-            } else {
-                stack[stack.length - 1].color = c
-            }
+            const THREE = ext.renderEngine?.THREE
+            if (!THREE) return '⚠️显示器未初始化！'
+            stack[stack.length - 1].color = ColorTools.toHex(
+                color,
+                THREE,
+                cast
+            )
         } catch {
             return '⚠️请在"创建材质"积木中运行！'
         }
     }
 
+    /**
+     * @param {any} args
+     * @param {any} util
+     */
     _setMaterialFog({ YN }, util) {
         const ext = this.ext
         const key = this._key(util)
         try {
-            const stack = ext.threadInfo[key]
+            const stack = (ext.threadInfo || {})[key]
             if (!stack || stack[stack.length - 1] === undefined)
                 return '⚠️请在"创建材质"积木中使用！'
             const cast = ext.cast
@@ -254,13 +280,17 @@ export default class MaterialGroup extends BlockGroup {
         }
     }
 
+    /**
+     * @param {any} args
+     * @param {any} util
+     */
     _returnm({ material }, util) {
         const ext = this.ext
         const THREE = ext.renderEngine.THREE
         const cast = ext.cast
         const key = this._key(util)
 
-        const stack = ext.threadInfo[key]
+        const stack = (ext.threadInfo || {})[key]
         if (stack && stack[stack.length - 1] === undefined)
             return '⚠️请在"创建材质"积木中使用！'
 
@@ -330,7 +360,7 @@ export default class MaterialGroup extends BlockGroup {
             'YN.true': { 'zh-cn': '能', en: 'can' },
             'YN.false': { 'zh-cn': '不能', en: "can't" },
             'material.Basic': { 'zh-cn': '基础', en: 'Basic' },
-            'material.Lambert': { 'zh-cn': '拉伯特', en: 'Lambert' },
+            'material.Lambert': { 'zh-cn': '朗伯', en: 'Lambert' },
             'material.Phong': { 'zh-cn': '冯氏', en: 'Phong' }
         }
     }

@@ -367,7 +367,7 @@ function initExpandableBlock(
     }
 
     const orgInit = blockDefinition.init
-    blockDefinition.init = function () {
+    blockDefinition.init = /** @this {any} */ function () {
         orgInit.call(this)
 
         this.dynamicArgumentIds_ = []
@@ -392,7 +392,7 @@ function initExpandableBlock(
         reorderInputs.call(this)
     }
 
-    blockDefinition.customContextMenu = function (contextMenu) {
+    blockDefinition.customContextMenu = /** @this {any} */ function (contextMenu) {
         if (this.isInFlyout) return
         let separator_ = true
 
@@ -506,7 +506,7 @@ function initExpandableBlock(
         })
     }
 
-    blockDefinition.attachShadow_ = function (
+    blockDefinition.attachShadow_ = /** @this {any} */ function (
         input,
         argumentType,
         defaultValue = ''
@@ -545,7 +545,7 @@ function initExpandableBlock(
         newBlock.outputConnection.connect(input.connection)
     }
 
-    blockDefinition.mutationToDom = function () {
+    blockDefinition.mutationToDom = /** @this {any} */ function () {
         const container = document.createElement('mutation')
         container.setAttribute(
             'dynamicargids',
@@ -558,7 +558,7 @@ function initExpandableBlock(
         return container
     }
 
-    blockDefinition.domToMutation = function (xmlElement) {
+    blockDefinition.domToMutation = /** @this {any} */ function (xmlElement) {
         this.dynamicArgumentIds_ =
             JSON.parse(xmlElement.getAttribute('dynamicargids')) || []
         this.dynamicArgumentTypes_ =
@@ -566,7 +566,7 @@ function initExpandableBlock(
         this.updateDisplay_()
     }
 
-    blockDefinition.addDynamicArg = function (type) {
+    blockDefinition.addDynamicArg = /** @this {any} */ function (type) {
         const oldMutationDom = this.mutationToDom()
         const oldMutation =
             oldMutationDom && ScratchBlocks.Xml.domToText(oldMutationDom)
@@ -605,7 +605,7 @@ function initExpandableBlock(
         ScratchBlocks.Events.setGroup(false)
     }
 
-    blockDefinition.removeDynamicArg = function (id) {
+    blockDefinition.removeDynamicArg = /** @this {any} */ function (id) {
         ScratchBlocks.Events.setGroup(true)
 
         const oldMutationDom = this.mutationToDom()
@@ -664,7 +664,7 @@ function initExpandableBlock(
         ScratchBlocks.Events.setGroup(false)
     }
 
-    blockDefinition.updateDisplay_ = function () {
+    blockDefinition.updateDisplay_ = /** @this {any} */ function () {
         const wasRendered = this.rendered
         this.rendered = false
 
@@ -681,7 +681,7 @@ function initExpandableBlock(
         }
     }
 
-    blockDefinition.disconnectDynamicArgBlocks_ = function () {
+    blockDefinition.disconnectDynamicArgBlocks_ = /** @this {any} */ function () {
         const connectionMap = {}
         for (let i = 0; i < this.inputList.length; i++) {
             const input = this.inputList[i]
@@ -698,10 +698,13 @@ function initExpandableBlock(
         return connectionMap
     }
 
-    blockDefinition.removeAllDynamicArgInputs_ = function () {
+    blockDefinition.removeAllDynamicArgInputs_ = /** @this {any} */ function () {
+        const list = /** @type {any} */ (this.inputList)
+        if (!list) return
         const inputList = []
-        for (let i = 0; i < this.inputList.length; i++) {
-            const input = this.inputList[i]
+        for (let i = 0; i < list.length; i++) {
+            const input = list[i]
+            if (!input) continue
             if (/^DYNAMIC_ARGS\d+$/.test(input.name)) input.dispose()
             else inputList.push(input)
         }
@@ -739,7 +742,7 @@ function initExpandableBlock(
         }
     }
 
-    blockDefinition.createAllDynamicArgInputs_ = function (connectionMap) {
+    blockDefinition.createAllDynamicArgInputs_ = /** @this {any} */ function (connectionMap) {
         const num = this.dynamicArgumentTypes_.length
         const { endText, joinCh, afterArg } = this.dynamicArgInfo_
         updatePreText(this, num)
@@ -773,7 +776,7 @@ function initExpandableBlock(
         updateButton.call(this)
     }
 
-    blockDefinition.populateArgument_ = function (
+    blockDefinition.populateArgument_ = /** @this {any} */ function (
         type,
         connectionMap,
         id,

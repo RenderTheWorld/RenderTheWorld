@@ -19,11 +19,17 @@ const MAP_TYPES = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissive
 
 export default class TextureGroup extends BlockGroup {
     static groupId = 'Textures'
+    /**
+     * @param {import('../BlockGroup.js').BlockGroupContext} ctx
+     */
     constructor(ctx) {
         super(ctx)
         this.label = this.translate('group.texture')
     }
 
+    /**
+     * @returns {(import('../BlockGroup.js').BlockDef | string)[]}
+     */
     build() {
         const BT = this.BlockType
         const AT = this.ArgumentType

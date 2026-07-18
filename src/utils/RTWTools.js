@@ -11,7 +11,7 @@ const setTHREE = (three) => {
 
 function addRTWStyle(newStyle) {
     let _RTWStyle = !window.RTWStyle
-    window.RTWStyle = document.getElementById('RTWStyle')
+    window.RTWStyle = /** @type {HTMLStyleElement | null} */ (document.getElementById('RTWStyle'))
 
     if (!window.RTWStyle) {
         window.RTWStyle = document.createElement('style')
@@ -73,7 +73,7 @@ addRTWStyle(`
     width: 14px;
     height: 14px;
     border-radius: 3px;
-    border: 1px solid rgba(255,255,255,0.3);
+    border: 1px solid #888;
     margin-right: 6px;
     vertical-align: middle;
 }
@@ -100,7 +100,7 @@ class _RTWVisualReport {
     constructor() {}
     Body(title, parts, isInMonitor) {
         const body = document.createElement('div')
-        body.classList.add('RTW-visualReport-body')
+        body.classList.add('RTW-visualReport')
         const head = document.createElement('div')
         head.classList.add('RTW-visualReport-head')
         head.appendChild(title)
@@ -256,12 +256,18 @@ class RTW_Model_Box {
         } else if (THREE && m instanceof THREE.Euler) {
             const deg = THREE.MathUtils.radToDeg
             text = `欧拉角 (${deg(m.x).toFixed(1)}°, ${deg(m.y).toFixed(1)}°, ${deg(m.z).toFixed(1)}°)`
+        } else if (THREE && m instanceof THREE.Vector4) {
+            text = `向量 (${m.x.toFixed(2)}, ${m.y.toFixed(2)}, ${m.z.toFixed(2)}, ${m.w.toFixed(2)})`
         } else if (THREE && m instanceof THREE.Vector3) {
             text = `向量 (${m.x.toFixed(2)}, ${m.y.toFixed(2)}, ${m.z.toFixed(2)})`
         } else if (THREE && m instanceof THREE.Vector2) {
             text = `向量 (${m.x.toFixed(2)}, ${m.y.toFixed(2)})`
         } else if (THREE && m instanceof THREE.Color) {
             text = `颜色 #${m.getHexString()}`
+        } else if (m && typeof m === 'object' && 'r' in m && 'g' in m && 'b' in m) {
+            text = `RGB(${Math.round(m.r)}, ${Math.round(m.g)}, ${Math.round(m.b)})`
+        } else if (m && typeof m === 'object' && 'h' in m && 's' in m && 'l' in m) {
+            text = `HSL(${Number(m.h).toFixed(2)}, ${Math.round(Number(m.s) * 100)}%, ${Math.round(Number(m.l) * 100)}%)`
         } else if (THREE && m instanceof THREE.Matrix4) {
             text = '4x4 矩阵'
         } else if (THREE && m instanceof THREE.Matrix3) {
@@ -490,8 +496,17 @@ class RTW_Model_Box {
                 R.Property('z:', quat.z.toFixed(4)),
                 R.Property('w:', quat.w.toFixed(4))
             )
+        } else if (THREE && m instanceof THREE.Vector4) {
+            // ============== 4D 向量 ==============
+            parts.push(
+                R.Property('x:', m.x.toFixed(4)),
+                R.Property('y:', m.y.toFixed(4)),
+                R.Property('z:', m.z.toFixed(4)),
+                R.Property('w:', m.w.toFixed(4)),
+                R.Property('长度:', m.length().toFixed(4))
+            )
         } else if (THREE && m instanceof THREE.Vector3) {
-            // ============== 向量 ==============
+            // ============== 3D 向量 ==============
             parts.push(
                 R.Property('x:', m.x.toFixed(4)),
                 R.Property('y:', m.y.toFixed(4)),
@@ -526,6 +541,19 @@ class RTW_Model_Box {
                 R.Property('饱和度:', `${(hsl.s * 100).toFixed(1)}%`),
                 R.Property('亮度:', `${(hsl.l * 100).toFixed(1)}%`)
             )
+        } else if (m && typeof m === 'object' && 'r' in m && 'g' in m && 'b' in m) {
+            // ============== RGB 对象 ==============
+            const isUnit = m.r <= 1 && m.g <= 1 && m.b <= 1
+            parts.push(R.Property('类型:', 'RGB 对象'))
+            parts.push(R.Property('r:', isUnit ? m.r.toFixed(4) : Math.round(m.r)))
+            parts.push(R.Property('g:', isUnit ? m.g.toFixed(4) : Math.round(m.g)))
+            parts.push(R.Property('b:', isUnit ? m.b.toFixed(4) : Math.round(m.b)))
+        } else if (m && typeof m === 'object' && 'h' in m && 's' in m && 'l' in m) {
+            // ============== HSL 对象 ==============
+            parts.push(R.Property('类型:', 'HSL 对象'))
+            parts.push(R.Property('色相:', `${Number(m.h).toFixed(3)}`))
+            parts.push(R.Property('饱和度:', `${(Number(m.s) * 100).toFixed(1)}%`))
+            parts.push(R.Property('亮度:', `${(Number(m.l) * 100).toFixed(1)}%`))
         } else if (THREE && m instanceof THREE.Matrix4) {
             // ============== 4x4 矩阵 ==============
             const e = m.elements
@@ -699,6 +727,182 @@ let Wrapper = class _Wrapper extends String {
     }
 }
 
+// ============== 通用工具函数（供各 BlockGroup 复用） ==============
+
+/**
+ * 解包可能经过 Wrapper / RTW_Model_Box 包装的值
+ * @param {*} value
+ * @returns {*}
+ */
+function unwrapRTWModel(value) {
+    const obj = Wrapper.unwrap(value)
+    return obj instanceof RTW_Model_Box ? obj.model : obj
+}
+
+/**
+ * 将值包装为 Wrapper(RTW_Model_Box(...))
+ * @param {*} obj
+ * @returns {Wrapper}
+ */
+function wrapRTWModel(obj) {
+    return new Wrapper(new RTW_Model_Box(obj, false, false, false, undefined))
+}
+
+/**
+ * 将任意值解析为 THREE.Vector3
+ * @param {*} value
+ * @param {any} THREE
+ * @param {{toNumber: (v: any) => number}} [cast]
+ * @returns {any | null}
+ */
+function toVector3(value, THREE, cast) {
+    const v = unwrapRTWModel(value)
+    if (v instanceof THREE.Vector3) return v.clone()
+    if (Array.isArray(v) && v.length >= 3) {
+        return new THREE.Vector3(
+            Number(v[0]) || 0,
+            Number(v[1]) || 0,
+            Number(v[2]) || 0
+        )
+    }
+    if (v && typeof v === 'object') {
+        return new THREE.Vector3(
+            cast ? cast.toNumber(v.x) : Number(v.x) || 0,
+            cast ? cast.toNumber(v.y) : Number(v.y) || 0,
+            cast ? cast.toNumber(v.z) : Number(v.z) || 0
+        )
+    }
+    return null
+}
+
+/**
+ * 将任意值解析为 THREE.Color
+ * 支持：number(hex)、string('#fff'/'rgb(...)'/'hsl(...)')、THREE.Color、
+ *       RTW_Model_Box<THREE.Color>、{r,g,b}/{h,s,l} 对象
+ * @param {*} value
+ * @param {any} THREE
+ * @param {{toNumber: (v: any) => number}} [cast]
+ * @returns {any}
+ */
+function toColor(value, THREE, cast) {
+    const c = unwrapRTWModel(value)
+    if (c instanceof THREE.Color) return c.clone()
+
+    const toN = v => (cast ? cast.toNumber(v) : Number(v)) || 0
+
+    if (Array.isArray(c) && c.length >= 3) {
+        return new THREE.Color(
+            toN(c[0]) / 255,
+            toN(c[1]) / 255,
+            toN(c[2]) / 255
+        )
+    }
+    if (typeof c === 'string') {
+        const trimmed = c.trim()
+        if (trimmed.startsWith('#')) return new THREE.Color(trimmed)
+        if (trimmed.startsWith('rgb')) {
+            const nums = (trimmed.match(/\d+/g) || []).map(Number)
+            if (nums.length >= 3) {
+                return new THREE.Color(
+                    nums[0] / 255,
+                    nums[1] / 255,
+                    nums[2] / 255
+                )
+            }
+        }
+        if (trimmed.startsWith('hsl')) {
+            const nums = (trimmed.match(/\d+(\.\d+)?/g) || []).map(Number)
+            if (nums.length >= 3) {
+                return new THREE.Color().setHSL(
+                    nums[0] / 360,
+                    nums[1] / 100,
+                    nums[2] / 100
+                )
+            }
+        }
+    }
+    if (c && typeof c === 'object') {
+        if ('r' in c && 'g' in c && 'b' in c) {
+            return new THREE.Color(
+                toN(c.r) / 255,
+                toN(c.g) / 255,
+                toN(c.b) / 255
+            )
+        }
+        if ('h' in c && 's' in c && 'l' in c) {
+            let h = toN(c.h)
+            const s = toN(c.s)
+            const l = toN(c.l)
+            if (h > 1) h /= 360
+            return new THREE.Color().setHSL(h, s, l)
+        }
+    }
+    return new THREE.Color(cast ? cast.toNumber(value) : Number(value))
+}
+
+/**
+ * 颜色工具集合，统一处理颜色类型转换。
+ * 所有接收颜色参数的积木都应通过 ColorTools.parse 解析输入。
+ */
+const ColorTools = {
+    /**
+     * 通用颜色解析器
+     * @param {*} value
+     * @param {any} THREE
+     * @param {{toNumber: (v: any) => number}} [cast]
+     * @returns {any} THREE.Color
+     */
+    parse: toColor,
+
+    /**
+     * 转十进制 hex 数值（0xRRGGBB）
+     */
+    toHex(value, THREE, cast) {
+        return toColor(value, THREE, cast).getHex()
+    },
+
+    /**
+     * 转 RGB 对象 {r, g, b}，范围 0-255
+     */
+    toRGB(value, THREE, cast) {
+        const c = toColor(value, THREE, cast)
+        return {
+            r: Math.round(c.r * 255),
+            g: Math.round(c.g * 255),
+            b: Math.round(c.b * 255)
+        }
+    },
+
+    /**
+     * 从 HSL 创建 THREE.Color
+     * h: 0-360°，s/l: 0-100%（或 0-1）
+     */
+    fromHSL(h, s, l, THREE, cast) {
+        let hh = cast ? cast.toNumber(h) : Number(h) || 0
+        const ss = cast ? cast.toNumber(s) : Number(s) || 0
+        const ll = cast ? cast.toNumber(l) : Number(l) || 0
+        if (hh > 1) hh /= 360
+        return new THREE.Color().setHSL(hh, ss / 100, ll / 100)
+    },
+
+    /**
+     * 转 HSL 对象 {h, s, l}，h 为 0-1，s/l 为 0-1
+     */
+    toHSL(value, THREE, cast) {
+        const c = toColor(value, THREE, cast)
+        const hsl = { h: 0, s: 0, l: 0 }
+        c.getHSL(hsl)
+        return hsl
+    },
+
+    /**
+     * 转 '#rrggbb' 字符串
+     */
+    toString(value, THREE, cast) {
+        return `#${toColor(value, THREE, cast).getHexString()}`
+    }
+}
+
 // patch 函数已统一到 injector.js，这里通过 import 复用
 
 export {
@@ -706,5 +910,10 @@ export {
     RTW_Model_Box,
     Wrapper,
     RTWVisualReport as RTWDialog,
-    setTHREE
+    setTHREE,
+    unwrapRTWModel,
+    wrapRTWModel,
+    toVector3,
+    toColor,
+    ColorTools
 }

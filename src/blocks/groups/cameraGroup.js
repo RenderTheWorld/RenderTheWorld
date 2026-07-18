@@ -18,11 +18,17 @@ import BlockGroup from '../BlockGroup.js'
 import { RTW_Model_Box, Wrapper } from '../../utils/RTWTools.js'
 
 export default class CameraGroup extends BlockGroup {
+    /**
+     * @param {import('../BlockGroup.js').BlockGroupContext} ctx
+     */
     constructor(ctx) {
         super(ctx)
         this.label = this.translate('group.camera')
     }
 
+    /**
+     * @returns {(import('../BlockGroup.js').BlockDef | string)[]}
+     */
     build() {
         const BT = this.BlockType
         const AT = this.ArgumentType
@@ -41,6 +47,22 @@ export default class CameraGroup extends BlockGroup {
                     const engine = ext.renderEngine
                     if (!engine.tc) return '⚠️显示器未初始化！'
                     engine.setActiveCamera(args.camera)
+                }
+            },
+            {
+                opcode: 'getCamera',
+                blockType: BT.OUTPUT,
+                text: t('getCamera'),
+                arguments: {},
+                output: 'Reporter',
+                outputShape: 3,
+                branchCount: 0,
+                handler: () => {
+                    const camera = ext.renderEngine.camera
+                    if (!camera) return null
+                    return new Wrapper(
+                        new RTW_Model_Box(camera, false, false, false, undefined)
+                    )
                 }
             },
             {
@@ -241,6 +263,10 @@ export default class CameraGroup extends BlockGroup {
             useCamera: {
                 'zh-cn': '使用相机 [camera]',
                 en: 'use camera [camera]'
+            },
+            getCamera: {
+                'zh-cn': '当前相机',
+                en: 'current camera'
             },
             perspectiveCamera: {
                 'zh-cn':

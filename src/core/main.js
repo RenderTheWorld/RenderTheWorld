@@ -8,8 +8,11 @@
 
 // 类型导入仅用于 JSDoc 类型注解，运行时无需导入
 import { chen_RenderTheWorld_extensionId } from '../assets/index.js'
-// import RenderEngine from './renderengine.js'
-// import ExtensionCore from './extcore.js'
+
+/**
+ * @typedef {import('./renderengine.js').default} RenderEngine
+ * @typedef {import('./extcore.js').default} ExtensionCore
+ */
 
 class Extension {
     constructor() {
@@ -19,7 +22,7 @@ class Extension {
         this.runtime = null
         /** @type {import('scratch-vm')} */
         this.vm = null
-        /** @type {import('scratch-blocks')} */
+        /** @type {any} */
         this.ScratchBlocks = null
 
         /** @type {Scratch} */
@@ -33,7 +36,7 @@ class Extension {
         /** @type {import('../utils/logger.js').default} */
         this.logger = null
 
-        /** @type {Object} Cast 工具（数值/字符串/布尔转换） */
+        /** @type {{toNumber: (v: any) => number, toString: (v: any) => string, toBoolean: (v: any) => boolean}} Cast 工具（数值/字符串/布尔转换） */
         this.cast = null
 
         /** 使用教程地址（docsURI，显示在扩展库的"文档"按钮） */

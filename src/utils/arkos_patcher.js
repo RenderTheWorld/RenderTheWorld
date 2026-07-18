@@ -18,10 +18,13 @@ const hasOwn = Object.prototype.hasOwnProperty
  * @property {boolean} [paused=false] 是否暂停应用
  */
 /**
+ * @typedef {Object} Options
+ * @property {boolean} [patchOwner=true]
+ */
+
+/**
  * @typedef FunctionRecord
  * @property {Array<SinglePatch>} patches 应用在该函数的所有 patch 信息
- *
- * @property {Function} patched patched function
  * @property {Array<Function>} befores before 钩子函数列表
  * @property {Function} wrapped 中间函数
  * @property {Array<Function>} afters after 钩子函数列表
@@ -77,10 +80,8 @@ class Patcher {
 
     /**
      * new Patcher(id, options)
-     * options:
-     *  @param {string} id - patcher id
-     *  @param {Options} options
-     *  @param {boolean} [options.patchOwner=true] (Default: true) Whether to patch on the prototype that owns the method
+     * @param {string} id - patcher id
+     * @param {Options} [options]
      */
     constructor(id, options = {}) {
         if (!id) throw new Error('Patcher requires an id')

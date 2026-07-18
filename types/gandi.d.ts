@@ -63,3 +63,32 @@ declare interface Window {
     l10n: Record<string, Record<string, string>>
   }
 }
+
+declare namespace VM {
+  interface Runtime {
+    logSystem?: any
+    extensionManager?: any
+    _events?: any
+    scratchBlocks?: any
+    /**
+     * Gandi IDE asset content accessor.
+     * @param {string} filename
+     * @returns {{ encodeDataURI: () => string } | null | undefined}
+     */
+    getGandiAssetContent?: (filename: string) => { encodeDataURI: () => string } | null | undefined
+  }
+}
+interface VM {
+  securityManager?: {
+    canDownload?: (...args: any[]) => any
+    canEmbed?: (...args: any[]) => any
+    canFetch?: (...args: any[]) => any
+    canGeolocate?: (...args: any[]) => any
+    canNotify?: (...args: any[]) => any
+    canOpenWindow?: (...args: any[]) => any
+    canReadClipboard?: (...args: any[]) => any
+    canRecordAudio?: (...args: any[]) => any
+    canRecordVideo?: (...args: any[]) => any
+    canRedirect?: (...args: any[]) => any
+  }
+}

@@ -7,13 +7,20 @@
  */
 
 import BlockGroup from '../BlockGroup.js'
+import { ColorTools } from '../../utils/RTWTools.js'
 
 export default class FogGroup extends BlockGroup {
+    /**
+     * @param {import('../BlockGroup.js').BlockGroupContext} ctx
+     */
     constructor(ctx) {
         super(ctx)
         this.label = this.translate('group.fog')
     }
 
+    /**
+     * @returns {(import('../BlockGroup.js').BlockDef | string)[]}
+     */
     build() {
         const BT = this.BlockType
         const AT = this.ArgumentType
@@ -36,7 +43,7 @@ export default class FogGroup extends BlockGroup {
                     const cast = ext.cast
                     const THREE = engine.THREE
                     engine.scene.fog = new THREE.Fog(
-                        cast.toNumber(args.color),
+                        ColorTools.parse(args.color, THREE, cast),
                         cast.toNumber(args.near),
                         cast.toNumber(args.far)
                     )

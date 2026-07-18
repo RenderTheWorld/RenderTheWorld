@@ -9,13 +9,20 @@
  */
 
 import BlockGroup from '../BlockGroup.js'
+import { ColorTools } from '../../utils/RTWTools.js'
 
 export default class SkyGroup extends BlockGroup {
+    /**
+     * @param {import('../BlockGroup.js').BlockGroupContext} ctx
+     */
     constructor(ctx) {
         super(ctx)
         this.label = this.translate('group.sky')
     }
 
+    /**
+     * @returns {(import('../BlockGroup.js').BlockDef | string)[]}
+     */
     build() {
         const BT = this.BlockType
         const AT = this.ArgumentType
@@ -82,8 +89,10 @@ export default class SkyGroup extends BlockGroup {
                         engine._skyTexture = null
                     }
                     const cast = ext.cast
-                    engine.scene.background = new THREE.Color(
-                        cast.toNumber(args.color)
+                    engine.scene.background = ColorTools.parse(
+                        args.color,
+                        THREE,
+                        cast
                     )
                     engine.setDirty3D()
                 }
@@ -106,8 +115,8 @@ export default class SkyGroup extends BlockGroup {
                         engine._skyTexture.dispose()
                         engine._skyTexture = null
                     }
-                    const top = new THREE.Color(cast.toNumber(args.top))
-                    const bottom = new THREE.Color(cast.toNumber(args.bottom))
+                    const top = ColorTools.parse(args.top, THREE, cast)
+                    const bottom = ColorTools.parse(args.bottom, THREE, cast)
                     const canvas = document.createElement('canvas')
                     canvas.width = 2
                     canvas.height = 256

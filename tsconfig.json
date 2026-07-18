@@ -7,7 +7,12 @@
         "importHelpers": true,
         "downlevelIteration": true,
         "isolatedModules": true,
-        "strict": true,
+        "strict": false,
+        "noImplicitAny": false,
+        "strictNullChecks": false,
+        "noImplicitThis": false,
+        "strictBindCallApply": false,
+        "strictFunctionTypes": false,
         "forceConsistentCasingInFileNames": true,
         "skipLibCheck": true,
         "resolveJsonModule": true,
@@ -18,32 +23,47 @@
         "types": [],
         "baseUrl": ".",
         "paths": {
-            // "~/*": [
-            //   "./types/*"
-            // ]
-            "scratch-vm": ["./node_modules/@turbowarp/types/index.d.ts"],
-            "scratch-render": ["./node_modules/@turbowarp/types/index.d.ts"],
+            "scratch-vm": [
+                "./node_modules/@turbowarp/types/index.d.ts"
+            ],
+            "scratch-render": [
+                "./node_modules/@turbowarp/types/index.d.ts"
+            ],
             "scratch-svg-renderer": [
                 "./node_modules/@turbowarp/types/index.d.ts"
             ],
             "scratch-render-fonts": [
                 "./node_modules/@turbowarp/types/index.d.ts"
             ],
-            "scratch-storage": ["./node_modules/@turbowarp/types/index.d.ts"],
-            "scratch-audio": ["./node_modules/@turbowarp/types/index.d.ts"],
-            "scratch-parser": ["./node_modules/@turbowarp/types/index.d.ts"],
-            "scratch-blocks": ["./node_modules/@turbowarp/types/index.d.ts"]
+            "scratch-storage": [
+                "./node_modules/@turbowarp/types/index.d.ts"
+            ],
+            "scratch-audio": [
+                "./node_modules/@turbowarp/types/index.d.ts"
+            ],
+            "scratch-parser": [
+                "./node_modules/@turbowarp/types/index.d.ts"
+            ],
+            "scratch-blocks": [
+                "./node_modules/@turbowarp/types/index.d.ts"
+            ]
         },
-        "lib": ["ESNext", "DOM"],
+        "lib": [
+            "ESNext",
+            "DOM"
+        ],
         "target": "ESNext",
         "moduleResolution": "Node",
         "outDir": "dist"
     },
+    "exclude": [
+        "src/test/**"
+    ],
     "include": [
         "node_modules/@turbowarp/types/types/scratch-vm-extension.d.ts",
         "types/universal.d.ts",
-        "types/turbowarp.d.ts", // 为了获得更好的 Turbowarp 体验
-        "types/gandi.d.ts", // 为了获得更好的 Gandi IDE 体验
+        "types/turbowarp.d.ts",
+        "types/gandi.d.ts",
         "src/**/*",
         "tsup.config.ts",
         "package.json"

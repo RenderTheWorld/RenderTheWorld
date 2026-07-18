@@ -45,6 +45,7 @@ import {
     inMainWorkspace
 } from './utils/scratchTools.js'
 import { initExpandableBlocks } from './utils/extendableBlock.js'
+import { initMutatorBlocks } from './utils/mutatorBlock.js'
 import { setupNestedCategory } from './utils/nestedCategory.js'
 import { addRTWStyle } from './utils/RTWTools.js'
 import {
@@ -133,7 +134,9 @@ addRTWStyle(`
                     leftButton,
                     rightSelectButton
                 )
-                // 9. 嵌套分类（工具栏父分类 + 子分类折叠）
+                // 9. 下拉驱动动态参数积木（如 mathUtils）
+                initMutatorBlocks(this)
+                // 10. 嵌套分类（工具栏父分类 + 子分类折叠）
                 this._hookCleanups.push(
                     setupNestedCategory({
                         vm: extension.vm,

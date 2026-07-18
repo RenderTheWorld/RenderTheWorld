@@ -16,11 +16,17 @@ import BlockGroup from '../BlockGroup.js'
 import { RTW_Model_Box, Wrapper } from '../../utils/RTWTools.js'
 
 export default class ControlsGroup extends BlockGroup {
+    /**
+     * @param {import('../BlockGroup.js').BlockGroupContext} ctx
+     */
     constructor(ctx) {
         super(ctx)
         this.label = this.translate('group.control')
     }
 
+    /**
+     * @returns {(import('../BlockGroup.js').BlockDef | string)[]}
+     */
     build() {
         const BT = this.BlockType
         const AT = this.ArgumentType

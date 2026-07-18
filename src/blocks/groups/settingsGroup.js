@@ -12,24 +12,30 @@
  *   - set3dState         (COMMAND)   设置 3D 层显隐
  *   - get3dState         (BOOLEAN)   三维显示器是否显示
  *   - isWebGLAvailable   (BOOLEAN)   当前设备是否支持 WebGL
- *   - color_RGB          (REPORTER)  RGB 颜色合成工具
  *
  * LABEL 顺序：
  *   🛠️工具 → [setBackgroundColor, setAntialias, setShadowMapType,
  *             setShadowEnabled, set3dState, get3dState,
- *             isWebGLAvailable, color_RGB]
+ *             isWebGLAvailable]
  *   🧸物体 → 材质 → ...（后续分组续接）
  */
 
 import BlockGroup from '../BlockGroup.js'
+import { ColorTools, wrapRTWModel } from '../../utils/RTWTools.js'
 
 export default class SettingsGroup extends BlockGroup {
     static groupId = 'Tools'
+    /**
+     * @param {import('../BlockGroup.js').BlockGroupContext} ctx
+     */
     constructor(ctx) {
         super(ctx)
         this.label = this.translate('group.tools')
     }
 
+    /**
+     * @returns {(import('../BlockGroup.js').BlockDef | string)[]}
+     */
     build() {
         const BT = this.BlockType
         const AT = this.ArgumentType
@@ -56,10 +62,9 @@ export default class SettingsGroup extends BlockGroup {
                         engine.setBackgroundColor(null)
                         return
                     }
-                    const colorVal = cast
-                        ? cast.toNumber(args.color)
-                        : Number(args.color)
-                    engine.setBackgroundColor(colorVal)
+                    const THREE = engine.THREE
+                    const color = ColorTools.parse(args.color, THREE, cast)
+                    engine.setBackgroundColor(color.getHex())
                 }
             },
             // —— 3D 显示器状态 ——
@@ -157,22 +162,74 @@ export default class SettingsGroup extends BlockGroup {
 
             // —— 颜色工具 ——
             {
-                opcode: 'color_RGB',
-                blockType: BT.REPORTER,
-                text: t('color_RGB'),
+                opcode: 'colorMath',
+                blockType: BT.OUTPUT,
+                text: t('colorMath'),
                 arguments: {
-                    R: { type: AT.NUMBER, defaultValue: 255 },
-                    G: { type: AT.NUMBER, defaultValue: 255 },
-                    B: { type: AT.NUMBER, defaultValue: 255 }
+                    hex: { type: AT.NUMBER, defaultValue: 0xffffff }
                 },
-                disableMonitor: true,
+                output: 'Reporter',
+                outputShape: 3,
+                branchCount: 0,
                 handler: args => {
-                    const cast = ext.cast
-                    const toNum = cast ? cast.toNumber : v => Number(v) || 0
-                    const r = Math.min(Math.max(toNum(args.R), 0), 255)
-                    const g = Math.min(Math.max(toNum(args.G), 0), 255)
-                    const b = Math.min(Math.max(toNum(args.B), 0), 255)
-                    return r * 65536 + g * 256 + b
+                    const engine = ext.renderEngine
+                    const THREE = engine?.THREE
+                    if (!THREE) return '⚠️显示器未初始化！'
+                    return wrapRTWModel(
+                        ColorTools.parse(args.hex, THREE, ext.cast)
+                    )
+                }
+            },
+            {
+                opcode: 'colorFromRGB',
+                blockType: BT.OUTPUT,
+                text: t('colorFromRGB'),
+                arguments: {
+                    r: { type: AT.NUMBER, defaultValue: 255 },
+                    g: { type: AT.NUMBER, defaultValue: 255 },
+                    b: { type: AT.NUMBER, defaultValue: 255 }
+                },
+                output: 'Reporter',
+                outputShape: 3,
+                branchCount: 0,
+                handler: args => {
+                    const engine = ext.renderEngine
+                    const THREE = engine?.THREE
+                    if (!THREE) return '⚠️显示器未初始化！'
+                    return wrapRTWModel(
+                        ColorTools.parse(
+                            [args.r, args.g, args.b],
+                            THREE,
+                            ext.cast
+                        )
+                    )
+                }
+            },
+            {
+                opcode: 'colorFromHSL',
+                blockType: BT.OUTPUT,
+                text: t('colorFromHSL'),
+                arguments: {
+                    h: { type: AT.NUMBER, defaultValue: 180 },
+                    s: { type: AT.NUMBER, defaultValue: 100 },
+                    l: { type: AT.NUMBER, defaultValue: 50 }
+                },
+                output: 'Reporter',
+                outputShape: 3,
+                branchCount: 0,
+                handler: args => {
+                    const engine = ext.renderEngine
+                    const THREE = engine?.THREE
+                    if (!THREE) return '⚠️显示器未初始化！'
+                    return wrapRTWModel(
+                        ColorTools.fromHSL(
+                            args.h,
+                            args.s,
+                            args.l,
+                            THREE,
+                            ext.cast
+                        )
+                    )
                 }
             }
         ]
@@ -245,10 +302,6 @@ export default class SettingsGroup extends BlockGroup {
                 'zh-cn': '当前设备支持WebGL',
                 en: 'WebGL available'
             },
-            color_RGB: {
-                'zh-cn': 'RGB颜色: R[R] G[G] B[B]',
-                en: 'RGB color: R[R] G[G] B[B]'
-            },
             bgColor: {
                 none: {
                     'zh-cn': '透明',
@@ -263,6 +316,18 @@ export default class SettingsGroup extends BlockGroup {
             ed: {
                 enable: { 'zh-cn': '启用', en: 'enable' },
                 disable: { 'zh-cn': '禁用', en: 'disable' }
+            },
+            colorMath: {
+                'zh-cn': '颜色 [hex]',
+                en: 'color [hex]'
+            },
+            colorFromRGB: {
+                'zh-cn': 'RGB颜色 R [r] G [g] B [b]',
+                en: 'RGB color R [r] G [g] B [b]'
+            },
+            colorFromHSL: {
+                'zh-cn': 'HSL颜色 色相 [h]° 饱和度 [s]% 亮度 [l]%',
+                en: 'HSL color hue [h]° sat [s]% light [l]%'
             }
         }
     }

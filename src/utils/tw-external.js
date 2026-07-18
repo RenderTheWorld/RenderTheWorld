@@ -55,7 +55,7 @@ external.dataURL = async url => {
     const blob = await res.blob()
     return new Promise((resolve, reject) => {
         const fr = new FileReader()
-        fr.onload = () => resolve(fr.result)
+        fr.onload = () => resolve(/** @type {string} */ (fr.result))
         fr.onerror = () => reject(fr.error)
         fr.readAsDataURL(blob)
     })

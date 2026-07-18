@@ -20,10 +20,10 @@ const staticFetch = url => {
             const contentType = simpleDataUrlMatch[1].toLowerCase()
             const base64 = url.substring(simpleDataUrlMatch[0].length)
             const decoded = Base64Util.base64ToUint8Array(base64)
-            return new Response(decoded, {
+            return new Response(/** @type {ArrayBuffer} */ (decoded.buffer), {
                 headers: {
                     'content-type': contentType,
-                    'content-length': decoded.byteLength
+                    'content-length': String(decoded.byteLength)
                 }
             })
         }

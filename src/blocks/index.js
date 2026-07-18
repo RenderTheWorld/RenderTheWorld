@@ -44,12 +44,12 @@ const groupClasses = [
     LightingGroup,
     CameraGroup,
     ControlsGroup,
-    FogGroup
+    FogGroup,
     // AI编写，还有问题，稍后修改
-    // MathGroup
-    // SkyGroup
+    MathGroup,
+    // SkyGroup,
     // EffectsGroup,
-    // TextureGroup
+    // TextureGroup,
 ]
 
 /**
@@ -61,7 +61,7 @@ const groupClasses = [
  * 对于 OUTPUT/XML 等非标准类型，优先使用原始 Scratch.BlockType 中的值
  * （Gandi 环境的 scratch-vm 能识别这些值），如果没有则使用回退值。
  *
- * @param {Object} [originalBlockType] - 来自 Scratch.BlockType 的原始枚举
+ * @param {any} [originalBlockType] - 来自 Scratch.BlockType 的原始枚举
  * @returns {import('./BlockGroup.js').BlockType}
  */
 function normalizeBlockType(originalBlockType) {
@@ -106,9 +106,9 @@ function normalizeArgumentType() {
  * 加载所有积木到 core
  * @param {import('../core/main.js').default} ext - Extension 主对象
  * @param {{[key: string]: any}} renderTheWorldInstance - RenderTheWorld 实例（用于挂载 opcode 方法）
- * @param {ExtensionCore} core - 扩展核心
- * @param {Object} BlockType - BlockType 枚举（原始）
- * @param {Object} ArgumentType - ArgumentType 枚举（原始）
+ * @param {import('../core/extcore.js').default} core - 扩展核心
+ * @param {import('./BlockGroup.js').BlockType} BlockType - BlockType 枚举（原始）
+ * @param {import('./BlockGroup.js').ArgumentType} ArgumentType - ArgumentType 枚举（原始）
  * @param {(key: string) => string} translate - 翻译函数
  * @returns {BlockGroup[]} 已注册的分组实例数组
  */
@@ -155,13 +155,13 @@ export function loadBlocks(
  * @returns {Object} 形如 { 'key': { 'zh-cn': '...', 'en': '...' } }
  */
 export function collectL10n() {
-    const ctx = {
+    const ctx = /** @type {import('./BlockGroup.js').BlockGroupContext} */ ({
         ext: null,
         core: null,
         BlockType: {},
         ArgumentType: {},
-        translate: k => k
-    }
+        translate: (/** @type {string} */ k) => k
+    })
     const merged = {}
     groupClasses.forEach(Cls => {
         try {

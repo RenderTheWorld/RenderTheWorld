@@ -17,6 +17,10 @@ import { chen_RenderTheWorld_extensionId } from '../assets/index.js'
 import { addFileType } from '../utils/gandiAssetTools.js'
 
 /**
+ * @typedef {import('./main.js').default} Extension
+ */
+
+/**
  * 劫持 _convertBlockForScratchBlocks，适配 OUTPUT 类型块
  *
  * Gandi/TurboWarp 的 BlockType 枚举都没有 OUTPUT 类型，需要回退为标准类型：
@@ -242,8 +246,7 @@ export function setupGandiAssetMenus(extension) {
  * 通过劫持 VM 的积木构建逻辑和 Blockly 的原型链，将 acceptText: true 的菜单
  * 转换为兼具文本输入框和下拉菜单特性的 field_textdropdown。
  *
- * @param {Object} ext - RenderTheWorld 实例
- * @param {Object} ScratchBlocks - Blockly/ScratchBlocks 全局对象
+ * @param {Object} ext - RenderTheWorld 实例（含 runtime 和 ScratchBlocks）
  * @returns {() => void} 清理函数
  */
 export function setupTextDropDowns(ext) {

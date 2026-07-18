@@ -14,7 +14,7 @@ function parseURL(url) {
 
 export function createScratchInstance(Scratch) {
     const vm = getVM(Scratch.vm?.runtime)
-    const ScratchBlocks = getScratchBlocks(Scratch.vm?.runtime, vm)
+    const ScratchBlocks = getScratchBlocks(Scratch.vm?.runtime)
 
     return {
         ArgumentType: Scratch.ArgumentType,
