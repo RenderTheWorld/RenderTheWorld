@@ -1048,7 +1048,6 @@ export default class MathGroup extends BlockGroup {
                 arguments: {
                     op: { type: AT.STRING, menu: 'mathUtilOp' }
                 },
-                hideFromPalette: true,
                 mutatorInfo: /** @type {import('../BlockGroup.js').MutatorInfo} */ ({
                     fieldName: 'op',
                     defaultValue: 'lerp',
