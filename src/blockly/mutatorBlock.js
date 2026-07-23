@@ -43,13 +43,23 @@ const enabledMutatorBlocksInfo = {}
 const PROXY_MARK = Symbol.for('MutatorProxyMark')
 
 // 严谨兼容的类型映射表，修正了 angle 的字段名
+// const TYPE_TABLE = {
+//     n: { shadow: 'math_number', field: 'NUM', check: 'Number' },
+//     s: { shadow: 'text', field: 'TEXT', check: null },
+//     l: { shadow: 'text', field: 'TEXT', check: null },
+//     b: { shadow: 'logic_boolean', field: 'BOOL', check: 'Boolean' },
+//     color: { shadow: 'colour_picker', field: 'COLOUR', check: null },
+//     angle: { shadow: 'math_angle', field: 'NUM', check: 'Number' },
+//     c: { shadow: null, field: null, check: null }
+// }
+// check 全部为 null，不限制输入类型，允许 RTW 扩展积木连接
 const TYPE_TABLE = {
-    n: { shadow: 'math_number', field: 'NUM', check: 'Number' },
+    n: { shadow: 'math_number', field: 'NUM', check: null },
     s: { shadow: 'text', field: 'TEXT', check: null },
     l: { shadow: 'text', field: 'TEXT', check: null },
-    b: { shadow: 'logic_boolean', field: 'BOOL', check: 'Boolean' },
+    b: { shadow: 'logic_boolean', field: 'BOOL', check: null },
     color: { shadow: 'colour_picker', field: 'COLOUR', check: null },
-    angle: { shadow: 'math_angle', field: 'NUM', check: 'Number' },
+    angle: { shadow: 'math_angle', field: 'NUM', check: null },
     c: { shadow: null, field: null, check: null }
 }
 
@@ -150,7 +160,6 @@ function buildShadowDom(type, defaultValue) {
     return shadow
 }
 
-// 防污染撤销栈的 Shadow 挂载逻辑（参考 extendableBlock 优化）
 // 修改后的 attachShadow 函数
 function attachShadow(block, input, type, defaultValue, ScratchBlocks) {
     // 【增加防御】如果是影子积木或插入标记，直接跳出，防止连环触发游离
@@ -179,10 +188,17 @@ function attachShadow(block, input, type, defaultValue, ScratchBlocks) {
         }
         sb.setShadow(true)
 
-        // 【核心修改】只建立连接，不提前生成 SVG！
+        // 建立连接
         if (sb.outputConnection) sb.outputConnection.connect(input.connection)
         else if (sb.previousConnection)
             sb.previousConnection.connect(input.connection)
+
+        // 【关键修复】对齐 expandableBlock.js，创建后立即初始化 SVG！
+        // 不要依赖于最后的统一遍历，立即渲染才能被 Blockly 的事件流正确捕获
+        if (!block.isInsertionMarker()) {
+            sb.initSvg()
+            sb.render(false)
+        }
     } catch (e) {
         if (eventsEnabled) ScratchBlocks.Events.enable()
         const dom = buildShadowDom(type, defaultValue)
@@ -279,20 +295,24 @@ function initMutatorBlock(
                         const group = ScratchBlocks.Events.getGroup()
                         if (!group) ScratchBlocks.Events.setGroup(true)
 
-                        // 构造状态覆盖对象，解决同步执行时积木内部下拉框还是旧值的问题
-                        const stateOverride = {}
-                        groups.forEach(grp => {
-                            stateOverride[grp.fieldName] =
-                                grp.fieldName === this.name
-                                    ? newValue
-                                    : src.getFieldValue(grp.fieldName) ||
-                                      grp.defaultValue
+                        // 【核心修复】恢复微任务，避开 Field 同步 DOM 更新冲突
+                        queueMicrotask(() => {
+                            if (!src.workspace) return
+                            src.updateDisplay_(oldXml)
+                            if (!group) ScratchBlocks.Events.setGroup(false)
+
+                            // 【关键补充】在微任务结束后，抛出宏任务强制 Workspace 重绘
+                            // 彻底解决“异步修改后 Blockly 不重绘”的问题
+                            setTimeout(() => {
+                                if (src.workspace) {
+                                    if (src.workspace.requestMeasureBlock) {
+                                        src.workspace.requestMeasureBlock(src)
+                                    } else if (src.workspace.resize) {
+                                        src.workspace.resize()
+                                    }
+                                }
+                            }, 0)
                         })
-
-                        // 【核心修复】直接同步调用，告别异步延迟导致的渲染丢失！
-                        src.updateDisplay_(oldXml, stateOverride)
-
-                        if (!group) ScratchBlocks.Events.setGroup(false)
                     }
                     return newValue
                 })
@@ -331,7 +351,7 @@ function initMutatorBlock(
         this.updateDisplay_()
     }
 
-    blockDefinition.updateDisplay_ = function (providedOldXml, stateOverride) {
+    blockDefinition.updateDisplay_ = function (providedOldXml) {
         if (this.isInsertionMarker()) {
             return
         }
@@ -353,11 +373,11 @@ function initMutatorBlock(
         try {
             const targetArgs = []
             groups.forEach(g => {
-                // 【关键】优先使用 stateOverride 里的新值，兼容同步调用
-                const val = stateOverride
-                    ? stateOverride[g.fieldName] || g.defaultValue
-                    : this.getFieldValue(g.fieldName) || g.defaultValue
-                const cfg = g.argMap[val] || []
+                // 微任务执行时，Field 的值已经更新，直接读取即可
+                const cfg =
+                    g.argMap[
+                        this.getFieldValue(g.fieldName) || g.defaultValue
+                    ] || []
                 cfg.forEach(a =>
                     targetArgs.push({ ...a, _afterArg: g.afterArg })
                 )
@@ -490,7 +510,6 @@ function initMutatorBlock(
             // 清理无用的积木
             Object.values(connectionMap).forEach(info => {
                 if (info && info.block) {
-                    // 不论是不是 shadow，没被重新连上的都清理掉
                     if (info.block.isShadow() || !info.block.getParent()) {
                         if (ScratchBlocks.Events.isEnabled()) {
                             const ev = new ScratchBlocks.Events.BlockDelete(
@@ -506,22 +525,13 @@ function initMutatorBlock(
 
             this.rendered = wasRendered
 
-            // 【核心修复】完全对齐 expandableBlock.js，不要搞花里胡哨的 field 修复
+            // 【核心修复】完全对齐 expandableBlock.js，清除尺寸缓存并强制重绘
             if (wasRendered && !this.isInsertionMarker()) {
+                // 重置尺寸缓存，逼迫 Blockly 重新计算高度和宽度
+                this.height = 0
+                this.width = 0
                 this.initSvg()
                 this.render()
-
-                // 主积木渲染完毕后，统一渲染子积木，确保位置正确
-                this.inputList.forEach(input => {
-                    if (input && input.connection) {
-                        const target = input.connection.targetBlock()
-                        if (target && !target.getSvgRoot()) {
-                            target.initSvg()
-                            target.render()
-                        }
-                    }
-                })
-
                 this.bumpNeighbours_()
             }
 

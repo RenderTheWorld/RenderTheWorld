@@ -108,7 +108,7 @@ export default class TextureGroup extends BlockGroup {
                         menu: 'mapTypeMenu',
                         defaultValue: 'map'
                     },
-                    texture: { type: null }
+                    texture: { type: null, defaultValue: '' }
                 },
                 handler: args => {
                     const engine = ext.renderEngine
@@ -146,7 +146,7 @@ export default class TextureGroup extends BlockGroup {
                 blockType: BT.COMMAND,
                 text: t('setTextureRepeat'),
                 arguments: {
-                    texture: { type: null },
+                    texture: { type: null, defaultValue: '' },
                     x: { type: AT.NUMBER, defaultValue: 1 },
                     y: { type: AT.NUMBER, defaultValue: 1 }
                 },
@@ -172,7 +172,7 @@ export default class TextureGroup extends BlockGroup {
                 blockType: BT.COMMAND,
                 text: t('setTextureOffset'),
                 arguments: {
-                    texture: { type: null },
+                    texture: { type: null, defaultValue: '' },
                     x: { type: AT.NUMBER, defaultValue: 0 },
                     y: { type: AT.NUMBER, defaultValue: 0 }
                 },
@@ -196,7 +196,7 @@ export default class TextureGroup extends BlockGroup {
                 blockType: BT.COMMAND,
                 text: t('setTextureRotation'),
                 arguments: {
-                    texture: { type: null },
+                    texture: { type: null, defaultValue: '' },
                     rotation: { type: AT.NUMBER, defaultValue: 0 }
                 },
                 handler: args => {
@@ -220,7 +220,7 @@ export default class TextureGroup extends BlockGroup {
                 blockType: BT.COMMAND,
                 text: t('disposeTexture'),
                 arguments: {
-                    texture: { type: null }
+                    texture: { type: null, defaultValue: '' }
                 },
                 handler: args => {
                     const texObj = Wrapper.unwrap(args.texture)

@@ -283,9 +283,19 @@ function restoreIconFields(block, SB) {
  * 为 Wrapper 对象积木和参数槽应用自定义 SVG 外观
  * 参考 test4.js 的 makeShape 实现
  *
+ * 双向策略：
+ *   1. text shadow 块自己渲染时 → 检查父积木是否为 RTW Wrapper 参数槽 → 自行应用样式
+ *   2. RTW 积木渲染时 → 为自身应用 Wrapper 形状 + 为参数槽内 shadow/子块应用样式
+ *
  * @param {Object} block - BlockSvg 实例
  */
 function applyModelStyle(block) {
+    // === text shadow 块：检查是否在 RTW Wrapper 参数槽内 ===
+    if (block.type === 'text' && block.svgPath_) {
+        styleShadowIfWrapperParam(block)
+        return
+    }
+
     if (!block.type || !block.type.startsWith(EXT_PREFIX)) return
     const suffix = getOpcodeSuffix(block.type)
     if (!suffix) return
@@ -299,7 +309,7 @@ function applyModelStyle(block) {
         block.svgPath_.setAttribute('d', makeModelShape(block.width))
     }
 
-    // === 接受 Wrapper 对象的参数槽：内部 shadow / 嵌套 Wrapper 块使用自定义形状 ===
+    // === 接受 Wrapper 对象的参数槽：为内部 shadow / 嵌套 Wrapper 块应用自定义形状 ===
     const wrapperParams = getWrapperParamNames(block.type)
     if (wrapperParams.length > 0 && block.inputList) {
         for (const paramName of wrapperParams) {
@@ -307,14 +317,45 @@ function applyModelStyle(block) {
             if (!input?.connection) continue
             const child = input.connection.targetBlock()
             if (!child?.svgPath_) continue
-            // text shadow 块 或 嵌套的 Wrapper 对象块 都需要自定义形状
             if (child.type === 'text' || isWrapperBlock(child.type)) {
-                child.svgPath_.setAttribute(
-                    'transform',
-                    `scale(1, ${child.height / 40})`
-                )
-                child.svgPath_.setAttribute('d', makeModelShape(child.width))
+                applyWrapperShape(child)
             }
+        }
+    }
+}
+
+/**
+ * 为块应用 Wrapper 自定义形状
+ *
+ * @param {Object} block - BlockSvg 实例
+ */
+function applyWrapperShape(block) {
+    if (!block.svgPath_) return
+    block.svgPath_.setAttribute(
+        'transform',
+        `scale(1, ${block.height / 40})`
+    )
+    block.svgPath_.setAttribute('d', makeModelShape(block.width))
+}
+
+/**
+ * text shadow 块自我检查：如果位于 RTW Wrapper 参数槽内，应用自定义形状
+ *
+ * @param {Object} shadow - text shadow BlockSvg 实例
+ */
+function styleShadowIfWrapperParam(shadow) {
+    const parent = shadow.getParent()
+    if (!parent || !parent.type || !parent.type.startsWith(EXT_PREFIX)) return
+
+    const wrapperParams = WRAPPER_PARAM_MAP[getOpcodeSuffix(parent.type)]
+    if (!wrapperParams || !parent.inputList) return
+
+    for (const input of parent.inputList) {
+        if (input.connection?.targetBlock() === shadow) {
+            if (wrapperParams.includes(input.name)) {
+                applyWrapperShape(shadow)
+            }
+            break
         }
     }
 }

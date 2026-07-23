@@ -1124,12 +1124,13 @@ function initExpandableBlock(
                     input = this.appendStatementInput(id)
                 } else {
                     input = this.appendValueInput(id)
-                    if (argumentType === 'b') input.setCheck('Boolean')
-                    else if (argumentType === 'n') input.setCheck('Number')
-                    else if (argumentType === 'color') input.setCheck('Colour')
-                    else if (argumentType === 'angle')
-                        input.setCheck(['Number', 'Angle'])
-                    else input.setCheck('String')
+                    // 不设置 setCheck，允许任意积木连接（包括 RTW 扩展积木）
+                    // if (argumentType === 'b') input.setCheck('Boolean')
+                    // else if (argumentType === 'n') input.setCheck('Number')
+                    // else if (argumentType === 'color') input.setCheck('Colour')
+                    // else if (argumentType === 'angle')
+                    //     input.setCheck(['Number', 'Angle'])
+                    // else input.setCheck('String')
                 }
 
                 if (joinCh && groupArgIndex > 0 && argumentType !== 'c') {
