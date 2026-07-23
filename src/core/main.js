@@ -33,7 +33,7 @@ class Extension {
         /** @type {RenderEngine} */
         this.renderEngine = null
 
-        /** @type {import('../utils/logger.js').default} */
+        /** @type {import('../common/logger.js').default} */
         this.logger = null
 
         /** @type {{toNumber: (v: any) => number, toString: (v: any) => string, toBoolean: (v: any) => boolean}} Cast 工具（数值/字符串/布尔转换） */

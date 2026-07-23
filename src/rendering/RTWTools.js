@@ -277,8 +277,16 @@ class RTW_Model_Box {
             text = `${m.type}`
             if (m.name) text += ` "${m.name}"`
             if (m.children?.length > 0) text += ` [${m.children.length} 子]`
+        } else if (Array.isArray(m)) {
+            text = `[${m.map(v => (typeof v === 'number' ? Math.round(v * 100) / 100 : String(v))).join(', ')}]`
+        } else if (m && typeof m === 'object') {
+            try {
+                text = JSON.stringify(m)
+            } catch {
+                text = String(m)
+            }
         } else {
-            text = `${m?.['type'] ?? String(m)}`
+            text = String(m)
         }
         return text
     }

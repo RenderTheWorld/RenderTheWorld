@@ -13,8 +13,8 @@
  */
 
 import BlockGroup from '../BlockGroup.js'
-import { RTW_Model_Box, Wrapper } from '../../utils/RTWTools.js'
-import { getDynamicArgs } from '../../utils/extendableBlock.js'
+import { RTW_Model_Box, Wrapper } from '../../rendering/RTWTools.js'
+import { getDynamicArgs } from '../../blockly/expandableBlock.js'
 
 export default class HierarchyGroup extends BlockGroup {
     /**
@@ -64,7 +64,10 @@ export default class HierarchyGroup extends BlockGroup {
                     defaultValues: '1',
                     dynamicArgTypes: ['n'],
                     joinCh: t('getChildrenInObject.joinCh'),
-                    preText: t('getChildrenInObject.preText')
+                    endText: t('getChildrenInObject.endText'),
+                    menuText: {
+                        n: t('getChildrenInObject.dynamicArgMenuText')
+                    }
                 },
                 output: 'Reporter',
                 outputShape: 3,
@@ -190,14 +193,21 @@ export default class HierarchyGroup extends BlockGroup {
                 en: 'direct children count of object [name]'
             },
             getChildrenInObject: {
-                'zh-cn': '对象 [name] 的第 [num] 个直接子物体',
-                en: 'object [name]\'s direct child [num]'
+                'zh-cn': '对象 [name] 的第 [num]',
+                en: "object [name]'s direct child [num]"
             },
             'getChildrenInObject.joinCh': {
-                'zh-cn': ' 个直接子物体的第 ',
-                en: '\'s direct child'
+                'zh-cn': '个直接子物体的第 ',
+                en: 'of direct child '
             },
-            'getChildrenInObject.preText': { 'zh-cn': '的第', en: '\'s direct child' },
+            'getChildrenInObject.endText': {
+                'zh-cn': '个直接子物体',
+                en: ''
+            },
+            'getChildrenInObject.dynamicArgMenuText': {
+                'zh-cn': '添加索引参数',
+                en: 'Add Index Parameter'
+            },
             getChildrenInObjectByName: {
                 'zh-cn': '对象 [name] 中第一个名为 [name2] 的子物体',
                 en: 'the first child named [name2] in object [name]'

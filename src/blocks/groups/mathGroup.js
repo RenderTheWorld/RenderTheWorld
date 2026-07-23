@@ -24,8 +24,8 @@ import {
     wrapRTWModel,
     toVector3,
     ColorTools
-} from '../../utils/RTWTools.js'
-import { getDynamicArgs } from '../../utils/extendableBlock.js'
+} from '../../rendering/RTWTools.js'
+import { getDynamicArgs } from '../../blockly/expandableBlock.js'
 
 export default class MathGroup extends BlockGroup {
     static groupId = 'Math'
@@ -300,9 +300,9 @@ export default class MathGroup extends BlockGroup {
                     const rgb = ColorTools.toRGB(args.color, THREE, cast)
                     const format = cast.toString(args.format)
                     if (format === 'array') {
-                        return [rgb.r, rgb.g, rgb.b]
+                        return wrapRTWModel([rgb.r, rgb.g, rgb.b])
                     }
-                    return rgb
+                    return wrapRTWModel(rgb)
                 }
             },
             {
@@ -322,13 +322,13 @@ export default class MathGroup extends BlockGroup {
                     const hsl = ColorTools.toHSL(args.color, THREE, cast)
                     const format = cast.toString(args.format)
                     if (format === 'array') {
-                        return [
+                        return wrapRTWModel([
                             Math.round(hsl.h * 360),
                             Math.round(hsl.s * 100),
                             Math.round(hsl.l * 100)
-                        ]
+                        ])
                     }
-                    return hsl
+                    return wrapRTWModel(hsl)
                 }
             },
             '---',
@@ -435,7 +435,10 @@ export default class MathGroup extends BlockGroup {
                     defaultValues: '0',
                     dynamicArgTypes: ['s'],
                     joinCh: t('vectorOperation.joinCh'),
-                    preText: t('vectorOperation.preText')
+                    preText: t('vectorOperation.preText'),
+                    menuText: {
+                        s: t('vectorOperation.dynamicArgMenuText')
+                    }
                 },
                 output: 'Reporter',
                 outputShape: 3,
@@ -528,7 +531,10 @@ export default class MathGroup extends BlockGroup {
                     defaultValues: '0',
                     dynamicArgTypes: ['s'],
                     joinCh: t('quaternionOperation.joinCh'),
-                    preText: t('quaternionOperation.preText')
+                    preText: t('quaternionOperation.preText'),
+                    menuText: {
+                        s: t('quaternionOperation.dynamicArgMenuText')
+                    }
                 },
                 output: 'Reporter',
                 outputShape: 3,
@@ -1134,7 +1140,6 @@ export default class MathGroup extends BlockGroup {
                         case 'randSpread':
                             return MU.randFloatSpread(a)
                         case 'map':
-                            console.log(a, b, c, d, e, MU.mapLinear)
                             return MU.mapLinear(a, b, c, d, e)
                         case 'inverseLerp':
                             return MU.inverseLerp(a, b, c)
@@ -1145,7 +1150,6 @@ export default class MathGroup extends BlockGroup {
                         case 'smootherstep':
                             return MU.smootherstep(c, a, b)
                         case 'pingpong':
-                            console.log(a, b, MU.pingpong)
                             return MU.pingpong(a, b)
                         default:
                             return 0
@@ -1368,6 +1372,10 @@ export default class MathGroup extends BlockGroup {
             },
             'vectorOperation.joinCh': { 'zh-cn': '、', en: ', ' },
             'vectorOperation.preText': { 'zh-cn': '', en: '' },
+            'vectorOperation.dynamicArgMenuText': {
+                'zh-cn': '添加向量参数',
+                en: 'Add Vector Parameter'
+            },
             vectorScalar: {
                 'zh-cn': '向量 [vec] [op] 标量 [scalar]',
                 en: 'vector [vec] [op] scalar [scalar]'
@@ -1378,6 +1386,10 @@ export default class MathGroup extends BlockGroup {
             },
             'quaternionOperation.joinCh': { 'zh-cn': '、', en: ', ' },
             'quaternionOperation.preText': { 'zh-cn': '', en: '' },
+            'quaternionOperation.dynamicArgMenuText': {
+                'zh-cn': '添加四元数参数',
+                en: 'Add Quaternion Parameter'
+            },
             matrixOperation: {
                 'zh-cn': '矩阵 [a] [op] [b]',
                 en: 'matrix [a] [op] [b]'

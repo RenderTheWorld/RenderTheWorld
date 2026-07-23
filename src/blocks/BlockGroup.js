@@ -55,16 +55,25 @@
  * @property {string|null} [type]
  * @property {any} [defaultValue]
  * @property {string} [menu]
+ * @property {string} [fillIn] - 填充块 opcode，生成 shadow 块供用户拖出使用
+ * @property {number} [shape] - 自定义参数形状（用于模型对象等特殊外观）
  */
 
 /**
  * @typedef {Object} DynamicArgsInfo
- * @property {any} defaultValues
- * @property {string} [afterArg]
- * @property {string} joinCh
- * @property {string[]} dynamicArgTypes
- * @property {any} [preText]
- * @property {any} [endText]
+ * @property {string} [groupId] - 扩展参数组 ID
+ * @property {string} [name] - 组名称
+ * @property {string[]} [types] - 参数类型缩写数组（s/n/b/color/angle/c）
+ * @property {Object|string|Function} [menuText] - 加号按钮文本（对象映射/字符串/函数）
+ * @property {string} [afterArg] - 挂载锚点参数名
+ * @property {string} joinCh - 参数间连接符
+ * @property {any} [preText] - 组前缀文本
+ * @property {any} [endText] - 组后缀文本
+ * @property {number} [min] - 最小参数数
+ * @property {number} [max] - 最大参数数
+ * @property {any} [defaultValues] - 默认值数组
+ * @property {string[]} [dynamicArgTypes] - 动态参数类型数组（旧版格式）
+ * @property {number} [paramsIncrement] - 每次增加的参数数
  */
 
 /**
@@ -89,6 +98,9 @@
  * @property {string} [text] - 积木显示文本（已翻译）
  * @property {string} [tooltip] - 提示文本（已翻译）
  * @property {boolean} [hideFromPalette] - 是否从面板隐藏
+ * @property {boolean} [allowDropAnywhere] - 是否允许拖放到任意位置（TurboWarp/Gandi）
+ * @property {boolean} [canDragDuplicate] - 是否允许拖动复制（TurboWarp/Gandi）
+ * @property {number} [blockShape] - 自定义积木形状（用于模型对象等特殊外观，3=方形带缺口）
  * @property {boolean} [disableInternalArgument] - 是否禁用内部参数
  * @property {boolean} [disableMonitor] - 是否禁用监视器
  * @property {boolean} [isTerminal] - 是否为终端块
@@ -115,6 +127,7 @@
  * @property {{toNumber: (v: any) => number, toString: (v: any) => string, toBoolean: (v: any) => boolean}} cast
  * @property {any} renderEngine
  * @property {{[key: string]: any}} [threadInfo]
+ * @property {string} [_currentObjectLoadingName] - 最后一次触发 objectLoadingCompleted 的对象名
  * @property {import('../core/extcore.js').default} [core]
  * @property {{warn: (...args: any[]) => void}} [logger]
  * @property {any} [patcher]
@@ -145,6 +158,31 @@ class BlockGroup {
         const name = this.name
         if (!name || typeof name !== 'string') return ''
         return name.replace(/Group$/, '')
+    }
+
+    /**
+     * 生成带 fillIn shadow 的积木 XML
+     *
+     * 参考 test4.js 的 fillIn 实现：将参数槽预填为指定 opcode 的 shadow 块，
+     * 用户可将其拖出作为局部变量/事件参数使用。
+     *
+     * @param {string} extId - 扩展 ID
+     * @param {string} opcode - 主积木 opcode
+     * @param {{[key: string]: BlockArgument}} args - 参数定义（支持 fillIn / menu）
+     * @returns {string}
+     */
+    static generateFillInXML(extId, opcode, args) {
+        let xml = `<block type="${extId}_${opcode}">`
+        for (const [name, arg] of Object.entries(args)) {
+            if (!arg || typeof arg !== 'object') continue
+            if (arg.menu) {
+                xml += `<field name="${name}">${arg.defaultValue ?? ''}</field>`
+            } else if (arg.fillIn) {
+                xml += `<value name="${name}"><shadow type="${extId}_${arg.fillIn}"></shadow></value>`
+            }
+        }
+        xml += '</block>'
+        return xml
     }
 
     /**
@@ -212,6 +250,12 @@ class BlockGroup {
             blockDef.disableMonitor = b.disableMonitor
         if (b.isTerminal !== undefined) blockDef.isTerminal = b.isTerminal
         if (b.tooltip !== undefined) blockDef.tooltip = b.tooltip
+        if (b.allowDropAnywhere !== undefined)
+            blockDef.allowDropAnywhere = b.allowDropAnywhere
+        if (b.canDragDuplicate !== undefined)
+            blockDef.canDragDuplicate = b.canDragDuplicate
+        if (b.blockShape !== undefined)
+            blockDef.blockShape = b.blockShape
 
         // OUTPUT 块自定义形状属性
         if (b.output !== undefined) blockDef.output = b.output

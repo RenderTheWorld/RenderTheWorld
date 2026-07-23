@@ -13,7 +13,7 @@
  */
 
 import BlockGroup from '../BlockGroup.js'
-import { RTW_Model_Box, Wrapper } from '../../utils/RTWTools.js'
+import { RTW_Model_Box, Wrapper } from '../../rendering/RTWTools.js'
 
 export default class ControlsGroup extends BlockGroup {
     /**

@@ -29,10 +29,10 @@ import LightingGroup from './groups/lightingGroup.js'
 import CameraGroup from './groups/cameraGroup.js'
 import ControlsGroup from './groups/controlsGroup.js'
 import FogGroup from './groups/fogGroup.js'
+import MathGroup from './groups/mathGroup.js'
 import SkyGroup from './groups/skyGroup.js'
 import EffectsGroup from './groups/effectsGroup.js'
 import TextureGroup from './groups/textureGroup.js'
-import MathGroup from './groups/mathGroup.js'
 
 const groupClasses = [
     SettingsGroup,
@@ -127,6 +127,7 @@ export function loadBlocks(
     const AT = normalizeArgumentType()
 
     const ctx = { ext, core, BlockType: BT, ArgumentType: AT, translate }
+    /** @type {import('./BlockGroup.js').default[]} */
     const instances = groupClasses.map(Cls => new Cls(ctx))
 
     // 1. 先注册所有菜单（菜单可能被多个分组复用）

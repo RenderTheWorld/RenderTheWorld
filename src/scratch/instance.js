@@ -1,7 +1,7 @@
-import external from './tw-external.js'
-import staticFetch from './tw-static-fetch.js'
-import Color from './gandi-color.js'
-import Patcher from './arkos_patcher.js'
+import external from '../platform/turbowarp/external.js'
+import staticFetch from '../platform/turbowarp/staticFetch.js'
+import Color from '../platform/gandi/color.js'
+import Patcher from './patcher.js'
 import { getVM, getScratchBlocks } from './injector.js'
 
 function parseURL(url) {

@@ -1,4 +1,4 @@
-import FormatMessager from './format.js'
+import FormatMessager from '../l10n/format.js'
 
 class ExtensionCore {
     /**

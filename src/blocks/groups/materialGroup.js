@@ -17,7 +17,7 @@
  */
 
 import BlockGroup from '../BlockGroup.js'
-import { RTW_Model_Box, Wrapper, ColorTools } from '../../utils/RTWTools.js'
+import { RTW_Model_Box, Wrapper, ColorTools } from '../../rendering/RTWTools.js'
 import { chen_RenderTheWorld_extensionId } from '../../assets/index.js'
 
 export default class MaterialGroup extends BlockGroup {

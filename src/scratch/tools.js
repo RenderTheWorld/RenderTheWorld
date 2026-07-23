@@ -10,7 +10,7 @@
  *   - inMainWorkspace: 判断是否在主工作区
  */
 
-import { RTW_Model_Box, Wrapper } from './RTWTools.js'
+import { RTW_Model_Box, Wrapper } from '../rendering/RTWTools.js'
 import { chen_RenderTheWorld_extensionId } from '../assets/index.js'
 
 /**

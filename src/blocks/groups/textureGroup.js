@@ -12,7 +12,7 @@
  */
 
 import BlockGroup from '../BlockGroup.js'
-import { RTW_Model_Box, Wrapper } from '../../utils/RTWTools.js'
+import { RTW_Model_Box, Wrapper } from '../../rendering/RTWTools.js'
 
 // 贴图通道枚举
 const MAP_TYPES = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'aoMap', 'bumpMap', 'alphaMap']

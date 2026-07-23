@@ -40,7 +40,7 @@ import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js'
 import { BrightnessContrastShader } from 'three/examples/jsm/shaders/BrightnessContrastShader.js'
 import { HueSaturationShader } from 'three/examples/jsm/shaders/HueSaturationShader.js'
 
-import { Skins } from '../utils/canvasSkin.js'
+import { Skins } from '../rendering/canvasSkin.js'
 import {
     chen_RenderTheWorld_icon,
     chen_RenderTheWorld_extensionId,
@@ -48,8 +48,8 @@ import {
     color_secondary
 } from '../assets/index.js'
 import RendererAdapter from '../adapters/rendererAdapter.js'
-import DOMUtils from '../utils/dom.js'
-import { RTW_Model_Box, Wrapper, setTHREE } from '../utils/RTWTools.js'
+import DOMUtils from '../rendering/dom.js'
+import { RTW_Model_Box, Wrapper, setTHREE } from '../rendering/RTWTools.js'
 import SceneManager from './SceneManager.js'
 import SessionGuard from './SessionGuard.js'
 
@@ -1139,13 +1139,22 @@ class RenderEngine {
         if (!runtime) return
         const opcode =
             chen_RenderTheWorld_extensionId + '_objectLoadingCompleted'
+        // 兜底：扩展状态记录最后一次加载的对象名
+        this.ext._currentObjectLoadingName = name
         try {
+            let threads = []
             if (typeof runtime.startHatsWithParams === 'function') {
-                runtime.startHatsWithParams(opcode, {
+                threads = runtime.startHatsWithParams(opcode, {
                     parameters: { name }
                 })
             } else if (typeof runtime.startHats === 'function') {
-                runtime.startHats(opcode, { name })
+                threads = runtime.startHats(opcode, { name })
+            }
+            // 将对象名绑定到每个启动的线程，保证并发/yield 时读取正确
+            if (Array.isArray(threads)) {
+                threads.forEach(thread => {
+                    if (thread) thread._RTW_eventName = name
+                })
             }
         } catch {
             /* 忽略 */

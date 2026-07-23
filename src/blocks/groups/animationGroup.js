@@ -12,7 +12,7 @@
  */
 
 import BlockGroup from '../BlockGroup.js'
-import { getDynamicArgs } from '../../utils/extendableBlock.js'
+import { getDynamicArgs } from '../../blockly/expandableBlock.js'
 
 export default class AnimationGroup extends BlockGroup {
     /**
@@ -48,7 +48,10 @@ export default class AnimationGroup extends BlockGroup {
                     defaultValues: i => `animationName${i + 2}`,
                     afterArg: 'animationName',
                     joinCh: ', ',
-                    dynamicArgTypes: ['s']
+                    dynamicArgTypes: ['s'],
+                    menuText: {
+                        s: t('playAnimation.dynamicArgMenuText')
+                    }
                 },
                 handler: args => {
                     const engine = ext.renderEngine
@@ -91,7 +94,10 @@ export default class AnimationGroup extends BlockGroup {
                     defaultValues: i => `animationName${i + 2}`,
                     afterArg: 'animationName',
                     joinCh: ', ',
-                    dynamicArgTypes: ['s']
+                    dynamicArgTypes: ['s'],
+                    menuText: {
+                        s: t('stopAnimation.dynamicArgMenuText')
+                    }
                 },
                 handler: args => {
                     const engine = ext.renderEngine
@@ -160,9 +166,17 @@ export default class AnimationGroup extends BlockGroup {
                 'zh-cn': '启动对象 [name] 的动画 [animationName]',
                 en: 'play animation [animationName] of object [name]'
             },
+            'playAnimation.dynamicArgMenuText': {
+                'zh-cn': '添加动画参数',
+                en: 'Add Animation Parameter'
+            },
             stopAnimation: {
                 'zh-cn': '结束对象 [name] 的动画 [animationName]',
                 en: 'stop animation [animationName] of object [name]'
+            },
+            'stopAnimation.dynamicArgMenuText': {
+                'zh-cn': '添加动画参数',
+                en: 'Add Animation Parameter'
             },
             updateAnimation: {
                 'zh-cn': '推进对象 [name] 的动画 [time] 秒 并更新',

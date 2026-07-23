@@ -13,7 +13,7 @@
  */
 
 // @ts-nocheck
-import { RTW_Model_Box, Wrapper } from '../utils/RTWTools.js'
+import { RTW_Model_Box, Wrapper } from '../rendering/RTWTools.js'
 
 class SceneManager {
     /**

@@ -21,7 +21,7 @@
  */
 
 import BlockGroup from '../BlockGroup.js'
-import { ColorTools, wrapRTWModel } from '../../utils/RTWTools.js'
+import { ColorTools, wrapRTWModel } from '../../rendering/RTWTools.js'
 
 export default class SettingsGroup extends BlockGroup {
     static groupId = 'Tools'
@@ -49,7 +49,7 @@ export default class SettingsGroup extends BlockGroup {
                 blockType: BT.COMMAND,
                 text: t('setBackgroundColor'),
                 arguments: {
-                    color: { type: AT.NUMBER, defaultValue: 0, menu: 'bgColorMenu' }
+                    color: { type: AT.NUMBER, defaultValue: "透明", menu: 'bgColorMenu' }
                 },
                 handler: args => {
                     const engine = ext.renderEngine

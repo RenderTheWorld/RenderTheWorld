@@ -6,35 +6,67 @@
  *
  * 🟢 简单用法（单组，99%的情况直接这么写）：
  * dynamicArgsInfo: {
- *     groupId: 'ARGS',          // 选填：组ID，默认 'ARGS'，多组时必须指定
- *     types: ['s', 'n'],        // 选填：允许添加的参数类型。如果填了多个，点击加号时会自动弹出供用户选择！默认 ['s']
- *     min: 1,                   // 选填：最少保留几个参数（默认1）
- *     max: 10,                  // 选填：最多添加几个参数（默认无限）
- *     defaultValues: ['A'],     // 选填：默认值数组。第N个参数取第N个值，超出的取最后一个值
+ *     groupId: 'ARGS',           // 选填：组ID，默认 'ARGS'，多组时必须指定
+ *     name: '数据',              // 选填：组名称，用于右键删除菜单显示（默认为 groupId）
+ *     types: ['s', 'n'],        // 选填：允许添加的参数类型。默认 ['s']
+ *                                // 支持类型：n(数字), s(文本), b(布尔), c(C型分支), color(颜色), angle(角度)
+ *     menuText: {                // 选填：自定义右键菜单/加号弹窗的显示文字
+ *         s: '添加文本参数',
+ *         n: '添加数字参数'
+ *     },
+ *     // menuText 支持多种格式：
+ *     // 1. 对象：{ s: '添加文本', n: '添加数字' }
+ *     // 2. 函数：(type) => `添加${type}参数`
+ *     // 3. 字符串：'添加自定义参数'（适用于单类型）
+ *     min: 1,                    // 选填：最少保留几个参数（默认1）
+ *     max: 10,                   // 选填：最多添加几个参数（默认无限）
+ *     defaultValues: ['A'],      // 选填：默认值数组。第N个参数取第N个值，超出的取最后一个值
  *     preText: '拼接',           // 选填：第一个动态参数前面的文字
- *     joinCh: '和',             // 选填：动态参数之间的文字连接符
+ *     joinCh: '和',              // 选填：动态参数之间的文字连接符
  *     endText: '结束',           // 选填：最后一个动态参数后面的文字
- *     afterArg: 'SOME_INPUT'    // 选填：新参数插在哪个固定的参数接口之后
+ *     afterArg: 'SOME_INPUT'     // 选填：新参数插在哪个固定的参数接口之后
  * }
  *
  * 🔴 高级用法（多组并发）：
- * 如果一个积木需要两拨完全不同且独立的 +/- 按钮（比如一拨加参数，一拨加C型分支），直接传数组：
+ * 如果一个积木需要两拨完全不同且独立的 +/- 按钮，直接传数组：
  * dynamicArgsInfo: [
- *     { groupId: 'ARGS', types: ['s'], preText: 'with' },
- *     { groupId: 'BRANCH', types: ['c'], preText: 'do', min: 0 }
+ *     { groupId: 'ARGS', name: '变量', types: ['s'], menuText: '添加变量参数' },
+ *     { groupId: 'BRANCH', name: '分支', types: ['c'], menuText: '添加分支参数', min: 0 }
  * ]
  *
- * 【支持的类型】
- *  n:数字 | s:文本 | b:布尔 | c:C型分支槽 | color:颜色 | angle:角度
+ * 📝 关键配置说明：
+ * 1. afterArg 与 joinCh 的关系：
+ *    - 如果设置了 afterArg，joinCh 会出现在 afterArg 与第一个动态参数之间
+ *    - joinCh 也会出现在后续动态参数之间
+ *    - 示例：afterArg = 'BASE', joinCh = '+'
+ *      结果：[BASE] [+] [参数1] [+] [参数2] ... [endText]
  *
- * 【如何在 execute 函数中获取用户填入的值？】
- * import { getDynamicArgs } from './expandableBlock.js';
- * execute(args) {
- *     // 返回一个数组，按顺序包含所有被动态添加的参数值
- *     // 如果你在高级用法中指定了 groupId，只需传入第二个参数：getDynamicArgs(args, 'BRANCH')
- *     const values = getDynamicArgs(args);
- * }
+ * 2. 多组并发时的布局：
+ *    - 每组有自己的 +/- 按钮和独立的参数序列
+ *    - 组与组之间通过 afterArg 链式挂载
+ *    - 示例：组A的 afterArg = 'BASE', 组B的 afterArg = 'A_ENDTEXT'
+ *      结果：[BASE] [组A参数...] [组A_ENDTEXT] [组B参数...] [组B_ENDTEXT]
+ *
+ * 3. 参数类型与Shadow积木：
+ *    - n(数字): math_number, 字段名 NUM, 默认值 '0'
+ *    - s(文本): text, 字段名 TEXT, 默认值 ''
+ *    - b(布尔): 无Shadow, 空槽
+ *    - c(C型分支): 无Shadow, 空槽
+ *    - color(颜色): colour_picker, 字段名 COLOUR, 默认值 '#000000'
+ *    - angle(角度): math_angle, 字段名 NUM(注意不是ANGLE), 默认值 '0'
+ *
+ * 4. 右键菜单结构：
+ *    - 添加菜单：所有组的添加选项集中显示，用虚线分割线隔开
+ *    - 删除菜单：所有组的删除选项集中显示，用虚线分割线隔开
+ *    - 悬停高亮：鼠标悬停时高亮对应参数块
+ *
+ * 【技术要点】
+ * - 子积木（Shadow）在主积木渲染后统一初始化SVG，防止游离坐标(0,0)
+ * - 使用 setShadowDom() 建立数据连接，不提前生成SVG
+ * - 角度积木字段名是 NUM 而非 ANGLE（已修复警告）
+ * - 多组并发支持，每组独立管理参数和按钮
  */
+
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable func-names */
 /* eslint-disable max-classes-per-file */
@@ -48,22 +80,29 @@ const INPUT_TYPES_OPTIONS_LABEL = {
     angle: 'ADD_ANGLE_PARAMETER'
 }
 
+// 提取公用映射表，避免在方法中重复生成
+const SHADOW_TYPE_DEFS = {
+    n: { shadowType: 'math_number', shadowField: 'NUM', shadowDefault: '0' },
+    s: { shadowType: 'text', shadowField: 'TEXT', shadowDefault: '' },
+    l: { shadowType: 'text', shadowField: 'TEXT', shadowDefault: '' },
+    b: { shadowType: null, shadowField: null, shadowDefault: null },
+    color: {
+        shadowType: 'colour_picker',
+        shadowField: 'COLOUR',
+        shadowDefault: '#000000'
+    },
+    angle: { shadowType: 'math_angle', shadowField: 'NUM', shadowDefault: '0' },
+    c: { shadowType: null, shadowField: null, shadowDefault: null }
+}
+
 const leftArrow =
     'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSIyNi4zMzU2MSIgaGVpZ2h0PSI0Ni42NjgzOSIgdmlld0JveD0iMCwwLDI2LjMzNTYxLDQ2LjY2ODM5Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMzA2LjgzMjIsLTE1Ni42NjU4KSI+PGcgZGF0YS1wYXBlci1kYXRhPSJ7JnF1b3Q7aXNQYWludGluZ0xheWVyJnF1b3Q7OnRydWV9IiBmaWxsPSIjZmZmZmZmIiBmaWxsLXJ1bGU9Im5vbnplcm8iIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxIiBzdHJva2UtbGluZWNhcD0iYnV0dCIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIgc3Ryb2tlLW1pdGVybGltaXQ9IjEwIiBzdHJva2UtZGFzaGFycmF5PSIiIHN0cm9rZS1kYXNob2Zmc2V0PSIwIiBzdHlsZT0ibWl4LWJsZW5kLW1vZGU6IG5vcm1hbCI+PHBhdGggZD0iTTMyOC4wNDY4LDIwMi40NTcyNWwtMjAuMzM1NSwtMjAuMzM3Yy0wLjU2Mjg3LC0wLjU2MjY0IC0wLjg3OTExLC0xLjMyNTg5IC0wLjg3OTExLC0yLjEyMTc1YzAsLTAuNzk1ODYgMC4zMTYyNCwtMS41NTkxMSAwLjg3OTExLC0yLjEyMTc1bDIwLjMzNTUsLTIwLjMzMjVjMC44NTc5OCwtMC44NTc3MiAyLjE0ODExLC0xLjExNDI3IDMuMjY4OTYsLTAuNjUwMDNjMS4xMjA4NSwwLjQ2NDIzIDEuODUxNzgsMS41NTc4NSAxLjg1MjA0LDIuNzcxMDN2NDAuNjY5NWMtMC4wMDAyNiwxLjIxMzE5IC0wLjczMTE4LDIuMzA2OCAtMS44NTIwNCwyLjc3MTAzYy0xLjEyMDg1LDAuNDY0MjMgLTIuNDEwOTgsMC4yMDc2OSAtMy4yNjg5NiwtMC42NTAwM3oiLz48L2c+PC9nPjwvc3ZnPg=='
 const rightArrow =
     'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSIyNi4zMzU2MSIgaGVpZ2h0PSI0Ni42NjgzOSIgdmlld0JveD0iMCwwLDI2LjMzNTYxLDQ2LjY2ODM5Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMzA2LjgzMjE5LC0xNTYuNjY1ODEpIj48ZyBkYXRhLXBhcGVyLWRhdGE9InsmcXVvdDtpc1BhaW50aW5nTGF5ZXImcXVvdDs6dHJ1ZX0iIGZpbGw9IiNmZmZmZmYiIGZpbGwtcnVsZT0ibm9uemVybyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIHN0cm9rZS1saW5lY2FwPSJidXR0IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIHN0cm9rZS1kYXNoYXJyYXk9IiIgc3Ryb2tlLWRhc2hvZmZzZXQ9IjAiIHN0eWxlPSJtaXgtYmxlbmQtbW9kZTogbm9ybWFsIj48cGF0aCBkPSJNMzExLjk1MzE5LDIwMi40NTU3NWMtMC44NTc5OCwwLjg1NzcyIC0yLjE0ODExLDEuMTE0MjYgLTMuMjY4OTYsMC42NTAwM2MtMS4xMjA4NiwtMC40NjQyMyAtMS44NTE3OCwtMS41NTc4NCAtMS44NTIwNCwtMi43NzEwM3YtNDAuNjY5NWMwLjAwMDI2LC0xLjIxMzE4IDAuNzMxMTksLTIuMzA2OCAxLjg1MjA0LC0yLjc3MTAzYzEuMTIwODUsLTAuNDY0MjQgMi40MTA5OCwtMC4yMDc2OSAzLjI2ODk2LDAuNjUwMDNsMjAuMzM1NSwyMC4zMzI1YzAuNTYyODcsMC41NjI2NCAwLjg3OTExLDEuMzI1ODkgMC44NzkxMSwyLjEyMTc1YzAsMC43OTU4NiAtMC4zMTYyNCwxLjU1OTExIC0wLjg3OTExLDIuMTIxNzVsLTIwLjMzNTUsMjAuMzM3eiIgZGF0YS1wYXBlci1kYXRhPSJ7JnF1b3Q7aW5kZXhmcXVvdDs6bnVsbH0iLz48L2c+PC9nPjwvc3ZnPg=='
 const minusButton =
-    'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAw' +
-    'MC9zdmciIHZlcnNpb249IjEuMSIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBkPS' +
-    'JNMTggMTFoLTEyYy0xLjEwNCAwLTIgLjg5Ni0yIDJzLjg5NiAyIDIgMmgxMmMxLjEwNCAw' +
-    'IDItLjg5NiAyLTJzLS44OTYtMi0yLTJ6IiBmaWxsPSJ3aGl0ZSIgLz48L3N2Zz4K'
+    'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBkPSJNMTggMTFoLTEyYy0xLjEwNCAwLTIgLjg5Ni0yIDJzLjg5NiAyIDIgMmgxMmMxLjEwNCAwIDItLjg5NiAyLTJzLS44OTYtMi0yLTJ6IiBmaWxsPSJ3aGl0ZSIgLz48L3N2Zz4K'
 const plusButton =
-    'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC' +
-    '9zdmciIHZlcnNpb249IjEuMSIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBkPSJNMT' +
-    'ggMTBoLTR2LTRjMC0xLjEwNC0uODk2LTItMi0ycy0yIC44OTYtMiAybC4wNzEgNGgtNC4wNz' +
-    'FjLTEuMTA0IDAtMiAuODk2LTIgMnMuODk2IDIgMiAybDQuMDcxLS4wNzEtLjA3MSA0LjA3MW' +
-    'MwIDEuMTA0Ljg5NiAyIDIgMnMyLS44OTYgMi0ydi00LjA3MWw0IC4wNzFjMS4xMDQgMCAyLS' +
-    '44OTYgMi0ycy0uODk2LTItMi0yeiIgZmlsbD0id2hpdGUiIC8+PC9zdmc+Cg=='
+    'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBkPSJNMTggMTBoLTR2LTRjMC0xLjEwNC0uODk2LTItMi0ycy0yIC44OTYtMiAybC4wNzEgNGgtNC4wNzFjLTEuMTA0IDAtMiAuODk2LTIgMnMuODk2IDIgMiAybDQuMDcxLS4wNzEtLjA3MSA0LjA3MWMwIDEuMTA0Ljg5NiAyIDIgMnMyLS44OTYgMi0ydi00LjA3MWw0IC4wNzFjMS4xMDQgMCAyLS44OTYgMi0ycy0uODk2LTItMi0yeiIgZmlsbD0id2hpdGUiIC8+PC9zdmc+Cg=='
 const defaultPlusSelectImage =
     'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTQiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCA1NCAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iMC41IiB5PSIwLjUiIHdpZHRoPSI1MyIgaGVpZ2h0PSIzMSIgcng9IjE1LjUiIHN0cm9rZT0iYmxhY2siIHN0cm9rZS1vcGFjaXR5PSIwLjIiLz4KPHBhdGggZD0iTTE3Ljk5OTggMTAuMTY0MVYyMS44MzA3TTEyLjE2NjUgMTUuOTk3NEgyMy44MzMyIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNjY2NjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8cGF0aCBkPSJNMzkuNzYzOCAxOC44Mzg2QzM5LjMyNTQgMTkuMjE4MiAzOC42NzQ2IDE5LjIxODIgMzguMjM2MiAxOC44Mzg2TDM1LjMwMzMgMTYuMjk4NkMzNC40ODY4IDE1LjU5MTQgMzQuOTg2OSAxNC4yNSAzNi4wNjcxIDE0LjI1TDQxLjkzMjkgMTQuMjVDNDMuMDEzMSAxNC4yNSA0My41MTMyIDE1LjU5MTQgNDIuNjk2NyAxNi4yOTg2TDM5Ljc2MzggMTguODM4NloiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo='
 
@@ -79,8 +118,9 @@ function cleanInputs(runtime, target, blockId, dynamicArgumentIds) {
     const block = target.blocks._blocks[blockId]
 
     Object.keys(block.inputs).forEach(name => {
+        // [修复] 支持任意 groupId 前缀的正则表达式匹配
         if (
-            /^DYNAMIC_ARGS\d+$/.test(name) &&
+            /^(.*?)_DYNAMIC_ARGS\d+$/.test(name) &&
             !dynamicArgumentIds.includes(name)
         ) {
             if (block.inputs[name].shadow) {
@@ -105,6 +145,9 @@ function isMutableBlock(block) {
 }
 
 function setLocales(ScratchBlocks) {
+    // [修复] 防止环境在早期加载时对象不存在导致报错
+    ScratchBlocks.ScratchMsgs.locales.en =
+        ScratchBlocks.ScratchMsgs.locales.en || {}
     Object.assign(ScratchBlocks.ScratchMsgs.locales.en, {
         ADD_TEXT_PARAMETER: 'Add Text Parameter',
         ADD_NUM_PARAMETER: 'Add Num Parameter',
@@ -114,6 +157,9 @@ function setLocales(ScratchBlocks) {
         ADD_ANGLE_PARAMETER: 'Add Angle Parameter',
         DELETE_DYNAMIC_PARAMETER: 'Delete Parameter'
     })
+
+    ScratchBlocks.ScratchMsgs.locales['zh-cn'] =
+        ScratchBlocks.ScratchMsgs.locales['zh-cn'] || {}
     Object.assign(ScratchBlocks.ScratchMsgs.locales['zh-cn'], {
         ADD_TEXT_PARAMETER: '添加文本参数',
         ADD_NUM_PARAMETER: '添加数字参数',
@@ -137,27 +183,27 @@ function createButtons(
 ) {
     let w = 25,
         h = 47,
-        size = 0.35
+        size = 0.45
 
     if (plusImage === '+') {
         plusImage = plusButton
         w = 18
         h = 18
-        size = 0.7
+        size = 0.9
     }
 
     if (plusSelectImage === '+ ▾') {
         plusSelectImage = defaultPlusSelectImage
         w = 54
         h = 18
-        size = 0.7
+        size = 0.9
     }
 
     if (minusImage === '-') {
         minusImage = minusButton
         w = 18
         h = 18
-        size = 0.7
+        size = 0.9
     }
 
     class FieldButton extends ScratchBlocks.FieldImage {
@@ -174,7 +220,7 @@ function createButtons(
             }
             super(src, width, height, undefined, false)
             this.padding = padding
-            this.EDITABLE = true // 开启原生可编辑态
+            this.EDITABLE = true
         }
 
         init() {
@@ -236,20 +282,49 @@ function createButtons(
         constructor() {
             super(plusSelectImage, true, undefined, undefined, 4)
         }
-
         onClick(e) {
             if (e && e.button !== 0) return
-            const menuOptions = this.sourceBlock_.dynamicArgOptionalTypes_.map(
-                i => ({
-                    text: translate(
-                        ScratchBlocks,
-                        INPUT_TYPES_OPTIONS_LABEL[i]
-                    ),
-                    enabled: true,
-                    callback: () => this.sourceBlock_.addDynamicArg(i)
-                })
+            const groupId =
+                this.groupId_ ||
+                (this.sourceBlock_.dynamicArgGroups_ &&
+                    this.sourceBlock_.dynamicArgGroups_[0].groupId)
+            const group = this.sourceBlock_.dynamicArgGroups_.find(
+                g => g.groupId === groupId
             )
-            ScratchBlocks.ContextMenu.show(e, menuOptions, false)
+            if (!group) return
+
+            const menuOptions = group.dynamicArgTypes.map(i => {
+                let displayText = translate(
+                    ScratchBlocks,
+                    INPUT_TYPES_OPTIONS_LABEL[i]
+                )
+                if (group.menuText) {
+                    if (typeof group.menuText === 'string') {
+                        displayText = group.menuText
+                    } else if (typeof group.menuText === 'function') {
+                        displayText = group.menuText(i)
+                    } else if (typeof group.menuText === 'object') {
+                        displayText =
+                            group.menuText[i] ||
+                            group.menuText.default ||
+                            displayText
+                    }
+                }
+
+                return Object.freeze({
+                    text: displayText,
+                    enabled: true,
+                    callback: () => this.sourceBlock_.addDynamicArg(i, groupId)
+                })
+            })
+
+            const protectedMenuOptions = [...menuOptions]
+            protectedMenuOptions.splice = () => []
+            protectedMenuOptions.push = function () {
+                return this.length
+            }
+
+            ScratchBlocks.ContextMenu.show(e, protectedMenuOptions, false)
         }
     }
 
@@ -257,27 +332,50 @@ function createButtons(
         constructor() {
             super(plusImage, false, undefined, undefined, 4)
         }
-
         onClick(e) {
             if (e && e.button !== 0) return
-            this.sourceBlock_.addDynamicArg(
-                this.sourceBlock_.dynamicArgOptionalTypes_[0]
+            const groupId =
+                this.groupId_ ||
+                (this.sourceBlock_.dynamicArgGroups_ &&
+                    this.sourceBlock_.dynamicArgGroups_[0].groupId)
+            const group = this.sourceBlock_.dynamicArgGroups_.find(
+                g => g.groupId === groupId
             )
+            if (
+                !group ||
+                !group.dynamicArgTypes ||
+                group.dynamicArgTypes.length === 0
+            )
+                return
+
+            const type = group.dynamicArgTypes[0]
+            this.sourceBlock_.addDynamicArg(type, groupId)
         }
     }
 
     class MinusButton extends FieldButton {
         constructor() {
             super(minusImage, false, undefined, undefined, 4)
+            this.groupId_ = null
         }
 
         onClick(e) {
             if (e && e.button !== 0) return
-            const { dynamicArgumentIds_ } = this.sourceBlock_
-            if (dynamicArgumentIds_.length > 0) {
-                this.sourceBlock_.removeDynamicArg(
-                    dynamicArgumentIds_[dynamicArgumentIds_.length - 1]
-                )
+            const groupId =
+                this.groupId_ ||
+                (this.sourceBlock_.dynamicArgGroups_ &&
+                    this.sourceBlock_.dynamicArgGroups_[0].groupId)
+            const group = this.sourceBlock_.dynamicArgGroups_.find(
+                g => g.groupId === groupId
+            )
+            if (!group) return
+
+            const groupArgIds = this.sourceBlock_.dynamicArgumentIds_.filter(
+                id => id.startsWith(`${groupId}_DYNAMIC_ARGS`)
+            )
+            if (groupArgIds.length > 0) {
+                const lastArgId = groupArgIds[groupArgIds.length - 1]
+                this.sourceBlock_.removeDynamicArg(lastArgId)
             }
         }
     }
@@ -312,26 +410,20 @@ function proxyBlocklyBlocksObject(runtime, ScratchBlocks) {
     })
 }
 
-/**
- * 初始化可扩展积木，支持多组并发参数
- */
 function initExpandableBlock(
     runtime,
     blockDefinition,
     dynamicArgInfo,
     ScratchBlocks
 ) {
-    // 将 dynamicArgInfo 统一为数组形式，以支持多组并发
     const dynamicArgGroups = Array.isArray(dynamicArgInfo)
         ? dynamicArgInfo
         : [{ groupId: 'ARGS', ...dynamicArgInfo }]
 
-    // 确保每个组都有 groupId，如果没有则默认为 'ARGS'
     dynamicArgGroups.forEach(group => {
         if (!group.groupId) group.groupId = 'ARGS'
     })
 
-    // 从第一组获取 extInfo（假设所有组共享相同的按钮配置）
     const { PlusSelectButton, PlusButton, MinusButton } =
         dynamicArgGroups[0].extInfo
 
@@ -384,56 +476,114 @@ function initExpandableBlock(
     }
 
     const reorderInputs = function () {
-        // 为每个组分别重新排序
-        this.dynamicArgGroups_.forEach(group => {
-            const { afterArg } = group
-            let insertBeforeName = null
+        const orderedNames = []
+        const placed = new Set()
 
-            if (afterArg) {
-                const afterInputIdx = this.inputList.findIndex(
-                    i => i.name === afterArg
-                )
-                if (afterInputIdx !== -1) {
-                    for (
-                        let i = afterInputIdx + 1;
-                        i < this.inputList.length;
-                        i++
-                    ) {
-                        const name = this.inputList[i].name
-                        if (
-                            !name.startsWith(`${group.groupId}_DYNAMIC_ARGS`) &&
-                            ![
-                                `${group.groupId}_ENDTEXT`,
-                                `${group.groupId}_MINUS`,
-                                `${group.groupId}_PLUS`
-                            ].includes(name)
-                        ) {
-                            insertBeforeName = name
-                            break
-                        }
-                    }
+        const pushGroup = groupId => {
+            if (placed.has(groupId)) return
+            placed.add(groupId)
+
+            const localDeps = []
+
+            const argIds = this.dynamicArgumentIds_
+                .filter(id => id.startsWith(`${groupId}_DYNAMIC_ARGS`))
+                .sort((a, b) => {
+                    const numA = parseInt(a.match(/(\d+)$/)[0], 10)
+                    const numB = parseInt(b.match(/(\d+)$/)[0], 10)
+                    return numA - numB
+                })
+
+            argIds.forEach(id => {
+                if (this.getInput(id)) {
+                    orderedNames.push(id)
+                    placed.add(id)
+                    localDeps.push(id)
                 }
-            }
-
-            const groupArgIds = this.dynamicArgumentIds_.filter(id =>
-                id.startsWith(`${group.groupId}_DYNAMIC_ARGS`)
-            )
-
-            groupArgIds.forEach(id => {
-                if (this.getInput(id))
-                    this.moveInputBefore(id, insertBeforeName)
             })
 
-            if (this.getInput(`${group.groupId}_ENDTEXT`))
-                this.moveInputBefore(
-                    `${group.groupId}_ENDTEXT`,
-                    insertBeforeName
-                )
-            if (this.getInput(`${group.groupId}_MINUS`))
-                this.moveInputBefore(`${group.groupId}_MINUS`, insertBeforeName)
-            if (this.getInput(`${group.groupId}_PLUS`))
-                this.moveInputBefore(`${group.groupId}_PLUS`, insertBeforeName)
+            const endName = `${groupId}_ENDTEXT`
+            if (this.getInput(endName)) {
+                orderedNames.push(endName)
+                placed.add(endName)
+                localDeps.push(endName)
+            }
+
+            const minusName = `${groupId}_MINUS`
+            if (this.getInput(minusName)) {
+                orderedNames.push(minusName)
+                placed.add(minusName)
+                localDeps.push(minusName)
+            }
+
+            const plusName = `${groupId}_PLUS`
+            if (this.getInput(plusName)) {
+                orderedNames.push(plusName)
+                placed.add(plusName)
+                localDeps.push(plusName)
+            }
+
+            localDeps.forEach(depName => {
+                this.dynamicArgGroups_.forEach(g => {
+                    if (g.afterArg === depName) {
+                        pushGroup(g.groupId)
+                    }
+                })
+            })
+        }
+
+        this.inputList.forEach(input => {
+            const name = input.name
+            let isGroupElement = false
+            this.dynamicArgGroups_.forEach(group => {
+                const prefix = `${group.groupId}_`
+                if (
+                    name.startsWith(`${prefix}DYNAMIC_ARGS`) ||
+                    name === `${prefix}ENDTEXT` ||
+                    name === `${prefix}MINUS` ||
+                    name === `${prefix}PLUS`
+                ) {
+                    isGroupElement = true
+                }
+            })
+
+            if (!isGroupElement) {
+                if (!placed.has(name)) {
+                    orderedNames.push(name)
+                    placed.add(name)
+                }
+                this.dynamicArgGroups_.forEach(g => {
+                    if (g.afterArg === name) {
+                        pushGroup(g.groupId)
+                    }
+                })
+            }
         })
+
+        this.dynamicArgGroups_.forEach(group => {
+            if (!placed.has(group.groupId)) {
+                pushGroup(group.groupId)
+            }
+        })
+
+        for (let i = orderedNames.length - 1; i >= 0; i--) {
+            const name = orderedNames[i]
+            if (this.getInput(name)) {
+                let nextName = null
+                if (i + 1 < orderedNames.length) {
+                    let j = i + 1
+                    while (
+                        j < orderedNames.length &&
+                        !this.getInput(orderedNames[j])
+                    ) {
+                        j++
+                    }
+                    nextName = j < orderedNames.length ? orderedNames[j] : null
+                }
+                if (!nextName || this.getInput(nextName)) {
+                    this.moveInputBefore(name, nextName)
+                }
+            }
+        }
     }
 
     const updateButton = function () {
@@ -444,7 +594,6 @@ function initExpandableBlock(
                 (_, idx) => this.dynamicArgumentGroups_[idx] === group.groupId
             )
 
-            // 更新加号按钮可见性（考虑 max 限制）
             const plusVisible =
                 getNextParamInc.call(this, group) > 0 &&
                 (!group.max || currentGroupArgs.length < group.max)
@@ -452,13 +601,12 @@ function initExpandableBlock(
                 this.getInput(plusInputName).setVisible(plusVisible)
             }
 
-            // 更新减号按钮可见性（考虑 min 限制）
             const minusVisible = currentGroupArgs.length > (group.min || 0)
             if (minusVisible) {
                 if (!this.getInput(minusInputName)) {
-                    this.appendDummyInput(minusInputName).appendField(
-                        new MinusButton()
-                    )
+                    const minusBtn = new MinusButton()
+                    minusBtn.groupId_ = group.groupId
+                    this.appendDummyInput(minusInputName).appendField(minusBtn)
                 }
             } else {
                 this.removeInput(minusInputName, true)
@@ -472,30 +620,26 @@ function initExpandableBlock(
     blockDefinition.init = /** @this {any} */ function () {
         orgInit.call(this)
 
-        // 初始化多组状态
         this.dynamicArgumentIds_ = []
         this.dynamicArgumentTypes_ = []
-        this.dynamicArgumentGroups_ = [] // 存储每个参数所属的 groupId
-        this.dynamicArgInfo_ = dynamicArgGroups[0] // 兼容旧代码
+        this.dynamicArgumentGroups_ = []
+        this.dynamicArgInfo_ = dynamicArgGroups[0]
         this.dynamicArgGroups_ = dynamicArgGroups
 
-        // 为每个组初始化可选类型
-        this.dynamicArgOptionalTypes_ = dynamicArgGroups[0].dynamicArgTypes
-
-        // 为每个组创建按钮
+        // [优化] 合并多重遍历，提升可读性
         this.dynamicArgGroups_.forEach(group => {
-            this[`${group.groupId}_plusButton_`] =
+            const btn =
                 group.dynamicArgTypes.length > 1
                     ? new PlusSelectButton()
                     : new PlusButton()
+            btn.groupId_ = group.groupId
+            this[`${group.groupId}_plusButton_`] = btn
         })
 
         if (!this.getInput) return
 
-        // 为每个组创建初始文本和按钮
         this.dynamicArgGroups_.forEach(group => {
-            const { endText } = group
-            const endTxt = getValue(endText, 0, '')
+            const endTxt = getValue(group.endText, 0, '')
             if (endTxt !== '') {
                 this.appendDummyInput(`${group.groupId}_ENDTEXT`).appendField(
                     endTxt,
@@ -506,10 +650,7 @@ function initExpandableBlock(
             this.appendDummyInput(`${group.groupId}_PLUS`).appendField(
                 this[`${group.groupId}_plusButton_`]
             )
-        })
 
-        // 更新前文本（如果存在）
-        this.dynamicArgGroups_.forEach(group => {
             updatePreText(this, 0, group)
         })
 
@@ -520,23 +661,36 @@ function initExpandableBlock(
         contextMenu
     ) {
         if (this.isInFlyout) return
-
         let separator_ = true
 
-        // 为每个组添加上下文菜单项
         this.dynamicArgGroups_.forEach(group => {
-            // 添加参数选项
             group.dynamicArgTypes.forEach(i => {
                 const _text = document.createElement('div')
                 _text.classList.add('keyboard-shortcuts-item')
+
                 const ltext = document.createElement('span')
-                ltext.textContent = translate(
+                let displayText = translate(
                     ScratchBlocks,
                     INPUT_TYPES_OPTIONS_LABEL[i]
                 )
+                if (group.menuText) {
+                    if (typeof group.menuText === 'string') {
+                        displayText = group.menuText
+                    } else if (typeof group.menuText === 'function') {
+                        displayText = group.menuText(i)
+                    } else if (typeof group.menuText === 'object') {
+                        displayText =
+                            group.menuText[i] ||
+                            group.menuText.default ||
+                            displayText
+                    }
+                }
+                ltext.textContent = displayText
+
                 const rtext = document.createElement('span')
                 rtext.classList.add('keyboard-shortcuts')
                 rtext.textContent = `+ (${group.groupId})`
+
                 _text.appendChild(ltext)
                 _text.appendChild(rtext)
 
@@ -548,19 +702,19 @@ function initExpandableBlock(
                 })
                 separator_ = false
             })
+        })
 
-            // 删除参数选项 - 恢复原有的一组联动删除逻辑
+        separator_ = true
+
+        this.dynamicArgGroups_.forEach(group => {
             const groupArgIds = this.dynamicArgumentIds_.filter(id =>
                 id.startsWith(`${group.groupId}_DYNAMIC_ARGS`)
             )
-
             const len = groupArgIds.length
             let sum = 0,
                 i = 0,
                 inc = 0
             const args = []
-
-            // 按照每次点击的增量(paramsIncrement)对参数进行分组
             while (sum < len) {
                 inc = getParamsIncPerClick.call(this, i, group)
                 if (inc === 0) break
@@ -572,24 +726,22 @@ function initExpandableBlock(
             args.forEach((id, idx) => {
                 const element = document.createElement('div')
                 element.classList.add('keyboard-shortcuts-item')
+
                 const ltext = document.createElement('span')
-                ltext.textContent = `${translate(
-                    ScratchBlocks,
-                    'DELETE_DYNAMIC_PARAMETER'
-                )} ${group.groupId} ${idx + 1}`
+                const groupName = group.name || group.groupId
+                ltext.textContent = `${translate(ScratchBlocks, 'DELETE_DYNAMIC_PARAMETER')} ${groupName} ${idx + 1}`
+
                 const rtext = document.createElement('span')
                 rtext.classList.add('keyboard-shortcuts')
                 rtext.textContent = '-'
+
                 element.appendChild(ltext)
                 element.appendChild(rtext)
 
-                // 提取后缀数字，兼容多组并发的 ID 格式
                 const match = id.match(/^(.*?)(\d+)$/)
                 if (!match) return
                 const name = match[1]
                 const j = Number(match[2])
-
-                // 计算属于这一拨的参数有哪些
                 const ids = getParamsGroupindexes
                     .call(this, j, group)
                     .map(it => `${name}${it}`)
@@ -602,7 +754,9 @@ function initExpandableBlock(
                             ? input.connection.targetConnection.sourceBlock_
                                   .svgPath_
                             : input.outlinePath
-                        // 鼠标悬浮高亮联动
+
+                        if (!pathElement) return
+
                         element.addEventListener('mouseenter', () => {
                             const replacementGlowFilterId =
                                 this.workspace.options
@@ -621,7 +775,6 @@ function initExpandableBlock(
 
                 if (separator_) {
                     setTimeout(() => {
-                        // 安全拦截，防止 Scratch DOM 改变导致的异常
                         if (element.parentElement?.parentElement) {
                             element.parentElement.parentElement.style.borderStyle =
                                 'dashed'
@@ -640,9 +793,6 @@ function initExpandableBlock(
                 })
                 separator_ = false
             })
-
-            // 组与组之间重置分割线状态，保证下一组添加时有虚线
-            separator_ = true
         })
     }
 
@@ -651,30 +801,49 @@ function initExpandableBlock(
         argumentType,
         defaultValue = ''
     ) {
-        const typeMap = {
-            n: 'math_number',
-            b: 'logic_boolean',
-            s: 'text',
-            l: 'text',
-            c: 'control_if', // C型分支槽使用条件积木作为影子
-            color: 'colour_picker',
-            angle: 'math_angle'
+        const def = SHADOW_TYPE_DEFS[argumentType] || SHADOW_TYPE_DEFS.s
+        if (!def.shadowType) return
+
+        const shadowDom = document.createElement('shadow')
+        shadowDom.setAttribute('type', def.shadowType)
+
+        if (def.shadowField) {
+            let valueToSet = defaultValue
+            if (argumentType === 'color') {
+                if (!valueToSet || !/^#[0-9A-F]{6}$/i.test(valueToSet)) {
+                    valueToSet = def.shadowDefault
+                }
+            } else if (argumentType === 'n' || argumentType === 'angle') {
+                if (
+                    valueToSet === '' ||
+                    valueToSet === null ||
+                    isNaN(Number(valueToSet))
+                ) {
+                    valueToSet = def.shadowDefault
+                }
+            }
+
+            const fieldDom = document.createElement('field')
+            fieldDom.setAttribute('name', def.shadowField)
+            fieldDom.textContent = String(valueToSet)
+            shadowDom.appendChild(fieldDom)
         }
-        const blockType = typeMap[argumentType] || 'text'
 
         ScratchBlocks.Events.disable()
-        const newBlock = this.workspace.newBlock(blockType)
-
+        let newBlock
         try {
-            if (argumentType === 'n')
-                newBlock.setFieldValue(defaultValue, 'NUM')
-            else if (argumentType === 's' || argumentType === 'l')
-                newBlock.setFieldValue(defaultValue, 'TEXT')
-            else if (argumentType === 'color')
-                newBlock.setFieldValue(defaultValue, 'COLOUR')
-            else if (argumentType === 'angle')
-                newBlock.setFieldValue(defaultValue, 'ANGLE')
+            newBlock = ScratchBlocks.Xml.domToBlockHeadless_(
+                shadowDom,
+                this.workspace
+            )
             newBlock.setShadow(true)
+
+            if (newBlock.outputConnection) {
+                newBlock.outputConnection.connect(input.connection)
+            } else if (newBlock.previousConnection) {
+                newBlock.previousConnection.connect(input.connection)
+            }
+
             if (!this.isInsertionMarker()) {
                 newBlock.initSvg()
                 newBlock.render(false)
@@ -687,15 +856,6 @@ function initExpandableBlock(
             ScratchBlocks.Events.fire(
                 new ScratchBlocks.Events.BlockCreate(newBlock)
             )
-        }
-
-        // C型分支槽使用语句连接
-        if (argumentType === 'c') {
-            if (newBlock.previousConnection)
-                newBlock.previousConnection.connect(input.connection)
-        } else {
-            if (newBlock.outputConnection)
-                newBlock.outputConnection.connect(input.connection)
         }
     }
 
@@ -730,13 +890,11 @@ function initExpandableBlock(
         type,
         groupId
     ) {
-        // 如果没有提供 groupId，则使用第一个组的 groupId
         if (!groupId) groupId = this.dynamicArgGroups_[0].groupId
 
         const group = this.dynamicArgGroups_.find(g => g.groupId === groupId)
         if (!group) return
 
-        // 检查是否达到最大数量限制
         const currentGroupArgs = this.dynamicArgumentTypes_.filter(
             (_, idx) => this.dynamicArgumentGroups_[idx] === groupId
         )
@@ -748,7 +906,6 @@ function initExpandableBlock(
 
         ScratchBlocks.Events.setGroup(true)
 
-        // 强健的 ID 防碰撞逻辑：找寻最大的后缀数字
         let maxIndex = 0
         this.dynamicArgumentIds_.forEach(id => {
             const match = id.match(/(\d+)$/)
@@ -785,15 +942,13 @@ function initExpandableBlock(
     }
 
     blockDefinition.removeDynamicArg = /** @this {any} */ function (id) {
-        // 从 id 中提取 groupId
-        const match = id.match(/^([^_]+)_/)
+        // [修复] 支持复杂的含下划线 groupId 截取
+        const match = id.match(/^(.*?)_DYNAMIC_ARGS/)
         if (!match) return
         const groupId = match[1]
-
         const group = this.dynamicArgGroups_.find(g => g.groupId === groupId)
         if (!group) return
 
-        // 检查是否低于最小数量限制
         const currentGroupArgs = this.dynamicArgumentIds_.filter(argId =>
             argId.startsWith(`${groupId}_DYNAMIC_ARGS`)
         )
@@ -818,7 +973,6 @@ function initExpandableBlock(
                 this.dynamicArgumentIds_.splice(idx, 1)
                 this.dynamicArgumentTypes_.splice(idx, 1)
                 this.dynamicArgumentGroups_.splice(idx, 1)
-                // 静默移除，规避 Scratch 积木弹开/跳动的碰撞检测
                 this.removeInput(curId, true)
             }
         })
@@ -839,18 +993,20 @@ function initExpandableBlock(
                     newMutation
                 )
             )
-            // 异步后台平滑清理，彻底杜绝跳动
+
             setTimeout(() => {
                 const target = runtime.getEditingTarget()
-                if (target)
+                if (target) {
                     cleanInputs(
                         runtime,
                         target,
                         this.id,
                         this.dynamicArgumentIds_
                     )
+                }
             }, 0)
         }
+
         ScratchBlocks.Events.setGroup(false)
     }
 
@@ -878,7 +1034,7 @@ function initExpandableBlock(
                 const input = this.inputList[i]
                 if (
                     input.connection &&
-                    /^([A-Z]+)_DYNAMIC_ARGS\d+$/.test(input.name)
+                    /^(.*?)_DYNAMIC_ARGS\d+$/.test(input.name) // [修复] 支持任意 groupId 匹配正则
                 ) {
                     const target = input.connection.targetBlock()
                     connectionMap[input.name] = {
@@ -892,20 +1048,17 @@ function initExpandableBlock(
             return connectionMap
         }
 
+    // [致命Bug修复] 防止直接 dispose 引起的原生 inputList 塌陷及幽灵元素无法清除
     blockDefinition.removeAllDynamicArgInputs_ =
         /** @this {any} */ function () {
-            const list = /** @type {any} */ (this.inputList)
-            if (!list) return
-            const inputList = []
-
-            for (let i = 0; i < list.length; i++) {
-                const input = list[i]
-                if (!input) continue
-                if (/^([A-Z]+)_DYNAMIC_ARGS\d+$/.test(input.name))
-                    input.dispose()
-                else inputList.push(input)
+            if (!this.inputList) return
+            // 正确做法：必须倒序遍历删除，并调用 Blockly 标准的 removeInput
+            for (let i = this.inputList.length - 1; i >= 0; i--) {
+                const input = this.inputList[i]
+                if (input && /^(.*?)_DYNAMIC_ARGS\d+$/.test(input.name)) {
+                    this.removeInput(input.name, true)
+                }
             }
-            this.inputList = inputList
         }
 
     function updatePreText(block, num, group) {
@@ -918,7 +1071,6 @@ function initExpandableBlock(
         if (afterArg) {
             input = block.inputList.find(i => i.name === afterArg)
         } else {
-            // 零内存分配的高效安全查找
             for (let i = block.inputList.length - 1; i >= 0; i--) {
                 const it = block.inputList[i]
                 if (
@@ -949,37 +1101,46 @@ function initExpandableBlock(
         connectionMap
     ) {
         const num = this.dynamicArgumentTypes_.length
-
-        // 为每个组创建输入
         this.dynamicArgGroups_.forEach(group => {
             const { endText, joinCh, afterArg } = group
-
-            // 更新前文本
             updatePreText(this, num, group)
+            let groupArgIndex = 0
 
-            // 创建该组的动态参数输入
+            let needJoinBeforeFirstArg = false
+            if (afterArg && joinCh && groupArgIndex === 0) {
+                const afterInput = this.getInput(afterArg)
+                if (afterInput) {
+                    needJoinBeforeFirstArg = true
+                }
+            }
+
             for (let i = 0; i < num; i++) {
                 if (this.dynamicArgumentGroups_[i] !== group.groupId) continue
-
                 const argumentType = this.dynamicArgumentTypes_[i]
                 const id = this.dynamicArgumentIds_[i]
                 let input
 
-                // 根据类型创建不同的输入
                 if (argumentType === 'c') {
                     input = this.appendStatementInput(id)
                 } else {
                     input = this.appendValueInput(id)
-                    // 严谨兼容的类型限制
                     if (argumentType === 'b') input.setCheck('Boolean')
                     else if (argumentType === 'n') input.setCheck('Number')
                     else if (argumentType === 'color') input.setCheck('Colour')
-                    else if (argumentType === 'angle') input.setCheck('Angle')
-                    // 's' 和 'l' 文本输入在 Scratch 中允许任意类型的块塞入，因此不设 Check
+                    else if (argumentType === 'angle')
+                        input.setCheck(['Number', 'Angle'])
+                    else input.setCheck('String')
                 }
 
-                if (joinCh && (i !== 0 || afterArg)) {
+                if (joinCh && groupArgIndex > 0 && argumentType !== 'c') {
                     input.appendField(getValue(joinCh, i, ''))
+                } else if (
+                    needJoinBeforeFirstArg &&
+                    groupArgIndex === 0 &&
+                    argumentType !== 'c'
+                ) {
+                    input.appendField(getValue(joinCh, i, ''))
+                    needJoinBeforeFirstArg = false
                 }
 
                 this.populateArgument_(
@@ -990,9 +1151,9 @@ function initExpandableBlock(
                     i,
                     group
                 )
+                groupArgIndex++
             }
 
-            // 处理结束文本
             const txt = getValue(endText, num, '')
             if (txt === '') {
                 this.removeInput(`${group.groupId}_ENDTEXT`, true)
@@ -1019,29 +1180,38 @@ function initExpandableBlock(
     ) {
         let oldBlock = null,
             oldShadow = null
-
         if (connectionMap && id in connectionMap) {
             const saveInfo = connectionMap[id]
             oldBlock = saveInfo.block
             oldShadow = saveInfo.shadow
         }
 
-        const getDefaultValue = (id, idx) => {
+        const def = SHADOW_TYPE_DEFS[type] || SHADOW_TYPE_DEFS.s
+
+        const getDefaultValue = (id, idx, argType) => {
+            // 【保留新特性】带有 argType
             const { defaultValues } = group
             if (typeof defaultValues === 'function')
-                return defaultValues(idx, id)
+                return defaultValues(idx, id, argType)
             if (Array.isArray(defaultValues)) {
                 const len = defaultValues.length
-                if (idx < len - 1) return defaultValues[idx]
-                if (idx === len - 1) return defaultValues[len - 1]
-                return `${defaultValues[len - 1]}${idx - len + 2}`
+                if (idx < len) return defaultValues[idx]
+                const lastVal = defaultValues[len - 1]
+                if (typeof lastVal === 'boolean') return lastVal
+                const strVal = String(lastVal)
+                const match = strVal.match(/^(.*?)(\d+)$/)
+                if (match) {
+                    const prefix = match[1]
+                    const num = parseInt(match[2], 10)
+                    return `${prefix}${num + (idx - len + 1)}`
+                }
+                return `${strVal}${idx - len + 2}`
             }
             return defaultValues
         }
 
         if (connectionMap && oldBlock) {
             connectionMap[input.name] = null
-            // C型分支槽使用 previousConnection
             if (type === 'c') {
                 if (oldBlock.previousConnection)
                     oldBlock.previousConnection.connect(input.connection)
@@ -1049,55 +1219,84 @@ function initExpandableBlock(
                 if (oldBlock.outputConnection)
                     oldBlock.outputConnection.connect(input.connection)
             }
-
-            if (type !== 'b' && type !== 'c') {
-                const shadowDom = oldShadow || this.buildShadowDom_(type, group)
-                input.connection.setShadowDom(shadowDom)
+            if (def.shadowType) {
+                const shadowDom =
+                    oldShadow || this.buildShadowDom_(type, group, i, id)
+                if (shadowDom) input.connection.setShadowDom(shadowDom)
             }
         } else {
-            this.attachShadow_(input, type, getDefaultValue(id, i))
+            if (def.shadowType) {
+                this.attachShadow_(input, type, getDefaultValue(id, i, type))
+            }
         }
     }
 
+    // [防御性修复] 防止由于扩展积木环境差异而导致 ProcedureUtils 内部属性找不到报错
     blockDefinition.deleteShadows_ =
-        ScratchBlocks.ScratchBlocks.ProcedureUtils.deleteShadows_
+        ScratchBlocks?.ScratchBlocks?.ProcedureUtils?.deleteShadows_ ||
+        function () {}
 
     blockDefinition.buildShadowDom_ = /** @this {any} */ function (
         type,
-        group
+        group,
+        idx,
+        id
     ) {
-        const shadowDom = document.createElement('shadow')
-        let blockType = 'text'
-        let fieldName = 'TEXT'
-        let defaultValue = ''
+        const def = SHADOW_TYPE_DEFS[type] || SHADOW_TYPE_DEFS.s
+        if (!def.shadowType) return null
 
-        if (type === 'n') {
-            blockType = 'math_number'
-            fieldName = 'NUM'
-            defaultValue = group?.defaultNumberValue || '0'
-        } else if (type === 'b') {
-            blockType = 'logic_boolean'
-            fieldName = 'BOOL'
-            defaultValue = 'false'
-        } else if (type === 'color') {
-            blockType = 'colour_picker'
-            fieldName = 'COLOUR'
-            defaultValue = '#000000'
-        } else if (type === 'angle') {
-            blockType = 'math_angle'
-            fieldName = 'ANGLE'
-            defaultValue = '0'
-        } else if (type === 'c') {
-            blockType = 'control_if'
-            fieldName = 'CONDITION'
-            defaultValue = ''
+        const shadowDom = document.createElement('shadow')
+        shadowDom.setAttribute('type', def.shadowType)
+
+        if (def.shadowField) {
+            const fieldDom = document.createElement('field')
+            fieldDom.setAttribute('name', def.shadowField)
+
+            const getDefaultValue = (id, i, argType) => {
+                // 【保留新特性】带有 argType
+                const { defaultValues } = group
+                if (typeof defaultValues === 'function')
+                    return defaultValues(i, id, argType)
+                if (Array.isArray(defaultValues)) {
+                    const len = defaultValues.length
+                    if (i < len) return defaultValues[i]
+                    const lastVal = defaultValues[len - 1]
+                    if (typeof lastVal === 'boolean') return lastVal
+                    const strVal = String(lastVal)
+                    const match = strVal.match(/^(.*?)(\d+)$/)
+                    if (match) {
+                        const prefix = match[1]
+                        const num = parseInt(match[2], 10)
+                        return `${prefix}${num + (i - len + 1)}`
+                    }
+                    return `${strVal}${i - len + 2}`
+                }
+                return defaultValues
+            }
+
+            let defaultValue = getDefaultValue(id, idx, type)
+            if (defaultValue === undefined || defaultValue === null) {
+                defaultValue = def.shadowDefault
+            }
+
+            if (type === 'color') {
+                if (!defaultValue || !/^#[0-9A-F]{6}$/i.test(defaultValue)) {
+                    defaultValue = def.shadowDefault
+                }
+            } else if (type === 'n' || type === 'angle') {
+                if (
+                    defaultValue === '' ||
+                    defaultValue === null ||
+                    isNaN(Number(defaultValue))
+                ) {
+                    defaultValue = def.shadowDefault
+                }
+            }
+
+            fieldDom.textContent = String(defaultValue)
+            shadowDom.appendChild(fieldDom)
         }
 
-        shadowDom.setAttribute('type', blockType)
-        const fieldDom = document.createElement('field', null)
-        fieldDom.setAttribute('name', fieldName)
-        fieldDom.textContent = defaultValue
-        shadowDom.appendChild(fieldDom)
         return shadowDom
     }
 }
@@ -1133,19 +1332,17 @@ function initExpandableBlocks(
 
         blocksInfo.forEach(i => {
             if (i.dynamicArgsInfo) {
-                // 确保是数组形式
                 const dynamicArgsInfo = Array.isArray(i.dynamicArgsInfo)
                     ? i.dynamicArgsInfo
                     : [i.dynamicArgsInfo]
 
-                // 为每个组添加默认 groupId 和 extInfo
                 dynamicArgsInfo.forEach(group => {
                     if (!group.groupId) group.groupId = 'ARGS'
-                    group.dynamicArgTypes = group.dynamicArgTypes || ['s']
+                    group.dynamicArgTypes = group.dynamicArgTypes ||
+                        group.types || ['s']
                     group.extInfo = extInfo[id]
                 })
 
-                // 如果只有一个组，保持兼容性
                 if (dynamicArgsInfo.length === 1) {
                     i.dynamicArgsInfo = dynamicArgsInfo[0]
                 } else {
@@ -1163,17 +1360,11 @@ function initExpandableBlocks(
 
 /**
  * 提取并智能排序扩展积木传入的所有动态参数。
- * 当出现中间断层时（例如 [1, 3]），将在执行层自动补位为 [第1项, 第2项]，杜绝数据截断。
- * 支持按 groupId 过滤参数。
- * @param {Object} args - 积木参数对象
- * @param {string} [groupId] - 可选的组ID，用于多组并发时筛选特定组的参数
- * @returns {Array} 按顺序包含所有被动态添加的参数值
  */
 function getDynamicArgs(args, groupId) {
-    // 如果没有提供 groupId，则返回所有动态参数（向后兼容）
     if (!groupId) {
         return Object.keys(args)
-            .filter(key => /^([A-Z]+)_DYNAMIC_ARGS\d+$/.test(key))
+            .filter(key => /^(.*?)_DYNAMIC_ARGS\d+$/.test(key)) // [修复] 支持带有特殊名称组参数捕获
             .sort((a, b) => {
                 const numA = parseInt(a.match(/(\d+)$/)[0], 10)
                 const numB = parseInt(b.match(/(\d+)$/)[0], 10)
@@ -1182,7 +1373,6 @@ function getDynamicArgs(args, groupId) {
             .map(key => args[key])
     }
 
-    // 如果提供了 groupId，则只返回该组的参数
     const groupPrefix = `${groupId}_DYNAMIC_ARGS`
     return Object.keys(args)
         .filter(key => key.startsWith(groupPrefix))

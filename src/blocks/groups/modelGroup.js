@@ -16,8 +16,9 @@
  */
 
 import BlockGroup from '../BlockGroup.js'
-import { RTW_Model_Box, Wrapper } from '../../utils/RTWTools.js'
-import { getDynamicArgs } from '../../utils/extendableBlock.js'
+import { chen_RenderTheWorld_extensionId } from '../../assets/index.js'
+import { RTW_Model_Box, Wrapper } from '../../rendering/RTWTools.js'
+import { getDynamicArgs } from '../../blockly/expandableBlock.js'
 
 export default class ModelGroup extends BlockGroup {
     static groupId = 'Objects'
@@ -38,18 +39,43 @@ export default class ModelGroup extends BlockGroup {
         const t = this.translate
         const ext = this.ext
 
+        const objectLoadingCompletedXML = BlockGroup.generateFillInXML(
+            chen_RenderTheWorld_extensionId,
+            'objectLoadingCompleted',
+            { name: { fillIn: 'objectLoadingCompletedName' } }
+        )
+
         return [
+            {
+                opcode: 'objectLoadingCompletedName',
+                blockType: BT.REPORTER,
+                text: t('objectLoadingCompletedName'),
+                hideFromPalette: true,
+                allowDropAnywhere: true,
+                canDragDuplicate: true,
+                handler: (args, util) => {
+                    // 优先读取当前线程绑定的事件对象名（线程安全）
+                    const threadName = util?.thread?._RTW_eventName
+                    if (threadName !== undefined) return threadName
+                    // 兜底：扩展状态中的最后一次对象名
+                    return ext._currentObjectLoadingName || ''
+                }
+            },
             {
                 opcode: 'objectLoadingCompleted',
                 blockType: BT.EVENT,
                 text: t('objectLoadingCompleted'),
+                isEdgeActivated: false,
                 shouldRestartExistingThreads: false,
+                hideFromPalette: true,
+                allowDropAnywhere: true,
                 arguments: {
-                    name: {
-                        type: AT.CCW_HAT_PARAMETER,
-                        defaultValue: 'name',
-                    }
+                    name: { fillIn: 'objectLoadingCompletedName' }
                 }
+            },
+            {
+                blockType: BT.XML,
+                xml: objectLoadingCompletedXML
             },
             {
                 opcode: 'importModel',
@@ -75,7 +101,10 @@ export default class ModelGroup extends BlockGroup {
                     defaultValues: i => `name${i + 2}`,
                     afterArg: 'name',
                     joinCh: ', ',
-                    dynamicArgTypes: ['s']
+                    dynamicArgTypes: ['s'],
+                    menuText: {
+                        s: t('destroyObject.dynamicArgMenuText')
+                    }
                 },
                 handler: args => {
                     const engine = ext.renderEngine
@@ -234,7 +263,10 @@ export default class ModelGroup extends BlockGroup {
                     joinCh: ', ',
                     preText: n =>
                         n === 0 ? t('groupModel') : `${t('groupModel')}[`,
-                    endText: n => (n === 0 ? '' : ']')
+                    endText: n => (n === 0 ? '' : ']'),
+                    menuText: {
+                        s: t('groupModel.dynamicArgMenuText')
+                    }
                 },
                 output: 'Reporter',
                 outputShape: 3,
@@ -483,6 +515,10 @@ export default class ModelGroup extends BlockGroup {
                 'zh-cn': '当名为 [name] 的对象导入或重置完成时',
                 en: 'when object named [name] imported or reset'
             },
+            objectLoadingCompletedName: {
+                'zh-cn': '对象名称',
+                en: 'object name'
+            },
             importModel: {
                 'zh-cn': '导入或重置名为 [name] 的对象 [model]',
                 en: 'import or reset object named [name] [model]'
@@ -490,6 +526,10 @@ export default class ModelGroup extends BlockGroup {
             destroyObject: {
                 'zh-cn': '销毁对象 [name]',
                 en: 'destroy object [name]'
+            },
+            'destroyObject.dynamicArgMenuText': {
+                'zh-cn': '添加对象参数',
+                en: 'Add Object Parameter'
             },
             getObjectByName: {
                 'zh-cn': '名为 [name] 的对象',
@@ -517,12 +557,15 @@ export default class ModelGroup extends BlockGroup {
                 en: '<GLTF model> GLTF file [gltffile]'
             },
             groupModel: { 'zh-cn': '<组> ', en: '<group> ' },
+            'groupModel.dynamicArgMenuText': {
+                'zh-cn': '添加组参数',
+                en: 'Add Group Parameter'
+            },
             shadowSettings: {
-                'zh-cn':
-                    '让对象 [name] [YN] 产生阴影, [YN2] 接收阴影',
+                'zh-cn': '让对象 [name] [YN] 产生阴影, [YN2] 接收阴影',
                 en: 'let object [name] cast shadows [YN] receive shadows [YN2]'
             },
-            fileListEmpty: { 'zh-cn': '没有文件', en: 'no file' },
+            fileListEmpty: { 'zh-cn': '没有文件', en: 'no file' }
         }
     }
 }

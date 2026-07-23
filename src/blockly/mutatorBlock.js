@@ -35,8 +35,9 @@
  */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable func-names */
+// @ts-nocheck
 
-import { getScratchBlocks } from './injector.js'
+import { getScratchBlocks } from '../scratch/injector.js'
 
 const enabledMutatorBlocksInfo = {}
 const PROXY_MARK = Symbol.for('MutatorProxyMark')
@@ -48,7 +49,7 @@ const TYPE_TABLE = {
     l: { shadow: 'text', field: 'TEXT', check: null },
     b: { shadow: 'logic_boolean', field: 'BOOL', check: 'Boolean' },
     color: { shadow: 'colour_picker', field: 'COLOUR', check: null },
-    angle: { shadow: 'math_angle', field: 'ANGLE', check: 'Number' },
+    angle: { shadow: 'math_angle', field: 'NUM', check: 'Number' },
     c: { shadow: null, field: null, check: null }
 }
 
@@ -150,14 +151,17 @@ function buildShadowDom(type, defaultValue) {
 }
 
 // 防污染撤销栈的 Shadow 挂载逻辑（参考 extendableBlock 优化）
+// 修改后的 attachShadow 函数
 function attachShadow(block, input, type, defaultValue, ScratchBlocks) {
-    if (!block.workspace || block.isInsertionMarker()) return
+    // 【增加防御】如果是影子积木或插入标记，直接跳出，防止连环触发游离
+    if (!block.workspace || block.isInsertionMarker() || block.isShadow())
+        return
+
     const info = TYPE_TABLE[type] || TYPE_TABLE.s
     if (!info.shadow) return
 
     const eventsEnabled = ScratchBlocks.Events.isEnabled()
     if (eventsEnabled) ScratchBlocks.Events.disable()
-
     let sb
     try {
         sb = block.workspace.newBlock(info.shadow)
@@ -175,20 +179,16 @@ function attachShadow(block, input, type, defaultValue, ScratchBlocks) {
         }
         sb.setShadow(true)
 
-        // 【核心修复】不能依赖 block.rendered，因为它可能被临时设为 false
-        // 必须通过 block.svgGroup_ 判断积木是否已经挂载到工作区 DOM 上
-        const shouldRender = block.svgGroup_ && !block.isInsertionMarker()
-        if (shouldRender) {
-            sb.initSvg()
-            sb.render(false)
-        }
+        // 【核心修改】只建立连接，不提前生成 SVG！
+        if (sb.outputConnection) sb.outputConnection.connect(input.connection)
+        else if (sb.previousConnection)
+            sb.previousConnection.connect(input.connection)
     } catch (e) {
         if (eventsEnabled) ScratchBlocks.Events.enable()
         const dom = buildShadowDom(type, defaultValue)
         if (dom) input.connection.setShadowDom(dom)
         return
     }
-
     if (eventsEnabled) ScratchBlocks.Events.enable()
 
     if (ScratchBlocks.Events.isEnabled()) {
@@ -196,10 +196,6 @@ function attachShadow(block, input, type, defaultValue, ScratchBlocks) {
         ev.recordUndo = false
         ScratchBlocks.Events.fire(ev)
     }
-
-    if (sb.outputConnection) sb.outputConnection.connect(input.connection)
-    else if (sb.previousConnection)
-        sb.previousConnection.connect(input.connection)
 }
 
 function getShadowBlockValue(shadowBlock) {
@@ -283,14 +279,20 @@ function initMutatorBlock(
                         const group = ScratchBlocks.Events.getGroup()
                         if (!group) ScratchBlocks.Events.setGroup(true)
 
-                        // 【核心修复】使用微任务 (queueMicrotask) 代替 setTimeout 和同步执行
-                        // 微任务会在当前 JavaScript 执行栈清空后、浏览器渲染前立即执行
-                        // 这样既避开了 Field 的 DOM 同步冲突，又能让 Blockly 正常捕获渲染时机
-                        queueMicrotask(() => {
-                            if (!src.workspace) return
-                            src.updateDisplay_(oldXml)
-                            if (!group) ScratchBlocks.Events.setGroup(false)
+                        // 构造状态覆盖对象，解决同步执行时积木内部下拉框还是旧值的问题
+                        const stateOverride = {}
+                        groups.forEach(grp => {
+                            stateOverride[grp.fieldName] =
+                                grp.fieldName === this.name
+                                    ? newValue
+                                    : src.getFieldValue(grp.fieldName) ||
+                                      grp.defaultValue
                         })
+
+                        // 【核心修复】直接同步调用，告别异步延迟导致的渲染丢失！
+                        src.updateDisplay_(oldXml, stateOverride)
+
+                        if (!group) ScratchBlocks.Events.setGroup(false)
                     }
                     return newValue
                 })
@@ -329,7 +331,10 @@ function initMutatorBlock(
         this.updateDisplay_()
     }
 
-    blockDefinition.updateDisplay_ = function (providedOldXml) {
+    blockDefinition.updateDisplay_ = function (providedOldXml, stateOverride) {
+        if (this.isInsertionMarker()) {
+            return
+        }
         if (this.mutatorUpdating_) return
         this.mutatorUpdating_ = true
 
@@ -348,10 +353,11 @@ function initMutatorBlock(
         try {
             const targetArgs = []
             groups.forEach(g => {
-                const cfg =
-                    g.argMap[
-                        this.getFieldValue(g.fieldName) || g.defaultValue
-                    ] || []
+                // 【关键】优先使用 stateOverride 里的新值，兼容同步调用
+                const val = stateOverride
+                    ? stateOverride[g.fieldName] || g.defaultValue
+                    : this.getFieldValue(g.fieldName) || g.defaultValue
+                const cfg = g.argMap[val] || []
                 cfg.forEach(a =>
                     targetArgs.push({ ...a, _afterArg: g.afterArg })
                 )
@@ -382,13 +388,11 @@ function initMutatorBlock(
                 }
             })
 
-            // 【核心修复】去掉 opt_quiet (true) 参数，让 Blockly 标准流程清理 DOM
-            // 避免“幽灵输入框”残留，即使 rendered=false 也不会阻止 DOM 注销
-            const inputsToRemove = this.inputList.filter(input =>
-                allArgNames.has(input.name)
-            )
-            inputsToRemove.forEach(input => {
-                this.removeInput(input.name)
+            // 直接调用 removeInput 清理
+            this.inputList.slice().forEach(input => {
+                if (allArgNames.has(input.name)) {
+                    this.removeInput(input.name)
+                }
             })
 
             // 重建按序插入
@@ -483,44 +487,41 @@ function initMutatorBlock(
                 }
             })
 
-            // 彻底清理无用的 Shadow 块
+            // 清理无用的积木
             Object.values(connectionMap).forEach(info => {
-                if (info && info.block && info.block.isShadow()) {
-                    if (ScratchBlocks.Events.isEnabled()) {
-                        const ev = new ScratchBlocks.Events.BlockDelete(
-                            info.block
-                        )
-                        ev.recordUndo = false
-                        ScratchBlocks.Events.fire(ev)
+                if (info && info.block) {
+                    // 不论是不是 shadow，没被重新连上的都清理掉
+                    if (info.block.isShadow() || !info.block.getParent()) {
+                        if (ScratchBlocks.Events.isEnabled()) {
+                            const ev = new ScratchBlocks.Events.BlockDelete(
+                                info.block
+                            )
+                            ev.recordUndo = false
+                            ScratchBlocks.Events.fire(ev)
+                        }
+                        info.block.dispose(false, false)
                     }
-                    info.block.dispose(false, false)
                 }
             })
 
             this.rendered = wasRendered
-            if (wasRendered && !this.isInsertionMarker()) {
-                // 【核心修复】兼容不同版本 Blockly，安全初始化缺失 DOM 的 Field
-                this.inputList.forEach(input => {
-                    input.fieldRow.forEach(field => {
-                        if (field && !field.fieldGroup_) {
-                            try {
-                                // Blockly 新版叫 initView，旧版叫 init
-                                if (field.initView) field.initView()
-                                else if (field.init) field.init()
 
-                                // 初始化后需要应用颜色，否则文字可能是透明的
-                                if (field.applyColour) field.applyColour()
-                            } catch (e) {
-                                console.warn('Field init failed:', e)
-                            }
+            // 【核心修复】完全对齐 expandableBlock.js，不要搞花里胡哨的 field 修复
+            if (wasRendered && !this.isInsertionMarker()) {
+                this.initSvg()
+                this.render()
+
+                // 主积木渲染完毕后，统一渲染子积木，确保位置正确
+                this.inputList.forEach(input => {
+                    if (input && input.connection) {
+                        const target = input.connection.targetBlock()
+                        if (target && !target.getSvgRoot()) {
+                            target.initSvg()
+                            target.render()
                         }
-                    })
+                    }
                 })
 
-                // 重置尺寸缓存，逼迫 Blockly 重新计算高度和宽度
-                this.height = 0
-                this.width = 0
-                this.render()
                 this.bumpNeighbours_()
             }
 

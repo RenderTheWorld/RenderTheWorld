@@ -9,7 +9,7 @@
  */
 
 import BlockGroup from '../BlockGroup.js'
-import { ColorTools } from '../../utils/RTWTools.js'
+import { ColorTools } from '../../rendering/RTWTools.js'
 
 export default class SkyGroup extends BlockGroup {
     /**
