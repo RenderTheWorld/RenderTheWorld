@@ -13,7 +13,11 @@
  *   - 劫持逻辑集中在一处，便于维护和调试
  */
 
-import { chen_RenderTheWorld_extensionId } from '../assets/index.js'
+import {
+    chen_RenderTheWorld_extensionId,
+    color,
+    color_tertiary
+} from '../assets/index.js'
 import { addFileType } from '../utils/gandiAssetTools.js'
 
 /**
@@ -95,9 +99,9 @@ export function setupHatParameterColor(extension, ScratchBlocks) {
                 if (flag) {
                     hatParameter['is_RTW_hat_parameter'] = true
                     hatParameter.colour_ = hatParameter.svgPath_.style.fill =
-                        '#121C3D'
+                        color
                     hatParameter.colourTertiary_ =
-                        hatParameter.svgPath_.style.stroke = '#4A76FF'
+                        hatParameter.svgPath_.style.stroke = color_tertiary
                 }
             })
 

@@ -333,7 +333,7 @@ export function setupNestedCategory({
         const childEl = e.target.closest(`[class*="scratchCategoryId-${extId}_"]`)
         if (childEl) {
             handleChildCategoryDblClick(e)
-            e.stopPropagation()
+            // e.stopPropagation()
             return
         }
 

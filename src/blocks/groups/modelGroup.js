@@ -43,7 +43,6 @@ export default class ModelGroup extends BlockGroup {
                 opcode: 'objectLoadingCompleted',
                 blockType: BT.EVENT,
                 text: t('objectLoadingCompleted'),
-                isEdgeActivated: false,
                 shouldRestartExistingThreads: false,
                 arguments: {
                     name: {

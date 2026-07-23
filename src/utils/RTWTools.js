@@ -30,6 +30,7 @@ function addRTWStyle(newStyle) {
 
 addRTWStyle(`
 .RTW-visualReport-body {
+    user-select: text;
     float: left;
     width: 100%;
 }
